@@ -261,7 +261,7 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 	unsigned int end_read = 0;
 	unsigned int end_ref = 0; // 1_based best alignment ending point; Initialized as isn't aligned - 0.
 	unsigned int refLen = strlen(ref);
-	unsigned int segLen = (readLen + 15) / 16;
+	unsigned int segLen = (readLen + 15) / 16; // number of segment
 	
 	// array to record the largest score of each reference position
 	char* maxColumn = (char*) calloc(refLen, 1); 
@@ -315,6 +315,7 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 	
 	// outer loop to process the reference sequence
 	for (unsigned int i = 0; i < refLen; i ++) {
+		
 		__m128i vF = vZero; // Initialize F value to 0. 
 							// Any errors to vH values will be corrected in the Lazy_F loop. 
 		__m128i vH = pvHStore[segLen - 1];
@@ -418,22 +419,25 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 		// end of Lazy-F loop
 		
 		// loop for tracing the ending point of the best alignment
-		vTemp = vMaxMark;
-		vMaxMark = _mm_max_epu8(vMaxScore, vMaxMark);
+		//vTemp = vMaxMark;
+		vTemp = _mm_max_epu8(vMaxScore, vMaxMark);
 		vTemp = _mm_cmpeq_epi8(vMaxMark, vTemp);
 		cmp = _mm_movemask_epi8(vTemp);
-		j = 0;
+		
+		j = 0; 
 		
 		while (cmp != 0xffff) {
 			vMaxMark = _mm_max_epu8(vMaxMark, pvHStore[j]);
 			end_ref = i + 1; // Adjust to 1-based position.
 			unsigned int p = 0;
 			unsigned char temp = findMax(vMaxMark, &p);
+			
 			if (temp > max) {
 				*end_seg = j;
 				end_read = p * segLen + j + 1;  
 				max = temp;
 			}
+			
 			vTemp = _mm_cmpeq_epi8(vMaxMark, vMaxScore);
 			cmp = _mm_movemask_epi8(vTemp);
 			j ++;
@@ -445,19 +449,19 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 		// loop to record the max score of each column as well as the alignment ending position on the read
 		j = 0;
 		maxColumn[i] = 0;
-		vTemp = pvHStore[j];
-		cmp = _mm_movemask_epi8(vTemp);
+		__m128i vMarkColumn = pvHStore[j]; // Record the cumulated max segment values.
+		cmp = _mm_movemask_epi8(vMarkColumn);
 		while (cmp != 0xffff) {
-			vTemp = _mm_max_epu8(vTemp, pvHStore[j]);
-			//			*end_ref = i + 1; // Adjust to 1-based position.
+			
+			vMarkColumn = _mm_max_epu8(vMarkColumn, pvHStore[j]);
+			
 			unsigned int p = 0;
-			unsigned char temp = findMax(vTemp, &p);
+			unsigned char temp = findMax(vMarkColumn, &p);
 			if (temp > maxColumn[i]) {
-				//				*end_seg = j;
 				end_read_column[i] = p * segLen + j + 1;  
 				maxColumn[i] = temp;
 			}
-			vTemp = _mm_cmpeq_epi8(vTemp, vMaxColumn);
+			vTemp = _mm_cmpeq_epi8(vMarkColumn, vMaxColumn);
 			cmp = _mm_movemask_epi8(vTemp);
 			j ++;
 			if (j >= segLen) {
@@ -466,11 +470,6 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 		}	
 		
 	} 	
-	
-	for (unsigned int i = 0; i < refLen; i ++) {
-		fprintf(stderr, "%d\t", maxColumn[i]);
-	}
-	fprintf(stderr, "\n");
 	
 	// Find the most possible 2nd best alignment.
 	alignment_end* bests = (alignment_end*) calloc(2, sizeof(alignment_end));
