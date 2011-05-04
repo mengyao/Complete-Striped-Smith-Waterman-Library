@@ -16,7 +16,7 @@ using namespace std;
 #include <vector>
 #include "ssw.h"
 #include "Benchmark.h"
-
+#define SIZE 64
 /*
 // For BandedSmithWaterman:
 #include <iostream>
@@ -178,6 +178,8 @@ int main (int argc, char * const argv[]) {
 	char* file_read = argv[2];
 	vector<char*> reads;
 	char* ref = readFasta(&reads, file_ref, file_read);
+	unsigned int refLen = strlen(ref); 
+	unsigned int* ref_num = ref_amino2num (ref, refLen);
 	
 	// start timing the algorithm
 	CBenchmark bench;
@@ -191,7 +193,7 @@ int main (int argc, char * const argv[]) {
 		unsigned int end_seg = 0;
 		//unsigned int segLen = (strlen(read) + 15) / 16;
 		unsigned int readLen = strlen(read);
-		alignment_end* bests = smith_waterman_sse2(ref, readLen, 2, 1, 2, 1, queryProfile, &end_seg, 4);
+		alignment_end* bests = smith_waterman_sse2(ref_num, refLen, readLen, 2, 1, 2, 1, queryProfile, &end_seg, 4);
 		//unsigned char score = smith_waterman_sse2(ref, segLen, 2, 1, 2, 1, queryProfile, &end_ref, &end_read, &end_seg, 4);
 		queryProfile_destructor(queryProfile);
 		
@@ -199,8 +201,8 @@ int main (int argc, char * const argv[]) {
 		//fprintf(stderr, "end_seg:%d\n", end_seg);
 		
 		if (bests[0].score != 0) {
-			fprintf(stdout, "max score: %d, end_ref: %d, end_read: %d\nmax2 score: %d, end_ref: %d, end_read: %d\n", 
-					bests[0].score, bests[0].ref, bests[0].read, bests[1].score, bests[1].ref, bests[1].read);		
+			fprintf(stdout, "max score: %d, end_ref: %d\nmax2 score: %d, end_ref: %d\n", 
+					bests[0].score, bests[0].ref, bests[1].score, bests[1].ref);		
 			//fprintf(stdout, "max score: %d, end_ref: %d, end_read: %d\n", score, end_ref, end_read);
 		}else {
 			fprintf(stdout, "No alignment found for this read.\n");

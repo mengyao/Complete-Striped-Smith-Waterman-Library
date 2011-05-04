@@ -103,6 +103,16 @@ unsigned int amino2num (char amino) {
 	return num;
 }
 
+//Transform the reference sequence to a number sequence.
+unsigned int* ref_amino2num (const char* ref, unsigned int refLen) {
+	//unsigned int refLen = strlen(ref);
+	unsigned int* ref_num = (unsigned int *)calloc(refLen, sizeof(unsigned int));
+	for (unsigned int i = 0; i < refLen; i ++) {
+		ref_num[i] = amino2num(ref[i]);
+	}
+	return ref_num;
+}
+
 // Create scoring matrix W.
 char** matrixScore_constructor (unsigned char weight_match, 
 								unsigned char weight_mismatch) {
@@ -243,7 +253,8 @@ unsigned char findMax (__m128i vMaxScore,
 // Return the alignment score and ending position of the best alignment, 2nd best alignment, etc. 
 // Gap begin and gap extention are different. 
 // wight_match > 0, all other weights < 0. 
-alignment_end* smith_waterman_sse2 (const char* ref, 
+alignment_end* smith_waterman_sse2 (const unsigned int* ref_num, 
+									unsigned int refLen,
 								    unsigned int readLen, 
 								    unsigned char weight_insertB, // will be used as -
 								    unsigned char weight_insertE, // will be used as -
@@ -258,9 +269,9 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 	
 	*end_seg = 0; // Initialize as aligned at num. 0 segment.
 	unsigned char max = 0;		                     // the max alignment score
-	unsigned int end_read = 0;
+	//unsigned int end_read = 0;
 	unsigned int end_ref = 0; // 1_based best alignment ending point; Initialized as isn't aligned - 0.
-	unsigned int refLen = strlen(ref);
+	//unsigned int refLen = strlen(ref_num);
 	unsigned int segLen = (readLen + 15) / 16; // number of segment
 	
 	// array to record the largest score of each reference position
@@ -335,22 +346,22 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 			
 			// Add the scoring profile to vH
 			// vProfile can include negative value.
-			__m128i vProfile = _mm_set_epi8(queryProfile[amino2num(ref[i])][Hseq + 15], 
-											queryProfile[amino2num(ref[i])][Hseq + 14], 
-											queryProfile[amino2num(ref[i])][Hseq + 13], 
-											queryProfile[amino2num(ref[i])][Hseq + 12], 
-											queryProfile[amino2num(ref[i])][Hseq + 11], 
-											queryProfile[amino2num(ref[i])][Hseq + 10], 
-											queryProfile[amino2num(ref[i])][Hseq + 9], 
-											queryProfile[amino2num(ref[i])][Hseq + 8], 
-											queryProfile[amino2num(ref[i])][Hseq + 7], 
-											queryProfile[amino2num(ref[i])][Hseq + 6], 
-											queryProfile[amino2num(ref[i])][Hseq + 5], 
-											queryProfile[amino2num(ref[i])][Hseq + 4], 
-											queryProfile[amino2num(ref[i])][Hseq + 3], 
-											queryProfile[amino2num(ref[i])][Hseq + 2], 
-											queryProfile[amino2num(ref[i])][Hseq + 1], 
-											queryProfile[amino2num(ref[i])][Hseq]); 
+			__m128i vProfile = _mm_set_epi8(queryProfile[ref_num[i]][Hseq + 15], 
+											queryProfile[ref_num[i]][Hseq + 14], 
+											queryProfile[ref_num[i]][Hseq + 13], 
+											queryProfile[ref_num[i]][Hseq + 12], 
+											queryProfile[ref_num[i]][Hseq + 11], 
+											queryProfile[ref_num[i]][Hseq + 10], 
+											queryProfile[ref_num[i]][Hseq + 9], 
+											queryProfile[ref_num[i]][Hseq + 8], 
+											queryProfile[ref_num[i]][Hseq + 7], 
+											queryProfile[ref_num[i]][Hseq + 6], 
+											queryProfile[ref_num[i]][Hseq + 5], 
+											queryProfile[ref_num[i]][Hseq + 4], 
+											queryProfile[ref_num[i]][Hseq + 3], 
+											queryProfile[ref_num[i]][Hseq + 2], 
+											queryProfile[ref_num[i]][Hseq + 1], 
+											queryProfile[ref_num[i]][Hseq]); 
 			Hseq += 16;
 
 			vH = _mm_adds_epu8(vH, vProfile);
@@ -429,12 +440,23 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 		while (cmp != 0xffff) {
 			vMaxMark = _mm_max_epu8(vMaxMark, pvHStore[j]);
 			end_ref = i + 1; // Adjust to 1-based position.
-			unsigned int p = 0;
-			unsigned char temp = findMax(vMaxMark, &p);
+			//unsigned int p = 0;
+			//unsigned char temp = findMax(vMaxMark, &p);
+			
+			/* find largest score in the vMaxMark vector */
+			__m128i vT = _mm_srli_si128 (vMaxMark, 8);
+			__m128i vM = _mm_max_epi16 (vMaxMark, vT);
+			vT = _mm_srli_si128 (vM, 4);
+			vM = _mm_max_epi16 (vM, vT);
+			vT = _mm_srli_si128 (vM, 2);
+			vM = _mm_max_epi16 (vM, vT);
+			vT = _mm_srli_si128 (vM, 1);
+			vM = _mm_max_epi16 (vM, vT);
+			unsigned int temp = _mm_extract_epi16 (vM, 0);
 			
 			if (temp > max) {
 				*end_seg = j;
-				end_read = p * segLen + j + 1;  
+				//end_read = p * segLen + j + 1;  
 				max = temp;
 			}
 			
@@ -455,10 +477,22 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 			
 			vMarkColumn = _mm_max_epu8(vMarkColumn, pvHStore[j]);
 			
-			unsigned int p = 0;
-			unsigned char temp = findMax(vMarkColumn, &p);
+			//unsigned int p = 0;
+			//unsigned char temp = findMax(vMarkColumn, &p);
+			
+			/* find largest score in the vMarkColumn vector */
+			__m128i vT = _mm_srli_si128 (vMarkColumn, 8);
+			__m128i vM = _mm_max_epi16 (vMarkColumn, vT);
+			vT = _mm_srli_si128 (vM, 4);
+			vM = _mm_max_epi16 (vM, vT);
+			vT = _mm_srli_si128 (vM, 2);
+			vM = _mm_max_epi16 (vM, vT);
+			vT = _mm_srli_si128 (vM, 1);
+			vM = _mm_max_epi16 (vM, vT);
+			unsigned int temp = _mm_extract_epi16 (vM, 0);
+			
 			if (temp > maxColumn[i]) {
-				end_read_column[i] = p * segLen + j + 1;  
+				//end_read_column[i] = p * segLen + j + 1;  
 				maxColumn[i] = temp;
 			}
 			vTemp = _mm_cmpeq_epi8(vMarkColumn, vMaxColumn);
@@ -475,11 +509,11 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 	alignment_end* bests = (alignment_end*) calloc(2, sizeof(alignment_end));
 	bests[0].score = max;
 	bests[0].ref = end_ref;
-	bests[0].read = end_read;
+	//bests[0].read = end_read;
 	
 	bests[1].score = 0;
 	bests[1].ref = 0;
-	bests[1].read = 0;
+	//bests[1].read = 0;
 	
 	//unsigned char max2 = 0;
 	unsigned int edge = (end_ref - readLen / 2 - 1) > 0 ? (end_ref - readLen / 2 - 1) : 0;
@@ -487,7 +521,7 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 		if (maxColumn[i] > bests[1].score) {
 			bests[1].score = maxColumn[i];
 			bests[1].ref = i + 1;
-			bests[1].read = end_read_column[i];
+			//bests[1].read = end_read_column[i];
 		}
 	}
 	edge = (end_ref + readLen / 2 + 1) > refLen ? refLen : (end_ref + readLen / 2 + 1);
@@ -495,7 +529,7 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 		if (maxColumn[i] > bests[1].score) {
 			bests[1].score = maxColumn[i];
 			bests[1].ref = i + 1;
-			bests[1].read = end_read_column[i];
+			//bests[1].read = end_read_column[i];
 		}		
 	}
 	

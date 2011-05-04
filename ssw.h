@@ -16,13 +16,13 @@ using namespace std;
 #include <stdio.h>
 #include <string.h>
 
-#define SIZE 64
+
 
 // struct of the alignment result
 typedef struct {
 	char score;
 	unsigned int ref;	// 1-based position
-	unsigned int read;	// 1-based position
+//	unsigned int read;	// 1-based position
 } alignment_end;
 
 // Generate query profile：rearrange query sequence & calculate the weight of match/mismatch.
@@ -34,12 +34,16 @@ char** queryProfile_constructor (const char* read,
 // Free the memory of queryProfile.
 void queryProfile_destructor (char** queryProfile);
 
+//Transform the reference sequence to a number sequence.
+unsigned int* ref_amino2num (const char* ref, unsigned int refLen);
+
 // striped Smith-Waterman
 // Record the highest score of each reference position. 
 // Find the ending position of the best alignment. 
 // Beginning of gap and extention of gap are different. 
 // wight_match > 0, all other weights < 0.
-alignment_end* smith_waterman_sse2 (const char* ref, 
+alignment_end* smith_waterman_sse2 (const unsigned int* ref,
+									unsigned int refLen,
 								    unsigned int readLen, 
 								    unsigned char weight_insertB, // will be used as -
 								    unsigned char weight_insertE, // will be used as -
