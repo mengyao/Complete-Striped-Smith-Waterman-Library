@@ -1,0 +1,67 @@
+SSW: Striped Smith-Waterman Sequence Alignment Algorithm
+
+Author: Mengyao Zhao, Ph.D. student of Boston College
+Last revision: 06/24/2011
+
+1. Overview
+SSW is a fast implementation of the Smith-Waterman algorithm, which use the Single-Instruction Multiple-Data (SIMD) instructions 
+to parallelize the algorithm at the instruction level. The SIMD registers are parallel to the query sequence, but are accessed in 
+a striped pattern. The query profile is calculated once for the database search, but the conditional F matrix adjustment and the 
+best lignment location tracing are moved outside the inner loop for achieving high performance [1][2]. Current version is 10 times
+faster than the Smith-Waterman in Mozaik and can return optimal and sub-optimal alignment locations.
+
+2. Input and output
+The input files to SSW are: (1) a FASTA format reference sequence file; (2) a FASTA or FASTQ format read sequence file.
+
+The output of SSW reports the optimal and sub_optimal alignment scores and alignment ending positions of each read in the read file
+to each reference in the reference file.
+
+An example of the output:
+...
+read_name: 1:57651555:R:-316;None;None/1
+read_seq: AGACTTGAAAGTCAGAATTACTCCTTGATCCATGGGCTGCAGAGTAGATGTTTT
+max score: 41, end_ref: 530
+max2 score: 39, end_ref: 499
+read_name: X:91671697:R:-206;None;X,91671506,G,A/1
+read_seq: ACTTCTTTGGTTCAAAGGTTTCTTTTCTTTTCATCAGAGTATTTTGAATCACTT
+max score: 54, end_ref: 523
+max2 score: 40, end_ref: 494
+...
+
+3. Software information
+SSW was developed in the pure C programming language. It is distributed for the Microsoft Windows, Mac OS X and Linux operating systems.
+
+4. Usage
+Linux: ./ssw_test <references.fasta> <reads.fasta>/<reads.fastq>
+
+Parameter setting for Smith-Waterman algorithm: Currently, the parameters can
+be changed in the main.cpp file. The default setting is as follows:
+weight of match: 2
+weight of mismatch: -1
+weight of insertion begin: -2
+weight of insertion extension: -1
+weight of deletion begin: -2
+weight of deletion extension: -1
+
+5. Speed and memory usage
+The time complexity of SSW is Omn. Where m is the reference length, n is the read length. SSW implementation divides the 128-bit
+wide register into 16 8-bit elements for parallel processing. Therefore, the runtime of SSW is theoretically 1/16 of original
+Smith-Waterman algorithm, thus 1/16mn. Due to the advantage of Intel's SIMD SSE2 instuctions, the actual runtime of SSW is 
+even shorter, about 20~30 times faster than original Smith-Waterman algorithm.
+Speed test result of SSWv0.01 on 100 Illumina 54 bp reads:
+Reference length	CPU time (s)	wall time (s)
+1K			0.094		0.094
+10K			0.864		1.864
+100K			7.755		8.756
+1M			77.839		78.868
+10M			772.225		773.338
+This speed means SSW uses ~35 minutes to align one 54 bp read to the whole human genome.
+
+The space complexity of SSW is On. The runtime maximum RAM usage is n bytes. Where n is the read length.
+
+References
+1. Farrar, M. Striped Smith-Waterman speeds database searches six times over other SIMD implementations. Bioinformatics 23, 156-161. (2007).
+2. Hinton, G. et al. The microarchitecture of the Pentium 4 Processor. Intel Technology Journal Q1 (2001). 
+
+
+
