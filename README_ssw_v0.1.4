@@ -7,7 +7,7 @@ Last revision: 06/24/2011
 SSW is a fast implementation of the Smith-Waterman algorithm, which use the Single-Instruction Multiple-Data (SIMD) instructions 
 to parallelize the algorithm at the instruction level. The SIMD registers are parallel to the query sequence, but are accessed in 
 a striped pattern. The query profile is calculated once for the database search, but the conditional F matrix adjustment and the 
-best lignment location tracing are moved outside the inner loop for achieving high performance [1][2]. Current version is 10 times
+best lignment location tracing are moved outside the inner loop for achieving high performance [1][2]. Current version is ~90 times
 faster than the Smith-Waterman in Mozaik and can return optimal and sub-optimal alignment locations.
 
 2. Input and output
@@ -34,28 +34,82 @@ SSW was developed in the pure C programming language. It is distributed for the 
 4. Usage
 Linux: ./ssw_test <references.fasta> <reads.fasta>/<reads.fastq>
 
-Parameter setting for Smith-Waterman algorithm: Currently, the parameters can
-be changed in the main.cpp file. The default setting is as follows:
-weight of match: 2
-weight of mismatch: -1
-weight of insertion begin: -2
-weight of insertion extension: -1
-weight of deletion begin: -2
-weight of deletion extension: -1
+useful structures and functions:
+
+/*! @typedef	struct of the alignment results
+ *  @field score	the alignment score
+ *	@field	ref	1-based position in the reference
+ */
+typedef struct {
+	char score;
+	int32_t ref;	/* 1-based position */
+} alignment_end;
+
+/*! @function	Generate query profile rearrange query sequence & calculate the weight of match/mismatch. 
+ *  @parameter	read	sequence
+ *  @parameter	weight_match	score for a pair of matched reference and read bases
+ *  @parameter	weight_mismatch	score (absolute value) for a pair of mismached reference and read bases
+ *	@parameter	bias	a number used to expend the max capacity of the values in the scoreing matrix; suggest to set to 4
+ *  @return		pointer to the query profile 
+ */
+__m128i* queryProfile_constructor (const char* read,
+								   unsigned char weight_match,    /* will be used as + */
+								   unsigned char weight_mismatch, /* will be used as - */
+								   unsigned char bias);
+
+/*! @function	Transform the reference sequence to a number sequence. 
+ *	@parameter	ref	reference sequence
+ *	@parameter	refLen	reference length
+ *	@return		reference sequence represented by numbers
+ */
+int32_t* ref_nt2num (const char* ref, int32_t refLen);
+
+/*! @function	striped Smith-Waterman
+ *  			Record the highest score of each reference position. 
+ *  			Find the ending position of the optimal and sub-optimal alignment.
+ *  @parameter	ref	reference sequence represented by numbers; can be generated using funceion ref_nt2num
+ *  @parameter	refLen	reference length
+ *  @parameter	readLen	read length
+ *  @parameter	weight_insertB	score (absolute value) for opening a insertion 
+ *  @parameter	weight_insertE	score (absolute value) for extending a insertion 
+ *  @parameter	weight_deletB	score (absolute value) for opening a deletion 
+ *  @parameter	weight_deletE	score (absolute value) for extending a deletion 
+ *  @parameter	vProfile	pointer to the query profile
+ *  @parameter	end_seg	a return value of 0-based segment number of alignment ending position in read; suggest to set to 0
+ *	@parameter	bias	a number used to expend the max capacity of the values in the scoreing matrix; suggest to set to 4
+ *  @return		a pointer to the array of structure alignment_end; the optimal (1st member of the array) and 
+ *				sub-optimal (2nd member of the array) alignment score and ending positions
+ */
+alignment_end* smith_waterman_sse2 (const int32_t* ref,
+									int32_t refLen,
+								    int32_t readLen, 
+								    unsigned char weight_insertB, /* will be used as - */
+								    unsigned char weight_insertE, /* will be used as - */
+								    unsigned char weight_deletB,  /* will be used as - */
+								    unsigned char weight_deletE,  /* will be used as - */
+								    __m128i* vProfile,
+								    int32_t* end_seg,        /* 0-based segment number of ending   
+																	 alignment; The return value is  
+																	 meaningful only when  
+																     the return value != 0.
+																   */	
+	 							    unsigned char bias);	
+
+example of using the functions: main.c
 
 5. Speed and memory usage
 The time complexity of SSW is Omn. Where m is the reference length, n is the read length. SSW implementation divides the 128-bit
 wide register into 16 8-bit elements for parallel processing. Therefore, the runtime of SSW is theoretically 1/16 of original
 Smith-Waterman algorithm, thus 1/16mn. Due to the advantage of Intel's SIMD SSE2 instuctions, the actual runtime of SSW is 
-even shorter, about 20~30 times faster than original Smith-Waterman algorithm.
-Speed test result of SSWv0.01 on 100 Illumina 54 bp reads:
-Reference length	CPU time (s)	wall time (s)
-1K			0.094		0.094
-10K			0.864		1.864
-100K			7.755		8.756
-1M			77.839		78.868
-10M			772.225		773.338
-This speed means SSW uses ~35 minutes to align one 54 bp read to the whole human genome.
+even shorter, about 90 times faster than original Smith-Waterman algorithm.
+
+Speed test result of ssw_v0.1.4 on 100 Illumina 54 bp reads:
+Reference length	CPU time (s)
+1K	0.008719			
+10K	0.060667
+100K	0.571767	
+1M	5.677395
+10M	55.117683		
 
 The space complexity of SSW is On. The runtime maximum RAM usage is n bytes. Where n is the read length.
 
