@@ -8,6 +8,7 @@
 #include <emmintrin.h>
 #include <zlib.h>
 #include <stdio.h>
+#include <time.h>
 #include "ssw.h"
 #include "kseq.h"
 KSEQ_INIT(gzFile, gzread)
@@ -19,12 +20,16 @@ int main (int argc, char * const argv[]) {
 		exit (1);
 	}
 
+	clock_t start, end;
+	float cpu_time;
 	gzFile ref_fp;
 	kseq_t *ref_seq;
 	int l;
 	int m;
 	ref_fp = gzopen(argv[1], "r");
 	ref_seq = kseq_init(ref_fp);
+
+	start = clock();
 	while ((l = kseq_read(ref_seq)) >= 0) {
 		printf("ref_name: %s\n", ref_seq->name.s);
 		/* printf("ref_seq: %s\n", ref_seq->seq.s); */
@@ -52,6 +57,10 @@ int main (int argc, char * const argv[]) {
 		kseq_destroy(read_seq);
 		gzclose(read_fp);
 	}
+	end = clock();
+	cpu_time = ((float) (end - start)) / CLOCKS_PER_SEC;
+	fprintf(stdout, "CPU time: %f seconds\n", cpu_time);
+
 	kseq_destroy(ref_seq);
 	gzclose(ref_fp);
 	return 0;
