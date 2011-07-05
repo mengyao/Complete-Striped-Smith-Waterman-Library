@@ -188,11 +188,14 @@ __m128i* queryProfile_constructor (const char* read,
 	int32_t nt;
 	int32_t i;
 	int32_t j;
+	int32_t segNum;
 	for (nt = 0; nt < 15; nt ++) {
 			for (i = 0; i < segLen; i ++) {
-			for (j = i; j < 16; j += segLen) {
-				*t++ = j>= readLen ? 0 : W[nt][nt2num(read[j])] + bias;
-			}
+				j = i; 
+				for (segNum = 0; segNum < 16 ; segNum ++) {
+					*t++ = j>= readLen ? 0 : W[nt][nt2num(read[j])] + bias;
+					j += segLen;
+				}
 		}
 	}
 	
@@ -201,6 +204,37 @@ __m128i* queryProfile_constructor (const char* read,
 	}
 	free(W);
 	return vProfile;
+}
+
+// Trace the max score from the max score vector.
+unsigned char findMax (__m128i vMaxScore, 
+					   int32_t* pos_vector) { // pos_vector should be originally 0.
+	
+	unsigned char max = 0;
+	int32_t two[8];
+	two[0] = _mm_extract_epi16(vMaxScore, 0);
+	two[1] = _mm_extract_epi16(vMaxScore, 1);
+	two[2] = _mm_extract_epi16(vMaxScore, 2);
+	two[3] = _mm_extract_epi16(vMaxScore, 3);
+	two[4] = _mm_extract_epi16(vMaxScore, 4);
+	two[5] = _mm_extract_epi16(vMaxScore, 5);
+	two[6] = _mm_extract_epi16(vMaxScore, 6);
+	two[7] = _mm_extract_epi16(vMaxScore, 7);
+	int32_t i;
+	for (i = 0; i < 8; i ++) {
+		int32_t low = two[i] & 0x00ff;
+		if (low > max) {
+			*pos_vector = i * 2;
+			max = low;
+		}
+		int32_t high = two[i] & 0xff00;
+		high = high >> 8;
+		if (high > max) {
+			*pos_vector = i * 2 + 1;
+			max = high;
+		}
+	}
+	return max;
 }
 
 /* Striped Smith-Waterman
@@ -226,6 +260,7 @@ alignment_end* smith_waterman_sse2 (const int32_t* ref_num,
 	
 	*end_seg = 0; /* Initialize as aligned at num. 0 segment. */
 	unsigned char max = 0;		                     /* the max alignment score */
+	int32_t end_read = 0;
 	int32_t end_ref = 0; /* 1_based best alignment ending point; Initialized as isn't aligned - 0. */
 	int32_t segLen = (readLen + 15) / 16; /* number of segment */
 	
@@ -379,25 +414,16 @@ alignment_end* smith_waterman_sse2 (const int32_t* ref_num,
 		j = 0; 
 		
 		while (cmp != 0xffff) {
-			__m128i vT;
-			__m128i vM;
-			int32_t temp;
+		/*	__m128i vT;
+			__m128i vM; */
 			vMaxMark = _mm_max_epu8(vMaxMark, pvHStore[j]);
 			end_ref = i + 1; /* Adjust to 1-based position. */
-			
-			/* find largest score in the vMaxMark vector */
-			vT = _mm_srli_si128 (vMaxMark, 8);
-			vM = _mm_max_epi16 (vMaxMark, vT);
-			vT = _mm_srli_si128 (vM, 4);
-			vM = _mm_max_epi16 (vM, vT);
-			vT = _mm_srli_si128 (vM, 2);
-			vM = _mm_max_epi16 (vM, vT);
-			vT = _mm_srli_si128 (vM, 1);
-			vM = _mm_max_epi16 (vM, vT);
-			temp = _mm_extract_epi16 (vM, 0);
+			int32_t p = 0;
+			unsigned char temp = findMax(vMaxMark, &p);
 			
 			if (temp > max) {
 				*end_seg = j;
+				end_read = p * segLen + j + 1;  
 				max = temp;
 			}
 			
@@ -415,24 +441,15 @@ alignment_end* smith_waterman_sse2 (const int32_t* ref_num,
 		vMarkColumn = pvHStore[j]; /* Record the cumulated max segment values. */
 		cmp = _mm_movemask_epi8(vMarkColumn);
 		while (cmp != 0xffff) {
-			__m128i vT; 
-			__m128i vM; 
-			int32_t temp;
+		/*	__m128i vT; 
+			__m128i vM;  */
 			
 			vMarkColumn = _mm_max_epu8(vMarkColumn, pvHStore[j]);
 			
-			/* find largest score in the vMarkColumn vector */
-			vT = _mm_srli_si128 (vMarkColumn, 8);
-			vM = _mm_max_epi16 (vMarkColumn, vT);
-			vT = _mm_srli_si128 (vM, 4);
-			vM = _mm_max_epi16 (vM, vT);
-			vT = _mm_srli_si128 (vM, 2);
-			vM = _mm_max_epi16 (vM, vT);
-			vT = _mm_srli_si128 (vM, 1);
-			vM = _mm_max_epi16 (vM, vT);
-			temp = _mm_extract_epi16 (vM, 0);
-			
+			int32_t p = 0;
+			unsigned char temp = findMax(vMarkColumn, &p);
 			if (temp > maxColumn[i]) {
+				end_read_column[i] = p * segLen + j + 1;  
 				maxColumn[i] = temp;
 			}
 			vTemp = _mm_cmpeq_epi8(vMarkColumn, vMaxColumn);
