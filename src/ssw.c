@@ -117,10 +117,10 @@ int32_t* ref_nt2num (const char* ref, int32_t refLen) {
 char** matrixScore_constructor (unsigned char weight_match, 
 								unsigned char weight_mismatch) {
 	
-	char** W = (char**)calloc(15, sizeof(char*));
+	char** W = (char**)calloc(16, sizeof(char*));
 	int32_t i;
 	int32_t j;
-	for (i = 0; i < 15; i ++) {
+	for (i = 0; i < 16; i ++) {
 		W[i] = (char*) calloc(15, sizeof(char));
 	}
 	for (i = 0; i < 15; i ++) {
@@ -190,12 +190,12 @@ __m128i* queryProfile_constructor (const char* read,
 	int32_t j;
 	int32_t segNum;
 	for (nt = 0; nt < 15; nt ++) {
-			for (i = 0; i < segLen; i ++) {
-				j = i; 
-				for (segNum = 0; segNum < 16 ; segNum ++) {
-					*t++ = j>= readLen ? 0 : W[nt][nt2num(read[j])] + bias;
-					j += segLen;
-				}
+		for (i = 0; i < segLen; i ++) {
+			j = i; 
+			for (segNum = 0; segNum < 16 ; segNum ++) {
+				*t++ = j>= readLen ? 0 : W[nt][nt2num(read[j])] + bias;
+				j += segLen;
+			}
 		}
 	}
 	
