@@ -105,14 +105,6 @@ char** matrixScore_constructor (unsigned char weight_match,
 	return W;
 }
 
-void matrixScore_destructor (char** W) {
-	int32_t i;
-	for (i = 0; i < 16; i ++) {
-		free (W[i]);
-	}
-	free (W);
-}
-
 /* Generate query profile rearrange query sequence & calculate the weight of match/mismatch. */
 __m128i* queryProfile_constructor (const char* read,
 								 unsigned char weight_match,	/* will be used as + */
@@ -145,7 +137,11 @@ __m128i* queryProfile_constructor (const char* read,
 		}
 	}
 
-	matrixScore_destructor (W);	
+	for (i = 0; i < 16; i ++) {
+		free (W[i]);
+	}
+	free (W);
+
 	return vProfile;
 }
 
