@@ -4,10 +4,8 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.3
- *	Revised by Mengyao Zhao on 4/5/11.
- *	New features: Record the highest score of each reference position. 
- *	Geve out the most possible 2nd distinguished best alignment score as well as the best alignment score and
- *	its ending position. 
+ *	Last revision by Mengyao Zhao on 12/28/11.
+ *	New features: Changed the data type of the score component of the alignment_end struct to unsigned char to avoid overflow.
  *
  */
 
@@ -20,7 +18,7 @@
  *	@field	ref	1-based position in the reference
  */
 typedef struct {
-	char score;
+	unsigned char score;
 	int32_t ref;	/* 1-based position */
 } alignment_end;
 
@@ -42,6 +40,7 @@ __m128i* queryProfile_constructor (const char* read,
  *	@return		reference sequence represented by numbers
  */
 int32_t* ref_nt2num (const char* ref, int32_t refLen);
+
 
 /*! @function	striped Smith-Waterman
  *  			Record the highest score of each reference position. 

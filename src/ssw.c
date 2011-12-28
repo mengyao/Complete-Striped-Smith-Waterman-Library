@@ -4,10 +4,8 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.3
- *	Revised by Mengyao Zhao on 4/5/11.
- *	New features: Record the highest score of each reference position. 
- *	Geve out the most possible 2nd distinguished best alignment score as well as the best alignment score and
- *	its ending position. 
+ *	Last revision by Mengyao Zhao on 12/28/11.
+ *	New features: The nucleotide letter to number transformation is changed into a faster way. 
  *
  */
 
@@ -19,7 +17,7 @@
 #define C 1
 #define G 2
 #define T 3
-#define K 4  /* G or T */
+#define K 13  /* G or T */
 #define M 5  /* A or C */
 #define R 6  /* A or G */
 #define Y 7  /* C or T */
@@ -28,87 +26,27 @@
 #define V 10 /* A or C or G */
 #define H 11 /* A or C or T */
 #define D 12 /* A or G or T */
-#define N 13 /* any */
+#define N 4 /* any */
 #define X 14 /* any, X mask on Y chromosome */
 
-/* Transform nt acid to numbers for Weight Matrix. */
-int32_t nt2num (char nt) {
-	int32_t num;
-	switch (nt) {
-		case 'A':
-		case 'a':
-			num = 0;
-			break;
-		case 'C':
-		case 'c':
-			num = 1;
-			break;
-		case 'G':
-		case 'g':
-			num = 2;
-			break;
-		case 'T':
-		case 't':
-			num = 3;
-			break;
-		case 'K': /* G or T */
-		case 'k':
-			num = 4;
-			break;
-		case 'M': /* A or C */
-		case 'm':
-			num = 5;
-			break;
-		case 'R': /* A or G */
-		case 'r':
-			num = 6;
-			break;
-		case 'Y': /* C or T */
-		case 'y':
-			num = 7;
-			break;
-		case 'S': /* A or T */
-		case 's':
-			num = 8;
-			break;
-		case 'B': /* C or G or T */
-		case 'b':
-			num = 9;
-			break;
-		case 'V': /* A or C or G */
-		case 'v':
-			num = 10;
-			break;
-		case 'H': /* A or C or T */
-		case 'h':
-			num = 11;
-			break;
-		case 'D': /* A or G or T */
-		case 'd':
-			num = 12;
-			break;
-		case 'N': /* any */
-		case 'n':
-			num = 13;
-			break;
-		case 'X': /* any, x mask on Y chromosome */
-		case 'x':
-			num = 14;
-			break;
-		default:
-			fprintf(stderr, "Wrong sequence. \n");
-			num = 15;
-			break;
-	}
-	return num;
-}
+/* This table is used to transform nucleotide letters into numbers. */
+unsigned char nt_table[128] = {
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+	4, 0, 9, 1,  12, 4, 4, 2,  11, 4, 4, 13,  4, 5, 4, 4, 
+	4, 4, 6, 8,  3, 4, 10, 4,  14, 7, 4, 4,  4, 4, 4, 4, 
+	4, 0, 9, 1,  12, 4, 4, 2,  11, 4, 4, 13,  4, 5, 4, 4, 
+	4, 4, 6, 8,  3, 4, 10, 4,  14, 7, 4, 4,  4, 4, 4, 4
+};
 
 /* Transform the reference sequence to a number sequence. */
 int32_t* ref_nt2num (const char* ref, int32_t refLen) {
 	int32_t* ref_num = (int32_t *)calloc(refLen, sizeof(int32_t));
 	int32_t i;
 	for (i = 0; i < refLen; i ++) {
-		ref_num[i] = nt2num(ref[i]);
+		ref_num[i] = nt_table[(int)ref[i]];
 	}
 	return ref_num;
 }
@@ -193,7 +131,7 @@ __m128i* queryProfile_constructor (const char* read,
 		for (i = 0; i < segLen; i ++) {
 			j = i; 
 			for (segNum = 0; segNum < 16 ; segNum ++) {
-				*t++ = j>= readLen ? 0 : W[nt][nt2num(read[j])] + bias;
+				*t++ = j>= readLen ? 0 : W[nt][nt_table[(int)read[j]]] + bias;
 				j += segLen;
 			}
 		}
