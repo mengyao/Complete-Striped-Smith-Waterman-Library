@@ -54,6 +54,7 @@ int main (int argc, char * const argv[]) {
 				fprintf(stdout, "No alignment found for this read.\n");
 			}
 		}
+		free (ref_num);
 		kseq_destroy(read_seq);
 		gzclose(read_fp);
 	}
