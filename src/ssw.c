@@ -3,43 +3,17 @@
  *
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
- *	Version 0.1.3
- *	Last revision by Mengyao Zhao on 12/28/11.
- *	New features: The nucleotide letter to number transformation is changed into a faster way. 
+ *	Version 0.1.4
+ *	Last revision by Mengyao Zhao on 12/29/11.
+ *	New features: Simplified the weighting matrix. 
  *
  */
 
 #include <emmintrin.h>
 #include "ssw.h"
 
-// for Weight matrix
-//#define A 0
-//#define C 1
-//#define G 2
-//#define T 3
-//#define K 13   G or T 
-//#define M 5   A or C */
-//#define R 6   A or G */
-//#define Y 7  /* C or T */
-//#define S 8  /* A or T */
-//#define B 9  /* C or G or T */
-//#define V 10 /* A or C or G */
-//#define H 11 /* A or C or T */
-//#define D 12 /* A or G or T */
-//#define N 4  any 
-//#define X 14  any, X mask on Y chromosome */
-
 /* This table is used to transform nucleotide letters into numbers. */
 unsigned char nt_table[128] = {
-/*	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-	4, 0, 9, 1,  12, 4, 4, 2,  11, 4, 4, 13,  4, 5, 4, 4, 
-	4, 4, 6, 8,  3, 4, 10, 4,  14, 7, 4, 4,  4, 4, 4, 4, 
-	4, 0, 9, 1,  12, 4, 4, 2,  11, 4, 4, 13,  4, 5, 4, 4, 
-	4, 4, 6, 8,  3, 4, 10, 4,  14, 7, 4, 4,  4, 4, 4, 4
-*/
 	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
 	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
 	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
@@ -60,67 +34,12 @@ int32_t* ref_nt2num (const char* ref, int32_t refLen) {
 	return ref_num;
 }
 
-/* Create scoring matrix W. */
-// char** matrixScore_constructor (unsigned char weight_match, 
-//								unsigned char weight_mismatch) {
-	
-//	char** W = (char**)calloc(16, sizeof(char*));
-/*	int32_t i;
-	int32_t j;
-	for (i = 0; i < 16; i ++) {
-		W[i] = (char*) calloc(16, sizeof(char));
-	}
-	for (i = 0; i < 15; i ++) {
-		for (j = 0; j < 15; j ++) {
-			if (i == j) {
-				W[i][j] = weight_match;
-			} else {
-				W[i][j] = - weight_mismatch;
-			}
-		}
-	}
-	
-	W[G][K] = W[K][G] = weight_match;  K/
-	W[T][K] = W[K][T] = weight_match;
-	
-	W[A][M] = W[M][A] = weight_match;  M 
-	W[C][M] = W[M][C] = weight_match;
-	
-	W[A][R] = W[R][A] = weight_match;  R 
-	W[G][R] = W[R][G] = weight_match;
-	
-	W[C][Y] = W[Y][C] = weight_match;  Y 
-	W[T][Y] = W[Y][T] = weight_match;
-	
-	W[A][S] = W[S][A] = weight_match;  S 
-	W[T][S] = W[S][T] = weight_match;
-	
-	W[C][B] = W[B][C] = weight_match;  B 
-	W[G][B] = W[B][G] = weight_match;
-	W[T][B] = W[B][T] = weight_match;
-	
-	W[A][V] = W[V][A] = weight_match;  V 
-	W[C][V] = W[V][C] = weight_match; 
-	W[G][V] = W[V][G] = weight_match;
-	
-	W[A][H] = W[H][A] = weight_match;  H 
-	W[C][H] = W[H][C] = weight_match; 
-	W[T][H] = W[H][T] = weight_match;
-	
-	W[A][D] = W[D][A] = weight_match;  D 
-	W[G][D] = W[D][G] = weight_match;
-	W[T][D] = W[D][T] = weight_match;
-	
-	return W;
-}*/
-
 /* Generate query profile rearrange query sequence & calculate the weight of match/mismatch. */
 __m128i* queryProfile_constructor (const char* read,
 								 unsigned char weight_match,	/* will be used as + */
 								 unsigned char weight_mismatch, /* will be used as - */
 								 unsigned char bias) { 
 					
-	//char** W = matrixScore_constructor (weight_match, weight_mismatch); /* Create scoring matrix. */
 	int32_t readLen = strlen(read);
 	int32_t
 	segLen = (readLen + 15) / 16; /* Split the 128 bit register into 16 pieces. 
@@ -130,8 +49,6 @@ __m128i* queryProfile_constructor (const char* read,
 	__m128i* vProfile = (__m128i*)calloc(15 * segLen, sizeof(__m128i));
 	int8_t* t = (int8_t*)vProfile;
 	int32_t nt, i, j, k;
-//	int32_t i;
-//	int32_t j;
 	int32_t segNum;
 	int8_t mat[25];
 
@@ -153,10 +70,6 @@ __m128i* queryProfile_constructor (const char* read,
 			}
 		}
 	}
-
-/*	for (i = 0; i < 16; i ++) {
-		free (W[i]);
-	}*/
 
 	return vProfile;
 }
@@ -369,8 +282,6 @@ alignment_end* smith_waterman_sse2 (const int32_t* ref_num,
 		j = 0; 
 		
 		while (cmp != 0xffff) {
-		/*	__m128i vT;
-			__m128i vM; */
 			vMaxMark = _mm_max_epu8(vMaxMark, pvHStore[j]);
 			end_ref = i + 1; /* Adjust to 1-based position. */
 			int32_t p = 0;
@@ -396,9 +307,6 @@ alignment_end* smith_waterman_sse2 (const int32_t* ref_num,
 		vMarkColumn = pvHStore[j]; /* Record the cumulated max segment values. */
 		cmp = _mm_movemask_epi8(vMarkColumn);
 		while (cmp != 0xffff) {
-		/*	__m128i vT; 
-			__m128i vM;  */
-			
 			vMarkColumn = _mm_max_epu8(vMarkColumn, pvHStore[j]);
 			
 			int32_t p = 0;

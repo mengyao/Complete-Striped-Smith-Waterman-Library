@@ -1,6 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
+ *  Last revision by Mengyao Zhao on 12/29/11.
  *	New features: pure c fasta parser, reach Farrar's speed, embeded run time testing function 
  */
 
@@ -32,7 +33,6 @@ int main (int argc, char * const argv[]) {
 	start = clock();
 	while ((l = kseq_read(ref_seq)) >= 0) {
 		printf("ref_name: %s\n", ref_seq->name.s);
-		/* printf("ref_seq: %s\n", ref_seq->seq.s); */
 		gzFile read_fp = gzopen(argv[2], "r");
 		kseq_t*	read_seq = kseq_init(read_fp);
 		int32_t refLen = strlen(ref_seq->seq.s); 
