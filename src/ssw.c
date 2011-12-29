@@ -25,14 +25,14 @@ unsigned char nt_table[128] = {
 };
 
 /* Transform the reference sequence to a number sequence. */
-int32_t* ref_nt2num (const char* ref, int32_t refLen) {
+/*int32_t* ref_nt2num (const char* ref, int32_t refLen) {
 	int32_t* ref_num = (int32_t *)calloc(refLen, sizeof(int32_t));
 	int32_t i;
 	for (i = 0; i < refLen; i ++) {
 		ref_num[i] = nt_table[(int)ref[i]];
 	}
 	return ref_num;
-}
+}*/
 
 /* Generate query profile rearrange query sequence & calculate the weight of match/mismatch. */
 __m128i* queryProfile_constructor (const char* read,
@@ -111,7 +111,8 @@ unsigned char findMax (__m128i vMaxScore,
    Gap begin and gap extention are different. 
    wight_match > 0, all other weights < 0.
  */ 
-alignment_end* smith_waterman_sse2 (const int32_t* ref_num,
+alignment_end* smith_waterman_sse2 (//const int32_t* ref_num,
+									const char* ref,
 									int32_t refLen,
 								    int32_t readLen, 
 								    unsigned char weight_insertB, /* will be used as - */
@@ -202,7 +203,8 @@ alignment_end* smith_waterman_sse2 (const int32_t* ref_num,
 		
 		__m128i vMaxColumn = vZero; /* vMaxColumn is used to record the max values of column i. */
 		
-		__m128i* vP = vProfile + ref_num[i] * segLen; /* Right part of the vProfile */
+//		__m128i* vP = vProfile + ref_num[i] * segLen; /* Right part of the vProfile */
+		__m128i* vP = vProfile + nt_table[(int)ref[i]] * segLen; /* Right part of the vProfile */
 		pvHLoad = pvHStore;
 		pvHStore = pv;
 		

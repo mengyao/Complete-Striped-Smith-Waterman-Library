@@ -58,7 +58,8 @@ int32_t* ref_nt2num (const char* ref, int32_t refLen);
  *  @return		a pointer to the array of structure alignment_end; the optimal (1st member of the array) and 
  *				sub-optimal (2nd member of the array) alignment score and ending positions
  */
-alignment_end* smith_waterman_sse2 (const int32_t* ref,
+alignment_end* smith_waterman_sse2 (//const int32_t* ref,
+									const char* ref,
 									int32_t refLen,
 								    int32_t readLen, 
 								    unsigned char weight_insertB, /* will be used as - */
