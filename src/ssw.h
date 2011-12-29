@@ -1,10 +1,10 @@
 /*
- *  ssw.cpp
+ *  ssw.h
  *
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
- *	Version 0.1.3
- *	Last revision by Mengyao Zhao on 12/28/11.
+ *	Version 0.1.4
+ *	Last revision by Mengyao Zhao on 12/29/11.
  *	New features: Changed the data type of the score component of the alignment_end struct to unsigned char to avoid overflow.
  *
  */
@@ -58,8 +58,7 @@ int32_t* ref_nt2num (const char* ref, int32_t refLen);
  *  @return		a pointer to the array of structure alignment_end; the optimal (1st member of the array) and 
  *				sub-optimal (2nd member of the array) alignment score and ending positions
  */
-alignment_end* smith_waterman_sse2 (//const int32_t* ref,
-									const char* ref,
+alignment_end* smith_waterman_sse2 (const char* ref,
 									int32_t refLen,
 								    int32_t readLen, 
 								    unsigned char weight_insertB, /* will be used as - */
