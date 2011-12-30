@@ -64,37 +64,6 @@ __m128i* queryProfile_constructor (const char* read,
 	return vProfile;
 }
 
-// Find the max score from the 16 element max score vector, also calculate the max score corresponding alignment position in the vector.
-/*unsigned char findMax (__m128i vMaxScore, 
-					   int32_t* pos_vector) { // pos_vector should be originally 0.
-	
-	unsigned char max = 0;
-	int32_t two[8];
-	two[0] = _mm_extract_epi16(vMaxScore, 0);
-	two[1] = _mm_extract_epi16(vMaxScore, 1);
-	two[2] = _mm_extract_epi16(vMaxScore, 2);
-	two[3] = _mm_extract_epi16(vMaxScore, 3);
-	two[4] = _mm_extract_epi16(vMaxScore, 4);
-	two[5] = _mm_extract_epi16(vMaxScore, 5);
-	two[6] = _mm_extract_epi16(vMaxScore, 6);
-	two[7] = _mm_extract_epi16(vMaxScore, 7);
-	int32_t i;
-	for (i = 0; i < 8; i ++) {
-		int32_t low = two[i] & 0x00ff;
-		if (low > max) {
-			*pos_vector = i * 2;
-			max = low;
-		}
-		int32_t high = two[i] & 0xff00;
-		high = high >> 8;
-		if (high > max) {
-			*pos_vector = i * 2 + 1;
-			max = high;
-		}
-	}
-	return max;
-}*/
-
 /* Striped Smith-Waterman
    Record the highest score of each reference position. 
    Return the alignment score and ending position of the best alignment, 2nd best alignment, etc. 
