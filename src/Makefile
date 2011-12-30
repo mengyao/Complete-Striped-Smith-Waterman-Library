@@ -1,5 +1,5 @@
 CC=			gcc
-CFLAGS=		-g -Wall -O3 #-m64 #-arch ppc
+CFLAGS=		-g -Wall -O3 -pg 
 LOBJS=		ssw.o	
 PROG=		ssw_test
 all:$(PROG)

@@ -26,9 +26,9 @@ unsigned char nt_table[128] = {
 
 /* Generate query profile rearrange query sequence & calculate the weight of match/mismatch. */
 __m128i* queryProfile_constructor (const char* read,
-								 unsigned char weight_match,	/* will be used as + */
-								 unsigned char weight_mismatch, /* will be used as - */
-								 unsigned char bias) { 
+			     				   unsigned char weight_match,	/* will be used as + */
+								   unsigned char weight_mismatch, /* will be used as - */
+								   unsigned char bias) { 
 					
 	int32_t readLen = strlen(read);
 	int32_t
@@ -64,7 +64,7 @@ __m128i* queryProfile_constructor (const char* read,
 	return vProfile;
 }
 
-// Trace the max score from the max score vector.
+// Find the max score from the 16 element max score vector, also calculate the max score corresponding alignment position in the vector.
 unsigned char findMax (__m128i vMaxScore, 
 					   int32_t* pos_vector) { // pos_vector should be originally 0.
 	
@@ -118,7 +118,7 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 	
 	*end_seg = 0; /* Initialize as aligned at num. 0 segment. */
 	unsigned char max = 0;		                     /* the max alignment score */
-	int32_t end_read = 0;
+	//int32_t end_read = 0;
 	int32_t end_ref = 0; /* 1_based best alignment ending point; Initialized as isn't aligned - 0. */
 	int32_t segLen = (readLen + 15) / 16; /* number of segment */
 	
@@ -264,16 +264,17 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 		}		
 		/* end of Lazy-F loop */
 		
-		/* loop for tracing the ending point of the best alignment */
+	
+		/* update the ending point of the best alignment */
 		vTemp = _mm_max_epu8(vMaxScore, vMaxMark);
 		vTemp = _mm_cmpeq_epi8(vMaxMark, vTemp);
 		cmp = _mm_movemask_epi8(vTemp);
-		
+
+	/*	
 		j = 0; 
 		
 		while (cmp != 0xffff) {
 			vMaxMark = _mm_max_epu8(vMaxMark, pvHStore[j]);
-			end_ref = i + 1; /* Adjust to 1-based position. */
 			int32_t p = 0;
 			unsigned char temp = findMax(vMaxMark, &p);
 			
@@ -289,7 +290,28 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 			if (j >= segLen) {
 				j = 0;
 			}
+		}*/
+
+		/* find largest score in the vMaxScore vector */
+		if (cmp != 0xffff) { 
+			end_ref = i + 1; /* Adjust to 1-based position. */
+			vMaxMark = vMaxScore;
+			vTemp = _mm_srli_si128 (vMaxMark, 8);
+			vMaxMark = _mm_max_epu8 (vMaxMark, vTemp);
+			vTemp = _mm_srli_si128 (vMaxMark, 4);
+			vMaxMark = _mm_max_epu8 (vMaxMark, vTemp);
+			vTemp = _mm_srli_si128 (vMaxMark, 2);
+			vMaxMark = _mm_max_epu8 (vMaxMark, vTemp);
+			vTemp = _mm_srli_si128 (vMaxMark, 1);
+			vMaxMark = _mm_max_epu8 (vMaxMark, vTemp);
+			//max = (unsigned char)vMaxMark;
+			unsigned char temp = (unsigned char)_mm_extract_epi16 (vMaxMark, 0);
+			//if (temp > max) {
+			max = temp;
+			vMaxMark = vMaxScore;
+			//}
 		}
+    	//score = score & 0x00ff;
 		
 		/* loop to record the max score of each column as well as the alignment ending position on the read */
 		j = 0;
