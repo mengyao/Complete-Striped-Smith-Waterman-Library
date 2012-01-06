@@ -4,12 +4,13 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 12/29/11.
- *	New features: Changed the data type of the score component of the alignment_end struct to unsigned char to avoid overflow.
+ *	Last revision by Mengyao Zhao on 01/05/12.
+ *	New features: Changed the data type of the score component of the alignment_end struct to uint8_t to avoid overflow.
  *
  */
 
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <emmintrin.h>
 
@@ -18,7 +19,7 @@
  *	@field	ref	1-based position in the reference
  */
 typedef struct {
-	unsigned char score;
+	uint8_t score;
 	int32_t ref;	/* 1-based position */
 } alignment_end;
 
@@ -30,9 +31,9 @@ typedef struct {
  *  @return		pointer to the query profile 
  */
 __m128i* queryProfile_constructor (const char* read,
-								   unsigned char weight_match,    /* will be used as + */
-								   unsigned char weight_mismatch, /* will be used as - */
-								   unsigned char bias);
+								   uint8_t weight_match,    /* will be used as + */
+								   uint8_t weight_mismatch, /* will be used as - */
+								   uint8_t bias);
 
 /*! @function	Transform the reference sequence to a number sequence. 
  *	@parameter	ref	reference sequence
@@ -61,14 +62,14 @@ int32_t* ref_nt2num (const char* ref, int32_t refLen);
 alignment_end* smith_waterman_sse2 (const char* ref,
 									int32_t refLen,
 								    int32_t readLen, 
-								    unsigned char weight_insertB, /* will be used as - */
-								    unsigned char weight_insertE, /* will be used as - */
-								    unsigned char weight_deletB,  /* will be used as - */
-								    unsigned char weight_deletE,  /* will be used as - */
+								    uint8_t weight_insertB, /* will be used as - */
+								    uint8_t weight_insertE, /* will be used as - */
+								    uint8_t weight_deletB,  /* will be used as - */
+								    uint8_t weight_deletE,  /* will be used as - */
 								    __m128i* vProfile,
 								    int32_t* end_seg,        /* 0-based segment number of ending   
 																	 alignment; The return value is  
 																	 meaningful only when  
 																     the return value != 0.
 																   */	
-	 							    unsigned char bias);	
+	 							    uint8_t bias);	

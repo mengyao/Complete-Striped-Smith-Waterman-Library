@@ -4,16 +4,17 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 12/29/11.
- *	New features: Simplified the weighting matrix. 
+ *	Last revision by Mengyao Zhao on 01/06/12.
+ *	New features: Record the ending position on reads. 
  *
  */
 
 #include <emmintrin.h>
+#include <stdint.h>
 #include "ssw.h"
 
 /* This table is used to transform nucleotide letters into numbers. */
-unsigned char nt_table[128] = {
+int8_t nt_table[128] = {
 	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
 	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
 	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
@@ -26,9 +27,9 @@ unsigned char nt_table[128] = {
 
 /* Generate query profile rearrange query sequence & calculate the weight of match/mismatch. */
 __m128i* queryProfile_constructor (const char* read,
-			     				   unsigned char weight_match,	/* will be used as + */
-								   unsigned char weight_mismatch, /* will be used as - */
-								   unsigned char bias) { 
+			     				   uint8_t weight_match,	/* will be used as + */
+								   uint8_t weight_mismatch, /* will be used as - */
+								   uint8_t bias) { 
 					
 	int32_t readLen = strlen(read);
 	int32_t
@@ -36,7 +37,7 @@ __m128i* queryProfile_constructor (const char* read,
 								     Each piece is 8 bit. Split the read into 16 segments. 
 								     Calculat 16 segments in parallel.
 								   */
-	__m128i* vProfile = (__m128i*)calloc(15 * segLen, sizeof(__m128i));
+	__m128i* vProfile = (__m128i*)calloc(5 * segLen, sizeof(__m128i));
 	int8_t* t = (int8_t*)vProfile;
 	int32_t nt, i, j, k;
 	int32_t segNum;
@@ -73,26 +74,26 @@ __m128i* queryProfile_constructor (const char* read,
 alignment_end* smith_waterman_sse2 (const char* ref,
 									int32_t refLen,
 								    int32_t readLen, 
-								    unsigned char weight_insertB, /* will be used as - */
-								    unsigned char weight_insertE, /* will be used as - */
-								    unsigned char weight_deletB,  /* will be used as - */
-								    unsigned char weight_deletE,  /* will be used as - */
+								    uint8_t weight_insertB, /* will be used as - */
+								    uint8_t weight_insertE, /* will be used as - */
+								    uint8_t weight_deletB,  /* will be used as - */
+								    uint8_t weight_deletE,  /* will be used as - */
 								    __m128i* vProfile,
 								    int32_t* end_seg,        /* 0-based segment number of ending  
 								                                     alignment; The return value is  
 																     meaningful only when  
 									  							     the return value != 0.
   																   */
-	 							    unsigned char bias) {         /* Shift 0 point to a positive value. */
+	 							    uint8_t bias) {         /* Shift 0 point to a positive value. */
 	
 	*end_seg = 0; /* Initialize as aligned at num. 0 segment. */
-	unsigned char max = 0;		                     /* the max alignment score */
-	//int32_t end_read = 0;
+	uint8_t max = 0;		                     /* the max alignment score */
+	int32_t end_read = 0;
 	int32_t end_ref = 0; /* 1_based best alignment ending point; Initialized as isn't aligned - 0. */
 	int32_t segLen = (readLen + 15) / 16; /* number of segment */
 	
 	/* array to record the largest score of each reference position */
-	unsigned char* maxColumn = (unsigned char*) calloc(refLen, 1); 
+	uint8_t* maxColumn = (uint8_t*) calloc(refLen, 1); 
 	
 	/* array to record the alignment read ending position of the largest score of each reference position */
 	int32_t* end_read_column = (int32_t*) calloc(refLen, sizeof(int32_t));
@@ -104,6 +105,8 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 	__m128i* pvHStore = (__m128i*) calloc(segLen, sizeof(__m128i));
 	__m128i* pvHLoad = (__m128i*) calloc(segLen, sizeof(__m128i));
 	__m128i* pvE = (__m128i*) calloc(segLen, sizeof(__m128i));
+	__m128i* pvHmax = (__m128i*) calloc(segLen, sizeof(__m128i));
+
 	int32_t i;
 	int32_t j;
 	for (i = 0; i < segLen; i ++) {
@@ -231,26 +234,30 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 			cmp = _mm_movemask_epi8(vTemp);
 		}		
 		/* end of Lazy-F loop */
-	
-		/* update the ending point of the best alignment */
-		vTemp = _mm_max_epu8(vMaxScore, vMaxMark);	/* vMaxScore: the max score vector till current column; vMaxMark: that till the previous column */
-		vTemp = _mm_cmpeq_epi8(vMaxMark, vTemp);
+		
+		vTemp = _mm_cmpeq_epi8(vMaxMark, vMaxScore);
 		cmp = _mm_movemask_epi8(vTemp);
-
 		if (cmp != 0xffff) { 
-			end_ref = i + 1; /* Adjust to 1-based position. */
 			vMaxMark = vMaxScore;
-			vTemp = _mm_srli_si128 (vMaxMark, 8);
-			vMaxMark = _mm_max_epu8 (vMaxMark, vTemp);
-			vTemp = _mm_srli_si128 (vMaxMark, 4);
-			vMaxMark = _mm_max_epu8 (vMaxMark, vTemp);
-			vTemp = _mm_srli_si128 (vMaxMark, 2);
-			vMaxMark = _mm_max_epu8 (vMaxMark, vTemp);
-			vTemp = _mm_srli_si128 (vMaxMark, 1);
-			vMaxMark = _mm_max_epu8 (vMaxMark, vTemp);
-			unsigned char temp = (unsigned char)_mm_extract_epi16 (vMaxMark, 0);
-			vMaxMark = vMaxScore;
-			max = temp;
+			vTemp = _mm_srli_si128 (vMaxScore, 8);
+			vMaxScore = _mm_max_epu8 (vMaxScore, vTemp);
+			vTemp = _mm_srli_si128 (vMaxScore, 4);
+			vMaxScore = _mm_max_epu8 (vMaxScore, vTemp);
+			vTemp = _mm_srli_si128 (vMaxScore, 2);
+			vMaxScore = _mm_max_epu8 (vMaxScore, vTemp);
+			vTemp = _mm_srli_si128 (vMaxScore, 1);
+			vMaxScore = _mm_max_epu8 (vMaxScore, vTemp);
+			uint8_t temp = (uint8_t)_mm_extract_epi16 (vMaxScore, 0);
+			vMaxScore = vMaxMark;
+			
+			if (temp > max) {
+				max = temp;
+				end_ref = i + 1; /* Adjust to 1-based position. */
+			
+				/* Store the column with the highest alignment score in order to trace the alignment ending position on read. */
+				for (j = 0; j < segLen; ++j) // keep the H1 vector
+					pvHmax[j] = pvHStore[j];
+			}
 		}
 		
 		/* Record the max score of current column. */	
@@ -262,9 +269,20 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 		vMaxColumn = _mm_max_epu8 (vMaxColumn, vTemp);
 		vTemp = _mm_srli_si128 (vMaxColumn, 1);
 		vMaxColumn = _mm_max_epu8 (vMaxColumn, vTemp);
-		maxColumn[i] = (unsigned char)_mm_extract_epi16 (vMaxColumn, 0);
+		maxColumn[i] = (uint8_t)_mm_extract_epi16 (vMaxColumn, 0);
 	} 	
-	
+
+	/* Trace the alignment ending position on read. */
+	uint8_t *t = (uint8_t*)pvHmax;
+	int32_t column_len = segLen * 16;
+	//int max_t = -1;
+	for (i = 0; i < column_len; ++i, ++t) {
+		if (*t == max) end_read = i / 16 + i % 16 * segLen;
+		//if ((int)*t > max_t) max_t = *t;
+	}
+	fprintf (stderr, "end_read: %d\n", end_read);
+	//fprintf (stderr, "max_t: %d\n", max_t);	
+
 	/* Find the most possible 2nd best alignment. */
 	alignment_end* bests = (alignment_end*) calloc(2, sizeof(alignment_end));
 	bests[0].score = max;

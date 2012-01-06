@@ -1,11 +1,12 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 12/29/11.
+ *  Last revision by Mengyao Zhao on 01/05/12.
  *	New features: pure c fasta parser, reach Farrar's speed, embeded run time testing function 
  */
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <emmintrin.h>
 #include <zlib.h>
 #include <stdio.h>
@@ -43,7 +44,9 @@ int main (int argc, char * const argv[]) {
 			int32_t end_seg = 0;
 			int32_t readLen = strlen(read_seq->seq.s);
 			__m128i* vProfile = queryProfile_constructor(read_seq->seq.s, 2, 1, 4);
+		//	__m128i* vProfile = queryProfile_constructor(read_seq->seq.s, 5, 4, 4);
 			alignment_end* bests = smith_waterman_sse2(ref_seq->seq.s, refLen, readLen, 2, 1, 2, 1, vProfile, &end_seg, 4);
+		//	alignment_end* bests = smith_waterman_sse2(ref_seq->seq.s, refLen, readLen, 7, 3, 7, 3, vProfile, &end_seg, 4);
 			free(vProfile);
 			
 			if (bests[0].score != 0) {

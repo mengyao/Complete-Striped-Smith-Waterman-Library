@@ -1,5 +1,5 @@
 CC=			gcc
-CFLAGS=		-g -Wall -O3 -pg 
+CFLAGS=		-g -Wall -O2 #-pg 
 LOBJS=		ssw.o	
 PROG=		ssw_test
 all:$(PROG)
@@ -11,6 +11,6 @@ ssw.o:ssw.h
 cleanlocal:
 		rm -fr *.o $(PROG) *~ 
 
-clean:cleanlocal-recur
+clean:cleanlocal
 
 
