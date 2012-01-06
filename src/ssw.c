@@ -195,8 +195,8 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 			/* Load the next vH. */
 			vH = pvHLoad[j];
 		}
-		
-		/* Lazy_F loop
+	
+		/* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3
 		   The computed vF value is for the given column. 
 	       Since we are at the end, we need to shift the vF value over to the next column.
 		 */
@@ -215,10 +215,6 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 			/* Update highest score incase the new vH value would change it. (New line I added!) */
 			vMaxScore = _mm_max_epu8(vMaxScore, pvHStore[j]);
 			vMaxColumn = _mm_max_epu8(vMaxColumn, pvHStore[j]);
-			
-			/* Update vE incase the new vH value would change it. */
-			vH = _mm_subs_epu8(pvHStore[j], vInserB);
-			pvE[j] = _mm_max_epu8(pvE[j], vH);
 			
 			/* Update vF value. */
 			vF = _mm_subs_epu8(vF, vDeletE);

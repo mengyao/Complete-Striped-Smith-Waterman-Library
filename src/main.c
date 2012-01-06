@@ -44,9 +44,9 @@ int main (int argc, char * const argv[]) {
 			int32_t end_seg = 0;
 			int32_t readLen = strlen(read_seq->seq.s);
 			__m128i* vProfile = queryProfile_constructor(read_seq->seq.s, 2, 1, 4);
-		//	__m128i* vProfile = queryProfile_constructor(read_seq->seq.s, 5, 4, 4);
+	//		__m128i* vProfile = queryProfile_constructor(read_seq->seq.s, 5, 4, 4);
 			alignment_end* bests = smith_waterman_sse2(ref_seq->seq.s, refLen, readLen, 2, 1, 2, 1, vProfile, &end_seg, 4);
-		//	alignment_end* bests = smith_waterman_sse2(ref_seq->seq.s, refLen, readLen, 7, 3, 7, 3, vProfile, &end_seg, 4);
+	//		alignment_end* bests = smith_waterman_sse2(ref_seq->seq.s, refLen, readLen, 7, 3, 7, 3, vProfile, &end_seg, 4);
 			free(vProfile);
 			
 			if (bests[0].score != 0) {
