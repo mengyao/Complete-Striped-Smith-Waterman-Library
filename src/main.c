@@ -51,9 +51,11 @@ int main (int argc, char * const argv[]) {
 		printf("ref_name: %s\n", ref_seq->name.s);
 		gzFile read_fp = gzopen(argv[2], "r");
 		kseq_t*	read_seq = kseq_init(read_fp);
-		int32_t refLen = strlen(ref_seq->seq.s); 
+		int32_t refLen = strlen(ref_seq->seq.s);
+		char* ref_reverse = seq_reverse(ref_seq->seq.s, refLen - 1); 
+		fprintf(stderr, "reverse_ref: %s\n", ref_reverse); 										
 		while ((m = kseq_read(read_seq)) >= 0) {
-			char *read_reverse, *ref_reverse;
+			char *read_reverse;
 			alignment_end *bests, *bests_reverse;
 			printf("read_name: %s\n", read_seq->name.s);
 			printf("read_seq: %s\n", read_seq->seq.s); 
@@ -66,21 +68,21 @@ int main (int argc, char * const argv[]) {
 			free(vProfile);
 			
 			read_reverse = seq_reverse(read_seq->seq.s, bests[0].read);
-			ref_reverse = seq_reverse(ref_seq->seq.s, bests[0].ref);
-			fprintf(stderr, "reverse_ref: %s\nreverse_read: %s\n", ref_reverse, read_reverse); 										
+			//ref_reverse = seq_reverse(ref_seq->seq.s, bests[0].ref);
+			fprintf(stderr, "reverse_read: %s\n", read_reverse); 										
 			vProfile = queryProfile_constructor(read_reverse, 2, 1, 4);
-			bests_reverse = smith_waterman_sse2(ref_reverse, refLen, readLen, 2, 1, 2, 1, vProfile, bests[0].score, 4);
+			bests_reverse = smith_waterman_sse2(ref_reverse + refLen - bests[0].ref - 1, bests[0].ref + 1, bests[0].read + 1, 2, 1, 2, 1, vProfile, bests[0].score, 4);
 			free(vProfile);
-			free(ref_reverse);
 			free(read_reverse);
 			
 			if (bests[0].score != 0) {
-				fprintf(stdout, "max score: %d, end_ref: %d, end_read: %d\nreverse_ref: %d, reverse_read: %d\n", 
-						bests[0].score, bests[0].ref + 1, bests[0].read + 1, bests[0].ref - bests_reverse[0].ref, bests[0].read - bests_reverse[0].read);		
+				fprintf(stdout, "max score: %d, end_ref: %d, end_read: %d\nbegin_ref: %d, begin_read: %d\n", 
+						bests[0].score, bests[0].ref + 1, bests[0].read + 1, bests[0].ref - bests_reverse[0].ref + 1, bests[0].read - bests_reverse[0].read + 1);		
 				}else {
 				fprintf(stdout, "No alignment found for this read.\n");
 			}
 		}
+		free(ref_reverse);
 		kseq_destroy(read_seq);
 		gzclose(read_fp);
 	}

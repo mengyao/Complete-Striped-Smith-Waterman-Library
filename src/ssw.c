@@ -70,7 +70,7 @@ __m128i* queryProfile_constructor (const char* read,
    Return the alignment score and ending position of the best alignment, 2nd best alignment, etc. 
    Gap begin and gap extention are different. 
    wight_match > 0, all other weights < 0.
-   When this function is used forwardly, the return positions are 0-based; when it is used backwardly, the return positions are 1-based.
+   The returned positions are 0-based.
  */ 
 alignment_end* smith_waterman_sse2 (const char* ref,
 									int32_t refLen,
@@ -248,6 +248,7 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 			if (temp > max) {
 				max = temp;
 				end_ref = i;
+				//fprintf(stderr, "max: %d\tref: %c\tend_ref: %d\n", max, ref[i], end_ref);
 			
 				/* Store the column with the highest alignment score in order to trace the alignment ending position on read. */
 				for (j = 0; j < segLen; ++j) // keep the H1 vector
@@ -290,14 +291,14 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 	for (i = 0; i < edge; i ++) {
 		if (maxColumn[i] > bests[1].score) {
 			bests[1].score = maxColumn[i];
-			bests[1].ref = i + 1;
+			bests[1].ref = i;
 		}
 	}
 	edge = (end_ref + readLen / 2 + 1) > refLen ? refLen : (end_ref + readLen / 2 + 1);
 	for (i = edge; i < refLen; i ++) {
 		if (maxColumn[i] > bests[1].score) {
 			bests[1].score = maxColumn[i];
-			bests[1].ref = i + 1;
+			bests[1].ref = i;
 		}		
 	}
 	
