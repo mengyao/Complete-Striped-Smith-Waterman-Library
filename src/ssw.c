@@ -4,8 +4,8 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 01/06/12.
- *	New features: Record the ending position on reads. 
+ *	Last revision by Mengyao Zhao on 01/10/12.
+ *	New features: Locate the alignment beginning position. 
  *
  */
 
@@ -70,6 +70,7 @@ __m128i* queryProfile_constructor (const char* read,
    Return the alignment score and ending position of the best alignment, 2nd best alignment, etc. 
    Gap begin and gap extention are different. 
    wight_match > 0, all other weights < 0.
+   When this function is used forwardly, the return positions are 0-based; when it is used backwardly, the return positions are 1-based.
  */ 
 alignment_end* smith_waterman_sse2 (const char* ref,
 									int32_t refLen,
@@ -79,14 +80,12 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 								    uint8_t weight_deletB,  /* will be used as - */
 								    uint8_t weight_deletE,  /* will be used as - */
 								    __m128i* vProfile,
-								    int32_t* end_seg,        /* 0-based segment number of ending  
-								                                     alignment; The return value is  
-																     meaningful only when  
-									  							     the return value != 0.
-  																   */
+									uint8_t terminate,	/* the best alignment score: used to terminate 
+														   the matrix calculation when locating the 
+														   alignment beginning point. If this score 
+														   is set to 0, it will not be used */
 	 							    uint8_t bias) {         /* Shift 0 point to a positive value. */
 	
-	*end_seg = 0; /* Initialize as aligned at num. 0 segment. */
 	uint8_t max = 0;		                     /* the max alignment score */
 	int32_t end_read = 0;
 	int32_t end_ref = 0; /* 1_based best alignment ending point; Initialized as isn't aligned - 0. */
@@ -248,7 +247,7 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 			
 			if (temp > max) {
 				max = temp;
-				end_ref = i + 1; /* Adjust to 1-based position. */
+				end_ref = i;
 			
 				/* Store the column with the highest alignment score in order to trace the alignment ending position on read. */
 				for (j = 0; j < segLen; ++j) // keep the H1 vector
@@ -266,26 +265,26 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 		vTemp = _mm_srli_si128 (vMaxColumn, 1);
 		vMaxColumn = _mm_max_epu8 (vMaxColumn, vTemp);
 		maxColumn[i] = (uint8_t)_mm_extract_epi16 (vMaxColumn, 0);
+		
+		if (terminate > 0 && maxColumn[i] == terminate) break;
 	} 	
 
 	/* Trace the alignment ending position on read. */
 	uint8_t *t = (uint8_t*)pvHmax;
 	int32_t column_len = segLen * 16;
-	//int max_t = -1;
 	for (i = 0; i < column_len; ++i, ++t) {
 		if (*t == max) end_read = i / 16 + i % 16 * segLen;
-		//if ((int)*t > max_t) max_t = *t;
 	}
-	fprintf (stderr, "end_read: %d\n", end_read);
-	//fprintf (stderr, "max_t: %d\n", max_t);	
 
 	/* Find the most possible 2nd best alignment. */
 	alignment_end* bests = (alignment_end*) calloc(2, sizeof(alignment_end));
 	bests[0].score = max;
 	bests[0].ref = end_ref;
+	bests[0].read = end_read;
 	
 	bests[1].score = 0;
 	bests[1].ref = 0;
+	bests[1].read = 0;
 
 	edge = (end_ref - readLen / 2 - 1) > 0 ? (end_ref - readLen / 2 - 1) : 0;
 	for (i = 0; i < edge; i ++) {

@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 01/05/12.
+ *	Last revision by Mengyao Zhao on 01/09/12.
  *	New features: Changed the data type of the score component of the alignment_end struct to uint8_t to avoid overflow.
  *
  */
@@ -20,7 +20,8 @@
  */
 typedef struct {
 	uint8_t score;
-	int32_t ref;	/* 1-based position */
+	int32_t ref;	/* 0-based position */
+	int32_t read;	/* alignment ending position on read, 0-based */
 } alignment_end;
 
 /*! @function	Generate query profile rearrange query sequence & calculate the weight of match/mismatch. 
@@ -54,7 +55,6 @@ int32_t* ref_nt2num (const char* ref, int32_t refLen);
  *  @parameter	weight_deletB	score (absolute value) for opening a deletion 
  *  @parameter	weight_deletE	score (absolute value) for extending a deletion 
  *  @parameter	vProfile	pointer to the query profile
- *  @parameter	end_seg	a return value of 0-based segment number of alignment ending position in read; suggest to set to 0
  *	@parameter	bias	a number used to expend the max capacity of the values in the scoreing matrix; suggest to set to 4
  *  @return		a pointer to the array of structure alignment_end; the optimal (1st member of the array) and 
  *				sub-optimal (2nd member of the array) alignment score and ending positions
@@ -67,9 +67,8 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 								    uint8_t weight_deletB,  /* will be used as - */
 								    uint8_t weight_deletE,  /* will be used as - */
 								    __m128i* vProfile,
-								    int32_t* end_seg,        /* 0-based segment number of ending   
-																	 alignment; The return value is  
-																	 meaningful only when  
-																     the return value != 0.
-																   */	
+									uint8_t terminate,	/* the best alignment score: used to terminate 
+														   the matrix calculation when locating the 
+														   alignment beginning point. If this score 
+														   is set to 0, it will not be used */
 	 							    uint8_t bias);	

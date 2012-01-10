@@ -1,8 +1,8 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 01/05/12.
- *	New features: pure c fasta parser, reach Farrar's speed, embeded run time testing function 
+ *  Last revision by Mengyao Zhao on 01/10/12.
+ *	New features: find the best alignment beginning position 
  */
 
 #include <stdlib.h>
@@ -11,9 +11,24 @@
 #include <zlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <string.h>
 #include "ssw.h"
 #include "kseq.h"
 KSEQ_INIT(gzFile, gzread)
+
+char* seq_reverse(const char* seq, int32_t end)	/* end is 0-based alignment ending position */	
+{									
+	char* reverse = (char*)calloc(end + 2, sizeof(char*));	
+	int32_t start = 0;
+	reverse[end + 1] = '\0';				
+	while (start <= end) {			
+		reverse[start] = seq[end];		
+		reverse[end] = seq[start];		
+		++ start;					
+		-- end;						
+	}								
+	return reverse;					
+}									
 
 int main (int argc, char * const argv[]) {
 	// validate argument count
@@ -38,20 +53,30 @@ int main (int argc, char * const argv[]) {
 		kseq_t*	read_seq = kseq_init(read_fp);
 		int32_t refLen = strlen(ref_seq->seq.s); 
 		while ((m = kseq_read(read_seq)) >= 0) {
+			char *read_reverse, *ref_reverse;
+			alignment_end *bests, *bests_reverse;
 			printf("read_name: %s\n", read_seq->name.s);
 			printf("read_seq: %s\n", read_seq->seq.s); 
 			
-			int32_t end_seg = 0;
 			int32_t readLen = strlen(read_seq->seq.s);
 			__m128i* vProfile = queryProfile_constructor(read_seq->seq.s, 2, 1, 4);
-	//		__m128i* vProfile = queryProfile_constructor(read_seq->seq.s, 5, 4, 4);
-			alignment_end* bests = smith_waterman_sse2(ref_seq->seq.s, refLen, readLen, 2, 1, 2, 1, vProfile, &end_seg, 4);
-	//		alignment_end* bests = smith_waterman_sse2(ref_seq->seq.s, refLen, readLen, 7, 3, 7, 3, vProfile, &end_seg, 4);
+	//		__m128i* vProfile = queryProfile_constructor(read_seq->seq.s, 2, 2, 4);
+			bests = smith_waterman_sse2(ref_seq->seq.s, refLen, readLen, 2, 1, 2, 1, vProfile, 0, 4);
+	//		alignment_end* bests = smith_waterman_sse2(ref_seq->seq.s, refLen, readLen, 3, 1, 3, 1, vProfile, 0, 4);
 			free(vProfile);
 			
+			read_reverse = seq_reverse(read_seq->seq.s, bests[0].read);
+			ref_reverse = seq_reverse(ref_seq->seq.s, bests[0].ref);
+			fprintf(stderr, "reverse_ref: %s\nreverse_read: %s\n", ref_reverse, read_reverse); 										
+			vProfile = queryProfile_constructor(read_reverse, 2, 1, 4);
+			bests_reverse = smith_waterman_sse2(ref_reverse, refLen, readLen, 2, 1, 2, 1, vProfile, bests[0].score, 4);
+			free(vProfile);
+			free(ref_reverse);
+			free(read_reverse);
+			
 			if (bests[0].score != 0) {
-				fprintf(stdout, "max score: %d, end_ref: %d\nmax2 score: %d, end_ref: %d\n", 
-						bests[0].score, bests[0].ref, bests[1].score, bests[1].ref);		
+				fprintf(stdout, "max score: %d, end_ref: %d, end_read: %d\nreverse_ref: %d, reverse_read: %d\n", 
+						bests[0].score, bests[0].ref + 1, bests[0].read + 1, bests[0].ref - bests_reverse[0].ref, bests[0].read - bests_reverse[0].read);		
 				}else {
 				fprintf(stdout, "No alignment found for this read.\n");
 			}
