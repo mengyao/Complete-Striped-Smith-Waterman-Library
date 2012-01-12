@@ -1,8 +1,8 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 01/10/12.
- *	New features: find the best alignment beginning position 
+ *  Last revision by Mengyao Zhao on 01/12/12.
+ *	New features: weight matrix is extracted 
  */
 
 #include <stdlib.h>
@@ -43,7 +43,6 @@ int main (int argc, char * const argv[]) {
 	kseq_t *ref_seq;
 	int32_t l, m, k;
 	int8_t mat[25];
-//	int m;
 
 	// initialize scoring matrix for genome sequences
 	for (l = k = 0; l < 5; ++l) {

@@ -4,8 +4,8 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 01/10/12.
- *	New features: Locate the alignment beginning position. 
+ *	Last revision by Mengyao Zhao on 01/12/12.
+ *	New features: Weight matrix is extracted. 
  *
  */
 
@@ -27,8 +27,6 @@ int8_t nt_table[128] = {
 
 /* Generate query profile rearrange query sequence & calculate the weight of match/mismatch. */
 __m128i* queryProfile_constructor (const char* read,
-			     				   //uint8_t weight_match,	/* will be used as + */
-								   //uint8_t weight_mismatch, /* will be used as - */
 								   int8_t* mat,
 								   int32_t n,	/* the edge length of the squre matrix mat */
 								   uint8_t bias) { 
@@ -43,8 +41,6 @@ __m128i* queryProfile_constructor (const char* read,
 	int8_t* t = (int8_t*)vProfile;
 	int32_t nt, i, j;
 	int32_t segNum;
-	//int8_t mat[25];
-
 	
 	/* Generate query profile rearrange query sequence & calculate the weight of match/mismatch */
 	for (nt = 0; nt < n; nt ++) {
@@ -94,7 +90,7 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 	
 	/* Define 16 byte 0 vector. */
 	__m128i vZero = _mm_set_epi8(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); 
-	vZero = _mm_xor_si128(vZero, vZero);
+//	vZero = _mm_xor_si128(vZero, vZero);
 
 	__m128i* pvHStore = (__m128i*) calloc(segLen, sizeof(__m128i));
 	__m128i* pvHLoad = (__m128i*) calloc(segLen, sizeof(__m128i));

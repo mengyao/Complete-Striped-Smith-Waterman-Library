@@ -4,8 +4,8 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 01/09/12.
- *	New features: Changed the data type of the score component of the alignment_end struct to uint8_t to avoid overflow.
+ *	Last revision by Mengyao Zhao on 01/12/12.
+ *	New features: Weight matrix is extracted.
  *
  */
 
@@ -32,8 +32,6 @@ typedef struct {
  *  @return		pointer to the query profile 
  */
 __m128i* queryProfile_constructor (const char* read,
-//								   uint8_t weight_match,    /* will be used as + */
-//								   uint8_t weight_mismatch, /* will be used as - */
 								   int8_t* mat,
 								   int32_t n,	/* the edge length of the squre matrix mat */
 								   uint8_t bias);
