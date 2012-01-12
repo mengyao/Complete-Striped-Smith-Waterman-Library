@@ -32,8 +32,10 @@ typedef struct {
  *  @return		pointer to the query profile 
  */
 __m128i* queryProfile_constructor (const char* read,
-								   uint8_t weight_match,    /* will be used as + */
-								   uint8_t weight_mismatch, /* will be used as - */
+//								   uint8_t weight_match,    /* will be used as + */
+//								   uint8_t weight_mismatch, /* will be used as - */
+								   int8_t* mat,
+								   int32_t n,	/* the edge length of the squre matrix mat */
 								   uint8_t bias);
 
 /*! @function	Transform the reference sequence to a number sequence. 

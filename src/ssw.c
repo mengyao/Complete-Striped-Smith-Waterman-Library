@@ -27,8 +27,10 @@ int8_t nt_table[128] = {
 
 /* Generate query profile rearrange query sequence & calculate the weight of match/mismatch. */
 __m128i* queryProfile_constructor (const char* read,
-			     				   uint8_t weight_match,	/* will be used as + */
-								   uint8_t weight_mismatch, /* will be used as - */
+			     				   //uint8_t weight_match,	/* will be used as + */
+								   //uint8_t weight_mismatch, /* will be used as - */
+								   int8_t* mat,
+								   int32_t n,	/* the edge length of the squre matrix mat */
 								   uint8_t bias) { 
 					
 	int32_t readLen = strlen(read);
@@ -39,24 +41,17 @@ __m128i* queryProfile_constructor (const char* read,
 								   */
 	__m128i* vProfile = (__m128i*)calloc(5 * segLen, sizeof(__m128i));
 	int8_t* t = (int8_t*)vProfile;
-	int32_t nt, i, j, k;
+	int32_t nt, i, j;
 	int32_t segNum;
-	int8_t mat[25];
+	//int8_t mat[25];
 
-	// initialize scoring matrix
-	for (i = k = 0; i < 5; ++i) {
-		for (j = 0; j < 4; ++j)
-			mat[k++] = i == j? weight_match : -weight_mismatch;
-		mat[k++] = 0; // ambiguous base
-	}
-	for (j = 0; j < 5; ++j) mat[k++] = 0;
 	
 	/* Generate query profile rearrange query sequence & calculate the weight of match/mismatch */
-	for (nt = 0; nt < 5; nt ++) {
+	for (nt = 0; nt < n; nt ++) {
 		for (i = 0; i < segLen; i ++) {
 			j = i; 
 			for (segNum = 0; segNum < 16 ; segNum ++) {
-				*t++ = j>= readLen ? 0 : mat[nt * 5 + nt_table[(int)read[j]]] + bias;
+				*t++ = j>= readLen ? 0 : mat[nt * n + nt_table[(int)read[j]]] + bias;
 				j += segLen;
 			}
 		}

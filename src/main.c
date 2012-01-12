@@ -41,8 +41,18 @@ int main (int argc, char * const argv[]) {
 	float cpu_time;
 	gzFile ref_fp;
 	kseq_t *ref_seq;
-	int l;
-	int m;
+	int32_t l, m, k;
+	int8_t mat[25];
+//	int m;
+
+	// initialize scoring matrix for genome sequences
+	for (l = k = 0; l < 5; ++l) {
+		for (m = 0; m < 4; ++m)
+			mat[k++] = l == m ? 2 : -1;	/* weight_match : -weight_mismatch */
+		mat[k++] = 0; // ambiguous base
+	}
+	for (m = 0; m < 5; ++m) mat[k++] = 0;
+
 	ref_fp = gzopen(argv[1], "r");
 	ref_seq = kseq_init(ref_fp);
 
@@ -61,7 +71,7 @@ int main (int argc, char * const argv[]) {
 			printf("read_seq: %s\n", read_seq->seq.s); 
 			
 			int32_t readLen = strlen(read_seq->seq.s);
-			__m128i* vProfile = queryProfile_constructor(read_seq->seq.s, 2, 1, 4);
+			__m128i* vProfile = queryProfile_constructor(read_seq->seq.s, mat, 5, 4);
 	//		__m128i* vProfile = queryProfile_constructor(read_seq->seq.s, 2, 2, 4);
 			bests = smith_waterman_sse2(ref_seq->seq.s, refLen, readLen, 2, 1, 2, 1, vProfile, 0, 4);
 	//		alignment_end* bests = smith_waterman_sse2(ref_seq->seq.s, refLen, readLen, 3, 1, 3, 1, vProfile, 0, 4);
@@ -70,7 +80,7 @@ int main (int argc, char * const argv[]) {
 			read_reverse = seq_reverse(read_seq->seq.s, bests[0].read);
 			//ref_reverse = seq_reverse(ref_seq->seq.s, bests[0].ref);
 			fprintf(stderr, "reverse_read: %s\n", read_reverse); 										
-			vProfile = queryProfile_constructor(read_reverse, 2, 1, 4);
+			vProfile = queryProfile_constructor(read_reverse, mat, 5, 4);
 			bests_reverse = smith_waterman_sse2(ref_reverse + refLen - bests[0].ref - 1, bests[0].ref + 1, bests[0].read + 1, 2, 1, 2, 1, vProfile, bests[0].score, 4);
 			free(vProfile);
 			free(read_reverse);
