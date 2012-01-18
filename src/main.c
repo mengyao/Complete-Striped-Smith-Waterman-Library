@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 01/12/12.
+ *  Last revision by Mengyao Zhao on 01/13/12.
  *	New features: weight matrix is extracted 
  */
 
@@ -14,6 +14,8 @@
 #include <string.h>
 #include "ssw.h"
 #include "kseq.h"
+#include "banded_sw.h"
+
 KSEQ_INIT(gzFile, gzread)
 
 char* seq_reverse(const char* seq, int32_t end)	/* end is 0-based alignment ending position */	
@@ -44,6 +46,18 @@ int main (int argc, char * const argv[]) {
 	int32_t l, m, k;
 	int8_t mat[25];
 
+	/* This table is used to transform nucleotide letters into numbers. */
+	int8_t nt_table[128] = {
+		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 4, 4, 4,  3, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 4, 4, 4,  3, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4 
+	};
+
 	// initialize scoring matrix for genome sequences
 	for (l = k = 0; l < 5; ++l) {
 		for (m = 0; m < 4; ++m)
@@ -70,26 +84,31 @@ int main (int argc, char * const argv[]) {
 			printf("read_seq: %s\n", read_seq->seq.s); 
 			
 			int32_t readLen = strlen(read_seq->seq.s);
-			__m128i* vProfile = queryProfile_constructor(read_seq->seq.s, mat, 5, 4);
+			__m128i* vProfile = queryProfile_constructor(read_seq->seq.s, nt_table, mat, 5, 4);
 	//		__m128i* vProfile = queryProfile_constructor(read_seq->seq.s, 2, 2, 4);
-			bests = smith_waterman_sse2(ref_seq->seq.s, refLen, readLen, 2, 1, 2, 1, vProfile, 0, 4);
+			bests = smith_waterman_sse2(ref_seq->seq.s, nt_table, refLen, readLen, 2, 1, 2, 1, vProfile, 0, 4);
 	//		alignment_end* bests = smith_waterman_sse2(ref_seq->seq.s, refLen, readLen, 3, 1, 3, 1, vProfile, 0, 4);
 			free(vProfile);
 			
 			read_reverse = seq_reverse(read_seq->seq.s, bests[0].read);
 			//ref_reverse = seq_reverse(ref_seq->seq.s, bests[0].ref);
 			fprintf(stderr, "reverse_read: %s\n", read_reverse); 										
-			vProfile = queryProfile_constructor(read_reverse, mat, 5, 4);
-			bests_reverse = smith_waterman_sse2(ref_reverse + refLen - bests[0].ref - 1, bests[0].ref + 1, bests[0].read + 1, 2, 1, 2, 1, vProfile, bests[0].score, 4);
+			vProfile = queryProfile_constructor(read_reverse, nt_table, mat, 5, 4);
+			bests_reverse = smith_waterman_sse2(ref_reverse + refLen - bests[0].ref - 1, nt_table, bests[0].ref + 1, bests[0].read + 1, 2, 1, 2, 1, vProfile, bests[0].score, 4);
 			free(vProfile);
 			free(read_reverse);
 			
 			if (bests[0].score != 0) {
+				char* cigar1;
+				int32_t begin_ref = bests[0].ref - bests_reverse[0].ref, begin_read = bests[0].read - bests_reverse[0].read, band_width = abs(bests_reverse[0].ref - bests_reverse[0].read);
+			//	fprintf(stderr, "best_reverse[0].ref: %d, best_reverse[0].read: %d\n", bests_reverse[0].ref, bests_reverse[0].read);
 				fprintf(stdout, "max score: %d, end_ref: %d, end_read: %d\nbegin_ref: %d, begin_read: %d\n", 
-						bests[0].score, bests[0].ref + 1, bests[0].read + 1, bests[0].ref - bests_reverse[0].ref + 1, bests[0].read - bests_reverse[0].read + 1);		
-				}else {
-				fprintf(stdout, "No alignment found for this read.\n");
-			}
+						bests[0].score, bests[0].ref + 1, bests[0].read + 1, begin_ref + 1, begin_read + 1);
+				cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, 2, 1, 2, 1, 2, 1, band_width, nt_table, mat, 5);
+				if (cigar1 != 0) {
+					fprintf(stdout, "cigar in asc2: %s\n", cigar1);
+				} else fprintf(stdout, "No alignment is available.\n");			
+			}else fprintf(stdout, "No alignment found for this read.\n");
 		}
 		free(ref_reverse);
 		kseq_destroy(read_seq);

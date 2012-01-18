@@ -14,7 +14,7 @@
 #include "ssw.h"
 
 /* This table is used to transform nucleotide letters into numbers. */
-int8_t nt_table[128] = {
+/*int8_t nt_table[128] = {
 	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
 	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
 	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
@@ -24,9 +24,10 @@ int8_t nt_table[128] = {
 	4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
 	4, 4, 4, 4,  3, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4 
 };
-
+*/
 /* Generate query profile rearrange query sequence & calculate the weight of match/mismatch. */
 __m128i* queryProfile_constructor (const char* read,
+								   int8_t* nt_table,
 								   int8_t* mat,
 								   int32_t n,	/* the edge length of the squre matrix mat */
 								   uint8_t bias) { 
@@ -64,6 +65,7 @@ __m128i* queryProfile_constructor (const char* read,
    The returned positions are 0-based.
  */ 
 alignment_end* smith_waterman_sse2 (const char* ref,
+									int8_t* nt_table,
 									int32_t refLen,
 								    int32_t readLen, 
 								    uint8_t weight_insertB, /* will be used as - */

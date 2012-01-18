@@ -32,6 +32,7 @@ typedef struct {
  *  @return		pointer to the query profile 
  */
 __m128i* queryProfile_constructor (const char* read,
+								   int8_t* nt_table,
 								   int8_t* mat,
 								   int32_t n,	/* the edge length of the squre matrix mat */
 								   uint8_t bias);
@@ -60,6 +61,7 @@ int32_t* ref_nt2num (const char* ref, int32_t refLen);
  *				sub-optimal (2nd member of the array) alignment score and ending positions
  */
 alignment_end* smith_waterman_sse2 (const char* ref,
+									int8_t* nt_table,
 									int32_t refLen,
 								    int32_t readLen, 
 								    uint8_t weight_insertB, /* will be used as - */
