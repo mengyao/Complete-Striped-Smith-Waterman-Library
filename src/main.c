@@ -91,7 +91,6 @@ int main (int argc, char * const argv[]) {
 			free(vProfile);
 			
 			read_reverse = seq_reverse(read_seq->seq.s, bests[0].read);
-			//ref_reverse = seq_reverse(ref_seq->seq.s, bests[0].ref);
 			fprintf(stderr, "reverse_read: %s\n", read_reverse); 										
 			vProfile = queryProfile_constructor(read_reverse, nt_table, mat, 5, 4);
 			bests_reverse = smith_waterman_sse2(ref_reverse + refLen - bests[0].ref - 1, nt_table, bests[0].ref + 1, bests[0].read + 1, 2, 1, 2, 1, vProfile, bests[0].score, 4);
@@ -101,7 +100,6 @@ int main (int argc, char * const argv[]) {
 			if (bests[0].score != 0) {
 				char* cigar1;
 				int32_t begin_ref = bests[0].ref - bests_reverse[0].ref, begin_read = bests[0].read - bests_reverse[0].read, band_width = abs(bests_reverse[0].ref - bests_reverse[0].read);
-			//	fprintf(stderr, "best_reverse[0].ref: %d, best_reverse[0].read: %d\n", bests_reverse[0].ref, bests_reverse[0].read);
 				fprintf(stdout, "max score: %d, end_ref: %d, end_read: %d\nbegin_ref: %d, begin_read: %d\n", 
 						bests[0].score, bests[0].ref + 1, bests[0].read + 1, begin_ref + 1, begin_read + 1);
 				cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, 2, 1, 2, 1, 2, 1, band_width, nt_table, mat, 5);
