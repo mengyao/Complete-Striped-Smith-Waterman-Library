@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 01/13/12.
+ *  Last revision by Mengyao Zhao on 01/18/12.
  *	New features: weight matrix is extracted 
  */
 
@@ -106,7 +106,7 @@ int main (int argc, char * const argv[]) {
 						bests[0].score, bests[0].ref + 1, bests[0].read + 1, begin_ref + 1, begin_read + 1);
 				cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, 2, 1, 2, 1, 2, 1, band_width, nt_table, mat, 5);
 				if (cigar1 != 0) {
-					fprintf(stdout, "cigar in asc2: %s\n", cigar1);
+					fprintf(stdout, "cigar: %s\n", cigar1);
 				} else fprintf(stdout, "No alignment is available.\n");			
 			}else fprintf(stdout, "No alignment found for this read.\n");
 		}
