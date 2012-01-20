@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 01/18/12.
+ *  Last revision by Mengyao Zhao on 01/20/12.
  *	New features: weight matrix is extracted 
  */
 
@@ -90,22 +90,26 @@ int main (int argc, char * const argv[]) {
 	//		alignment_end* bests = smith_waterman_sse2(ref_seq->seq.s, refLen, readLen, 3, 1, 3, 1, vProfile, 0, 4);
 			free(vProfile);
 			
-			read_reverse = seq_reverse(read_seq->seq.s, bests[0].read);
-			fprintf(stderr, "reverse_read: %s\n", read_reverse); 										
-			vProfile = queryProfile_constructor(read_reverse, nt_table, mat, 5, 4);
-			bests_reverse = smith_waterman_sse2(ref_reverse + refLen - bests[0].ref - 1, nt_table, bests[0].ref + 1, bests[0].read + 1, 2, 1, 2, 1, vProfile, bests[0].score, 4);
-			free(vProfile);
-			free(read_reverse);
-			
 			if (bests[0].score != 0) {
 				char* cigar1;
-				int32_t begin_ref = bests[0].ref - bests_reverse[0].ref, begin_read = bests[0].read - bests_reverse[0].read, band_width = abs(bests_reverse[0].ref - bests_reverse[0].read);
+				int32_t begin_ref, begin_read, band_width;
+				read_reverse = seq_reverse(read_seq->seq.s, bests[0].read);
+				fprintf(stderr, "reverse_read: %s\n", read_reverse); 										
+				vProfile = queryProfile_constructor(read_reverse, nt_table, mat, 5, 4);
+				bests_reverse = smith_waterman_sse2(ref_reverse + refLen - bests[0].ref - 1, nt_table, bests[0].ref + 1, bests[0].read + 1, 2, 1, 2, 1, vProfile, bests[0].score, 4);
+				free(vProfile);
+				free(read_reverse);
+			
+				begin_ref = bests[0].ref - bests_reverse[0].ref, begin_read = bests[0].read - bests_reverse[0].read, band_width = abs(bests_reverse[0].ref - bests_reverse[0].read);
 				fprintf(stdout, "max score: %d, end_ref: %d, end_read: %d\nbegin_ref: %d, begin_read: %d\n", 
 						bests[0].score, bests[0].ref + 1, bests[0].read + 1, begin_ref + 1, begin_read + 1);
+				//if (bests[0].score == bests[1].score)
+				//cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, 2, 1, 2, 1, 2, 1, band_width, nt_table, mat, 5);
 				cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, 2, 1, 2, 1, 2, 1, band_width, nt_table, mat, 5);
 				if (cigar1 != 0) {
 					fprintf(stdout, "cigar: %s\n", cigar1);
-				} else fprintf(stdout, "No alignment is available.\n");			
+				} else fprintf(stdout, "No alignment is available.\n");	
+				free(cigar1);		
 			}else fprintf(stdout, "No alignment found for this read.\n");
 		}
 		free(ref_reverse);

@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 01/12/12.
+ *	Last revision by Mengyao Zhao on 01/20/12.
  *	New features: Weight matrix is extracted. 
  *
  */
