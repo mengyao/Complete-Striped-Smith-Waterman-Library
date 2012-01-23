@@ -58,6 +58,7 @@ char* banded_sw (const char* ref,
 				 	int32_t n) {	
 
 	char* cigar = (char*)calloc(16, sizeof(char)), *p = cigar, ci = 'M';
+	char* cigar1, *p1;	// reverse cigar
 	int32_t width = band_width * 2 + 3, width_d = band_width * 2 + 1;
 	int32_t h_b[width], e_b[width], h_c[width], i, j, e, f, temp1, temp2, s = 16, c = 0, l;
 	int32_t length_b = readLen < refLen ? readLen : refLen;
@@ -175,5 +176,34 @@ char* banded_sw (const char* ref,
 		*p = 'M';
 	}
 	++p; *p = '\0';
-	return cigar;
+
+	// reverse cigar
+	cigar1 = (char*)calloc(strlen(cigar) + 1, sizeof(char));
+	p1 = cigar1;
+	l = 0;
+	ci = 'M';
+	p = cigar + strlen(cigar) - 1;
+	while (p >= cigar) {
+		if (*p == 'M' || *p == 'I' || *p == 'D') {
+			if (l > 0) {
+				strncpy(p1, p + 1, l);
+				p1 += l;
+				*p1 = ci;
+				++p1;
+			}
+			ci = *p;
+			--p;
+			l = 0;
+		} else {
+			++l;
+			--p;
+		}
+	}
+	strncpy(p1, p + 1, l);
+	p1 += l;
+	*p1 = ci;
+	++p1;
+	*p1 = '\0';
+
+	return cigar1;
 }
