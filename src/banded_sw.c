@@ -95,10 +95,10 @@ char* banded_sw (const char* ref,
 		for (j = 1; j <= u; j ++) h_b[j] = h_c[j];
 	}
 
-	/*fprintf(stderr, "width_d: %d\tlength_b: %d\n", width_d, length_b);
+	fprintf(stderr, "width_d: %d\tlength_b: %d\n", width_d, length_b);
 	for (i = 0; i < width_d * length_b; i ++)
 	fprintf(stderr, "direction: %d\n", direction[i]);
-*/
+
 	// trace back
 	i = length_b - 1;
 	j = refLen - 1;
