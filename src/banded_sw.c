@@ -61,7 +61,7 @@ char* banded_sw (const char* ref,
 	char* cigar1, *p1;	// reverse cigar
 	int32_t width = band_width * 2 + 3, width_d = band_width * 2 + 1;
 	int32_t h_b[width], e_b[width], h_c[width], i, j, e, f, temp1, temp2, s = 16, c = 0, l;
-	int32_t length_b = readLen < refLen ? readLen : refLen;
+	int32_t length_b = readLen < refLen ? refLen : readLen;
 	int8_t direction[width_d * length_b], *direction_line;
 	for (j = 1; j < width - 1; j ++) h_b[j] = 0;
 	for (i = 0; i < length_b; i ++) {
@@ -95,11 +95,16 @@ char* banded_sw (const char* ref,
 		for (j = 1; j <= u; j ++) h_b[j] = h_c[j];
 	}
 
+	/*fprintf(stderr, "width_d: %d\tlength_b: %d\n", width_d, length_b);
+	for (i = 0; i < width_d * length_b; i ++)
+	fprintf(stderr, "direction: %d\n", direction[i]);
+*/
 	// trace back
 	i = length_b - 1;
 	j = refLen - 1;
 	e = 0;	// Count the number of M, D or I.
 	f = 'M';
+	fprintf(stderr, "band_width: %d\n", band_width);
 	while (i > 0) {
 		set_u(temp1, band_width, i, j);	// alignment ending position
 		switch (direction_line[temp1 - 1]) {
