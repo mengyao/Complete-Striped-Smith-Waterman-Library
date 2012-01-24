@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 01/20/12.
+ *	Last revision by Mengyao Zhao on 01/24/12.
  *	New features: Weight matrix is extracted. 
  *
  */
@@ -13,18 +13,6 @@
 #include <stdint.h>
 #include "ssw.h"
 
-/* This table is used to transform nucleotide letters into numbers. */
-/*int8_t nt_table[128] = {
-	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-	4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
-	4, 4, 4, 4,  3, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-	4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
-	4, 4, 4, 4,  3, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4 
-};
-*/
 /* Generate query profile rearrange query sequence & calculate the weight of match/mismatch. */
 __m128i* queryProfile_constructor (const char* read,
 								   int8_t* nt_table,
@@ -92,7 +80,6 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 	
 	/* Define 16 byte 0 vector. */
 	__m128i vZero = _mm_set_epi8(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); 
-//	vZero = _mm_xor_si128(vZero, vZero);
 
 	__m128i* pvHStore = (__m128i*) calloc(segLen, sizeof(__m128i));
 	__m128i* pvHLoad = (__m128i*) calloc(segLen, sizeof(__m128i));
@@ -241,7 +228,6 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 			if (temp > max) {
 				max = temp;
 				end_ref = i;
-				//fprintf(stderr, "max: %d\tref: %c\tend_ref: %d\n", max, ref[i], end_ref);
 			
 				/* Store the column with the highest alignment score in order to trace the alignment ending position on read. */
 				for (j = 0; j < segLen; ++j) // keep the H1 vector

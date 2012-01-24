@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 01/20/12.
+ *  Last revision by Mengyao Zhao on 01/24/12.
  *	New features: weight matrix is extracted 
  */
 
@@ -62,6 +62,7 @@ int main (int argc, char * const argv[]) {
 	for (l = k = 0; l < 4; ++l) {
 		for (m = 0; m < 4; ++m)
 			mat[k++] = l == m ? 2 : -1;	/* weight_match : -weight_mismatch */
+	//		mat[k++] = l == m ? 2 : -2;	/* weight_match : -weight_mismatch */
 		mat[k++] = 0; // ambiguous base
 	}
 	for (m = 0; m < 5; ++m) mat[k++] = 0;
@@ -85,11 +86,10 @@ int main (int argc, char * const argv[]) {
 			
 			int32_t readLen = strlen(read_seq->seq.s);
 			__m128i* vProfile = queryProfile_constructor(read_seq->seq.s, nt_table, mat, 5, 4);
-	//		__m128i* vProfile = queryProfile_constructor(read_seq->seq.s, 2, 2, 4);
 			bests = smith_waterman_sse2(ref_seq->seq.s, nt_table, refLen, readLen, 2, 1, 2, 1, vProfile, 0, 4);
-	//		alignment_end* bests = smith_waterman_sse2(ref_seq->seq.s, refLen, readLen, 3, 1, 3, 1, vProfile, 0, 4);
-			fprintf(stdout, "max score: %d, 2nd score: %d, end_ref: %d, end_read: %d\n", 
-			bests[0].score, bests[1].score, bests[0].ref + 1, bests[0].read + 1);
+	//		bests = smith_waterman_sse2(ref_seq->seq.s, nt_table, refLen, readLen, 3, 1, 3, 1, vProfile, 0, 4);
+		/*	fprintf(stdout, "max score: %d, 2nd score: %d, end_ref: %d, end_read: %d\n", 
+			bests[0].score, bests[1].score, bests[0].ref + 1, bests[0].read + 1);*/
 			free(vProfile);
 			
 			if (bests[0].score != 0) {
@@ -104,8 +104,8 @@ int main (int argc, char * const argv[]) {
 			
 				begin_ref = bests[0].ref - bests_reverse[0].ref, begin_read = bests[0].read - bests_reverse[0].read, band_width = abs(bests_reverse[0].ref - bests_reverse[0].read);
 			
-			//	fprintf(stdout, "max score: %d, 2nd score: %d, end_ref: %d, end_read: %d\nbegin_ref: %d, begin_read: %d\n", 
-			//	bests[0].score, bests[1].score, bests[0].ref + 1, bests[0].read + 1, begin_ref + 1, begin_read + 1);free(vProfile);
+				fprintf(stdout, "max score: %d, 2nd score: %d, end_ref: %d, end_read: %d\nbegin_ref: %d, begin_read: %d\n", 
+				bests[0].score, bests[1].score, bests[0].ref + 1, bests[0].read + 1, begin_ref + 1, begin_read + 1);
 				if (bests[0].score != bests[1].score) {
 					cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, 2, 1, 2, 1, 2, 1, band_width, nt_table, mat, 5);
 					if (cigar1 != 0) {
