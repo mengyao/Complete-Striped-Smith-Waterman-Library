@@ -68,11 +68,11 @@ char* banded_sw (const char* ref,
 //	int32_t readLen = readLen < refLen ? refLen : readLen;
 //	int32_t readLen = readLen;
 	//int8_t direction[width_d * readLen], *direction_line;
-	int8_t *direction = (int8_t*)calloc(width_d * readLen, sizeof(int8_t)), *direction_line;
+	int8_t *direction = (int8_t*)calloc(width_d * readLen, sizeof(int8_t)), *direction_line = direction;
 //	fprintf(stderr, "width_d: %d\trefLen: %d\n", width, refLen);
 	for (j = 1; j < width - 1; j ++) h_b[j] = 0;
 	for (i = 0; i < readLen; i ++) {
-		int32_t beg = 0, end = refLen - 1, u, edge;
+		int32_t beg = 0, end = refLen - 1, u = 0, edge;
 		j = i - band_width;	beg = beg > j ? beg : j; // band start
 		j = i + band_width; end = end < j ? end : j; // band end
 		edge = end + 1 < width - 1 ? end + 1 : width - 1;
