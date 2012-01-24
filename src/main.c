@@ -101,15 +101,15 @@ int main (int argc, char * const argv[]) {
 				free(read_reverse);
 			
 				begin_ref = bests[0].ref - bests_reverse[0].ref, begin_read = bests[0].read - bests_reverse[0].read, band_width = abs(bests_reverse[0].ref - bests_reverse[0].read);
+				fprintf(stdout, "max score: %d, end_ref: %d, end_read: %d\nbegin_ref: %d, begin_read: %d\n", 
+				bests[0].score, bests[0].ref + 1, bests[0].read + 1, begin_ref + 1, begin_read + 1);
 				if (bests[0].score != bests[1].score) {
-					fprintf(stdout, "max score: %d, end_ref: %d, end_read: %d\nbegin_ref: %d, begin_read: %d\n", 
-							bests[0].score, bests[0].ref + 1, bests[0].read + 1, begin_ref + 1, begin_read + 1);
 					cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, 2, 1, 2, 1, 2, 1, band_width, nt_table, mat, 5);
 					if (cigar1 != 0) {
 						fprintf(stdout, "cigar: %s\n", cigar1);
 					} else fprintf(stdout, "No alignment is available.\n");	
 					free(cigar1);		
-				}
+				} else fprintf(stdout, "Two alignments available.\n");
 			}else fprintf(stdout, "No alignment found for this read.\n");
 		}
 		free(ref_reverse);
