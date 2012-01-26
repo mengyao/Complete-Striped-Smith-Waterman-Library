@@ -175,11 +175,10 @@ alignment_end* sw_sse2_16 (const char* ref,
 		/* Correct the vH values until there are no element in vF that could influence the vH values. */
 		j = 0;
 		vTemp = _mm_subs_epu8(pvHStore[j], vDeletB);
-		vTemp = _mm_subs_epu8(vF, vTemp);
-		vTemp = _mm_cmpeq_epi8(vTemp, vZero); /* result >= 0 */
+		vTemp = _mm_cmpgt_epi8 (vF, vTemp);
 		cmp = _mm_movemask_epi8(vTemp);
 		
-		while (cmp != 0xffff) {
+		while (cmp) {
 			pvHStore[j] = _mm_max_epu8(pvHStore[j], vF);
 			
 			/* Update highest score incase the new vH value would change it. (New line I added!) */
@@ -195,8 +194,7 @@ alignment_end* sw_sse2_16 (const char* ref,
 				vF = _mm_slli_si128 (vF, 1);
 			}
 			vTemp = _mm_subs_epu8(pvHStore[j], vDeletB);
-			vTemp = _mm_subs_epu8(vF, vTemp);
-			vTemp = _mm_cmpeq_epi8(vTemp, vZero); /* result >= 0 */
+			vTemp = _mm_cmpgt_epi8(vF, vTemp);
 			cmp = _mm_movemask_epi8(vTemp);
 		}		
 		/* end of Lazy-F loop */
@@ -275,6 +273,11 @@ alignment_end* sw_sse2_8 (const char* ref,
 														   alignment beginning point. If this score 
 														   is set to 0, it will not be used */
 	 							    uint8_t bias) {         /* Shift 0 point to a positive value. */
+
+#define max8(m, vm) (vm) = _mm_max_epi16((vm), _mm_srli_si128((vm), 8)); \
+					(vm) = _mm_max_epi16((vm), _mm_srli_si128((vm), 4)); \
+					(vm) = _mm_max_epi16((vm), _mm_srli_si128((vm), 2)); \
+					(m) = _mm_extract_epi16((vm), 0)
 	
 	uint8_t max = 0;		                     /* the max alignment score */
 	int32_t end_read = 0;
@@ -303,19 +306,19 @@ alignment_end* sw_sse2_8 (const char* ref,
 	}
 	
 	/* 16 byte insertion begin vector */
-	__m128i vInserB = _mm_set1_epi8(weight_insertB);
+	__m128i vInserB = _mm_set1_epi16(weight_insertB);
 	
 	/* 16 byte insertion extention vector */
-	__m128i vInserE = _mm_set1_epi8(weight_insertE);	
+	__m128i vInserE = _mm_set1_epi16(weight_insertE);	
 	
 	/* 16 byte deletion begin vector */
-	__m128i vDeletB = _mm_set1_epi8(weight_deletB);	
+	__m128i vDeletB = _mm_set1_epi16(weight_deletB);	
 
 	/* 16 byte deletion extention vector */
-	__m128i vDeletE = _mm_set1_epi8(weight_deletE);	
+	__m128i vDeletE = _mm_set1_epi16(weight_deletE);	
 
 	/* 16 byte bias vector */
-	__m128i vBias = _mm_set1_epi8(bias);	
+	__m128i vBias = _mm_set1_epi16(bias);	
 
 	__m128i vMaxScore = vZero; /* Trace the highest score of the whole SW matrix. */
 	__m128i vMaxMark = vZero; /* Trace the highest score till the previous column. */	
@@ -329,7 +332,7 @@ alignment_end* sw_sse2_8 (const char* ref,
 							   Any errors to vH values will be corrected in the Lazy_F loop. 
 							 */
 		__m128i vH = pvHStore[segLen - 1];
-		vH = _mm_slli_si128 (vH, 1); /* Shift the 128-bit value in vH left by 1 byte. */
+		vH = _mm_slli_si128 (vH, 2); /* Shift the 128-bit value in vH left by 2 byte. */
 		
 		/* Swap the 2 H buffers. */
 		__m128i* pv = pvHLoad;
@@ -342,28 +345,28 @@ alignment_end* sw_sse2_8 (const char* ref,
 		
 		/* inner loop to process the query sequence */
 		for (j = 0; j < segLen; j ++) {
-			vH = _mm_adds_epu8(vH, vP[j]);
-			vH = _mm_subs_epu8(vH, vBias); /* vH will be always > 0 */
+			vH = _mm_adds_epu16(vH, vP[j]);
+			vH = _mm_subs_epu16(vH, vBias); /* vH will be always > 0 */
 
 			/* Get max from vH, vE and vF. */
-			vH = _mm_max_epu8(vH, pvE[j]);
-			vH = _mm_max_epu8(vH, vF);
+			vH = _mm_max_epi16(vH, pvE[j]);
+			vH = _mm_max_epi16(vH, vF);
 			
 			/* Update highest score encountered this far. */
-			vMaxScore = _mm_max_epu8(vMaxScore, vH);
-			vMaxColumn = _mm_max_epu8(vMaxColumn, vH);
+			vMaxScore = _mm_max_epi16(vMaxScore, vH);
+			vMaxColumn = _mm_max_epi16(vMaxColumn, vH);
 			
 			/* Save vH values. */
 			pvHStore[j] = vH;
 
 			/* Update vE value. */
-			vH = _mm_subs_epu8(vH, vInserB); /* saturation arithmetic, result >= 0 */
-			pvE[j] = _mm_subs_epu8(pvE[j], vInserE);
-			pvE[j] = _mm_max_epu8(pvE[j], vH);
+			vH = _mm_subs_epu16(vH, vInserB); /* saturation arithmetic, result >= 0 */
+			pvE[j] = _mm_subs_epu16(pvE[j], vInserE);
+			pvE[j] = _mm_max_epi16(pvE[j], vH);
 			
 			/* Update vF value. */
-			vF = _mm_subs_epu8(vF, vDeletE);
-			vF = _mm_max_epu8(vF, vH);
+			vF = _mm_subs_epu16(vF, vDeletE);
+			vF = _mm_max_epi16(vF, vH);
 			
 			/* Load the next vH. */
 			vH = pvHLoad[j];
@@ -373,50 +376,47 @@ alignment_end* sw_sse2_8 (const char* ref,
 		   The computed vF value is for the given column. 
 	       Since we are at the end, we need to shift the vF value over to the next column.
 		 */
-		vF = _mm_slli_si128 (vF, 1);
+		vF = _mm_slli_si128 (vF, 2);
 		
 		/* Correct the vH values until there are no element in vF that could influence the vH values. */
 		j = 0;
-		vTemp = _mm_subs_epu8(pvHStore[j], vDeletB);
-		vTemp = _mm_subs_epu8(vF, vTemp);
-		vTemp = _mm_cmpeq_epi8(vTemp, vZero); /* result >= 0 */
+		vTemp = _mm_subs_epu16(pvHStore[j], vDeletB);
+		//vTemp = _mm_subs_epu16(vF, vTemp);
+		//vTemp = _mm_cmpeq_epi16(vTemp, vZero); /* result >= 0 */
+		vTemp = _mm_cmpgt_epi16(vF, vTemp);
 		cmp = _mm_movemask_epi8(vTemp);
 		
-		while (cmp != 0xffff) {
-			pvHStore[j] = _mm_max_epu8(pvHStore[j], vF);
+	//	while (cmp != 0xffff) {
+		while (! cmp) {
+			pvHStore[j] = _mm_max_epi16(pvHStore[j], vF);
 			
 			/* Update highest score incase the new vH value would change it. (New line I added!) */
-			vMaxScore = _mm_max_epu8(vMaxScore, pvHStore[j]);
-			vMaxColumn = _mm_max_epu8(vMaxColumn, pvHStore[j]);
+			vMaxScore = _mm_max_epi16(vMaxScore, pvHStore[j]);
+			vMaxColumn = _mm_max_epi16(vMaxColumn, pvHStore[j]);
 			
 			/* Update vF value. */
-			vF = _mm_subs_epu8(vF, vDeletE);
+			vF = _mm_subs_epu16(vF, vDeletE);
 			
 			j ++;
 			if (j >= segLen) {
 				j = 0;
 				vF = _mm_slli_si128 (vF, 1);
 			}
-			vTemp = _mm_subs_epu8(pvHStore[j], vDeletB);
-			vTemp = _mm_subs_epu8(vF, vTemp);
-			vTemp = _mm_cmpeq_epi8(vTemp, vZero); /* result >= 0 */
+			vTemp = _mm_subs_epu16(pvHStore[j], vDeletB);
+			vTemp = _mm_cmpgt_epi16(vF, vTemp);
+		//	vTemp = _mm_subs_epu16(vF, vTemp);
+		//	vTemp = _mm_cmpeq_epi16(vTemp, vZero); /* result >= 0 */
 			cmp = _mm_movemask_epi8(vTemp);
 		}		
 		/* end of Lazy-F loop */
 		
 		vTemp = _mm_cmpeq_epi8(vMaxMark, vMaxScore);
 		cmp = _mm_movemask_epi8(vTemp);
-		if (cmp != 0xffff) { 
+		if (cmp != 0xffff) {
+	//	if (! cmp) {
+			uint8_t temp; 
 			vMaxMark = vMaxScore;
-			vTemp = _mm_srli_si128 (vMaxScore, 8);
-			vMaxScore = _mm_max_epu8 (vMaxScore, vTemp);
-			vTemp = _mm_srli_si128 (vMaxScore, 4);
-			vMaxScore = _mm_max_epu8 (vMaxScore, vTemp);
-			vTemp = _mm_srli_si128 (vMaxScore, 2);
-			vMaxScore = _mm_max_epu8 (vMaxScore, vTemp);
-			vTemp = _mm_srli_si128 (vMaxScore, 1);
-			vMaxScore = _mm_max_epu8 (vMaxScore, vTemp);
-			uint8_t temp = (uint8_t)_mm_extract_epi16 (vMaxScore, 0);
+			max8(temp, vMaxScore);
 			vMaxScore = vMaxMark;
 			
 			if (temp > max) {
@@ -430,25 +430,16 @@ alignment_end* sw_sse2_8 (const char* ref,
 		}
 		
 		/* Record the max score of current column. */	
-		vTemp = _mm_srli_si128 (vMaxColumn, 8);
-		vMaxColumn = _mm_max_epu8 (vMaxColumn, vTemp);
-		vTemp = _mm_srli_si128 (vMaxColumn, 4);
-		vMaxColumn = _mm_max_epu8 (vMaxColumn, vTemp);
-		vTemp = _mm_srli_si128 (vMaxColumn, 2);
-		vMaxColumn = _mm_max_epu8 (vMaxColumn, vTemp);
-		vTemp = _mm_srli_si128 (vMaxColumn, 1);
-		vMaxColumn = _mm_max_epu8 (vMaxColumn, vTemp);
-		maxColumn[i] = (uint8_t)_mm_extract_epi16 (vMaxColumn, 0);
-		
+		max16(maxColumn[i], vMaxColumn);
 		if (terminate > 0 && maxColumn[i] == terminate) break;
 	} 	
 
 	/* Trace the alignment ending position on read. */
-	uint8_t *t = (uint8_t*)pvHmax;
-	int32_t column_len = segLen * 16;
+	uint16_t *t = (uint16_t*)pvHmax;
+	int32_t column_len = segLen * 8;
 	for (i = 0; i < column_len; ++i, ++t) {
 		if (*t == max) {
-			end_read = i / 16 + i % 16 * segLen;
+			end_read = i / 8 + i % 8 * segLen;
 			break;
 		}
 	}
