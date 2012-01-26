@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 01/12/12.
+ *	Last revision by Mengyao Zhao on 01/24/12.
  *	New features: Weight matrix is extracted.
  *
  */
@@ -60,7 +60,7 @@ int32_t* ref_nt2num (const char* ref, int32_t refLen);
  *  @return		a pointer to the array of structure alignment_end; the optimal (1st member of the array) and 
  *				sub-optimal (2nd member of the array) alignment score and ending positions
  */
-alignment_end* smith_waterman_sse2 (const char* ref,
+alignment_end* sw_sse2_16 (const char* ref,
 									int8_t* nt_table,
 									int32_t refLen,
 								    int32_t readLen, 

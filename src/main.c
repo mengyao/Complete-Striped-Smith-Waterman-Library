@@ -86,8 +86,8 @@ int main (int argc, char * const argv[]) {
 			
 			int32_t readLen = strlen(read_seq->seq.s);
 			__m128i* vProfile = queryProfile_constructor(read_seq->seq.s, nt_table, mat, 5, 4);
-			bests = smith_waterman_sse2(ref_seq->seq.s, nt_table, refLen, readLen, 2, 1, 2, 1, vProfile, 0, 4);
-	//		bests = smith_waterman_sse2(ref_seq->seq.s, nt_table, refLen, readLen, 3, 1, 3, 1, vProfile, 0, 4);
+			bests = sw_sse2_16(ref_seq->seq.s, nt_table, refLen, readLen, 2, 1, 2, 1, vProfile, 0, 4);
+		//	bests = sw_sse2_16(ref_seq->seq.s, nt_table, refLen, readLen, 3, 1, 3, 1, vProfile, 0, 4);
 		/*	fprintf(stdout, "max score: %d, 2nd score: %d, end_ref: %d, end_read: %d\n", 
 			bests[0].score, bests[1].score, bests[0].ref + 1, bests[0].read + 1);*/
 			free(vProfile);
@@ -98,7 +98,7 @@ int main (int argc, char * const argv[]) {
 				read_reverse = seq_reverse(read_seq->seq.s, bests[0].read);
 				fprintf(stderr, "reverse_read: %s\n", read_reverse); 										
 				vProfile = queryProfile_constructor(read_reverse, nt_table, mat, 5, 4);
-				bests_reverse = smith_waterman_sse2(ref_reverse + refLen - bests[0].ref - 1, nt_table, bests[0].ref + 1, bests[0].read + 1, 2, 1, 2, 1, vProfile, bests[0].score, 4);
+				bests_reverse = sw_sse2_16(ref_reverse + refLen - bests[0].ref - 1, nt_table, bests[0].ref + 1, bests[0].read + 1, 2, 1, 2, 1, vProfile, bests[0].score, 4);
 				free(vProfile);
 				free(read_reverse);
 			

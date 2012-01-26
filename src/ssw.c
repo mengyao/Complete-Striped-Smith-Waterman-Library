@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 01/24/12.
+ *	Last revision by Mengyao Zhao on 01/26/12.
  *	New features: Weight matrix is extracted. 
  *
  */
@@ -52,7 +52,7 @@ __m128i* queryProfile_constructor (const char* read,
    wight_match > 0, all other weights < 0.
    The returned positions are 0-based.
  */ 
-alignment_end* smith_waterman_sse2 (const char* ref,
+alignment_end* sw_sse2_16 (const char* ref,
 									int8_t* nt_table,
 									int32_t refLen,
 								    int32_t readLen, 
@@ -79,7 +79,7 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 	int32_t* end_read_column = (int32_t*) calloc(refLen, sizeof(int32_t));
 	
 	/* Define 16 byte 0 vector. */
-	__m128i vZero = _mm_set_epi8(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); 
+	__m128i vZero = _mm_set1_epi32(0);
 
 	__m128i* pvHStore = (__m128i*) calloc(segLen, sizeof(__m128i));
 	__m128i* pvHLoad = (__m128i*) calloc(segLen, sizeof(__m128i));
@@ -94,39 +94,24 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 	}
 	
 	/* 16 byte insertion begin vector */
-	__m128i vInserB = _mm_set_epi8(weight_insertB, weight_insertB, weight_insertB, weight_insertB, 
-								   weight_insertB, weight_insertB, weight_insertB, weight_insertB,
-								   weight_insertB, weight_insertB, weight_insertB, weight_insertB, 
-								   weight_insertB, weight_insertB, weight_insertB, weight_insertB);
+	__m128i vInserB = _mm_set1_epi8(weight_insertB);
 	
 	/* 16 byte insertion extention vector */
-	__m128i vInserE = _mm_set_epi8(weight_insertE, weight_insertE, weight_insertE, weight_insertE, 
-								   weight_insertE, weight_insertE, weight_insertE, weight_insertE, 
-								   weight_insertE, weight_insertE, weight_insertE, weight_insertE, 
-								   weight_insertE, weight_insertE, weight_insertE, weight_insertE);
+	__m128i vInserE = _mm_set1_epi8(weight_insertE);	
 	
 	/* 16 byte deletion begin vector */
-	__m128i vDeletB = _mm_set_epi8(weight_deletB, weight_deletB, weight_deletB, weight_deletB, 
-								   weight_deletB, weight_deletB, weight_deletB, weight_deletB, 
-								   weight_deletB, weight_deletB, weight_deletB, weight_deletB, 
-								   weight_deletB, weight_deletB, weight_deletB, weight_deletB);
+	__m128i vDeletB = _mm_set1_epi8(weight_deletB);	
 
 	/* 16 byte deletion extention vector */
-	__m128i vDeletE = _mm_set_epi8(weight_deletE, weight_deletE, weight_deletE, weight_deletE, 
-								   weight_deletE, weight_deletE, weight_deletE, weight_deletE, 
-								   weight_deletE, weight_deletE, weight_deletE, weight_deletE, 
-								   weight_deletE, weight_deletE, weight_deletE, weight_deletE);
+	__m128i vDeletE = _mm_set1_epi8(weight_deletE);	
 
 	/* 16 byte bias vector */
-	__m128i vBias = _mm_set_epi8(bias, bias, bias, bias, bias, bias, bias, bias,  
-								 bias, bias, bias, bias, bias, bias, bias, bias);
+	__m128i vBias = _mm_set1_epi8(bias);	
 
 	__m128i vMaxScore = vZero; /* Trace the highest score of the whole SW matrix. */
 	__m128i vMaxMark = vZero; /* Trace the highest score till the previous column. */	
 	__m128i vTemp;
-	
 	int32_t edge;
-	
 	/* outer loop to process the reference sequence */
 	for (i = 0; i < refLen; i ++) {
 		
@@ -253,7 +238,10 @@ alignment_end* smith_waterman_sse2 (const char* ref,
 	uint8_t *t = (uint8_t*)pvHmax;
 	int32_t column_len = segLen * 16;
 	for (i = 0; i < column_len; ++i, ++t) {
-		if (*t == max) end_read = i / 16 + i % 16 * segLen;
+		if (*t == max) {
+			end_read = i / 16 + i % 16 * segLen;
+			break;
+		}
 	}
 
 	/* Find the most possible 2nd best alignment. */
