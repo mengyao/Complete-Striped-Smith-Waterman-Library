@@ -3,7 +3,7 @@
  *
  *  Created by Mengyao Zhao on 01/10/12.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 01/24/12.
+ *	Last revision by Mengyao Zhao on 01/26/12.
  *
  */
 
@@ -101,8 +101,8 @@ char* banded_sw (const char* ref,
 	j = refLen - 1;
 	e = 0;	// Count the number of M, D or I.
 	f = 'M';
-	set_u(temp1, band_width, i, j);	// alignment ending position
-	while (h_c[temp1] > 2) {
+	while (i > 0) {
+		set_u(temp1, band_width, i, j);	// alignment ending position
 		switch (direction_line[temp1 - 1]) {
 			case 1: 
 				--i;
@@ -142,7 +142,6 @@ char* banded_sw (const char* ref,
 			++p;
 			e = 1;
 		}
-		set_u(temp1, band_width, i, j);	// alignment ending position
 	}
 	if (f == 'M') {
 		char* num = itoa(e + 1);
