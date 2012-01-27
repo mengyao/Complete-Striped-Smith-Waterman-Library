@@ -52,7 +52,7 @@ __m128i* queryProfile_constructor (const char* read,
    wight_match > 0, all other weights < 0.
    The returned positions are 0-based.
  */ 
-alignment_end* sw_sse2_16 (const char* ref,
+alignment_end* sw_sse2_byte (const char* ref,
 									int8_t* nt_table,
 									int32_t refLen,
 								    int32_t readLen, 
@@ -259,7 +259,7 @@ alignment_end* sw_sse2_16 (const char* ref,
 	return bests;
 }
 
-alignment_end* sw_sse2_8 (const char* ref,
+alignment_end* sw_sse2_word (const char* ref,
 									int8_t* nt_table,
 									int32_t refLen,
 								    int32_t readLen, 
@@ -268,11 +268,7 @@ alignment_end* sw_sse2_8 (const char* ref,
 								    uint8_t weight_deletB,  /* will be used as - */
 								    uint8_t weight_deletE,  /* will be used as - */
 								    __m128i* vProfile,
-									uint8_t terminate,	/* the best alignment score: used to terminate 
-														   the matrix calculation when locating the 
-														   alignment beginning point. If this score 
-														   is set to 0, it will not be used */
-	 							    uint8_t bias) {         /* Shift 0 point to a positive value. */
+									uint8_t terminate) { 
 
 #define max8(m, vm) (vm) = _mm_max_epi16((vm), _mm_srli_si128((vm), 8)); \
 					(vm) = _mm_max_epi16((vm), _mm_srli_si128((vm), 4)); \
@@ -318,7 +314,7 @@ alignment_end* sw_sse2_8 (const char* ref,
 	__m128i vDeletE = _mm_set1_epi16(weight_deletE);	
 
 	/* 16 byte bias vector */
-	__m128i vBias = _mm_set1_epi16(bias);	
+//	__m128i vBias = _mm_set1_epi16(bias);	
 
 	__m128i vMaxScore = vZero; /* Trace the highest score of the whole SW matrix. */
 	__m128i vMaxMark = vZero; /* Trace the highest score till the previous column. */	
@@ -346,7 +342,7 @@ alignment_end* sw_sse2_8 (const char* ref,
 		/* inner loop to process the query sequence */
 		for (j = 0; j < segLen; j ++) {
 			vH = _mm_adds_epu16(vH, vP[j]);
-			vH = _mm_subs_epu16(vH, vBias); /* vH will be always > 0 */
+//			vH = _mm_subs_epu16(vH, vBias); /* vH will be always > 0 */
 
 			/* Get max from vH, vE and vF. */
 			vH = _mm_max_epi16(vH, pvE[j]);

@@ -4,8 +4,8 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 01/24/12.
- *	New features: Weight matrix is extracted.
+ *	Last revision by Mengyao Zhao on 01/26/12.
+ *	New features: add sw_sse2_word.
  *
  */
 
@@ -60,7 +60,7 @@ int32_t* ref_nt2num (const char* ref, int32_t refLen);
  *  @return		a pointer to the array of structure alignment_end; the optimal (1st member of the array) and 
  *				sub-optimal (2nd member of the array) alignment score and ending positions
  */
-alignment_end* sw_sse2_16 (const char* ref,
+alignment_end* sw_sse2_byte (const char* ref,
 									int8_t* nt_table,
 									int32_t refLen,
 								    int32_t readLen, 
@@ -74,3 +74,14 @@ alignment_end* sw_sse2_16 (const char* ref,
 														   alignment beginning point. If this score 
 														   is set to 0, it will not be used */
 	 							    uint8_t bias);	
+
+alignment_end* sw_sse2_word (const char* ref,
+									int8_t* nt_table,
+									int32_t refLen,
+								    int32_t readLen, 
+								    uint8_t weight_insertB, /* will be used as - */
+								    uint8_t weight_insertE, /* will be used as - */
+								    uint8_t weight_deletB,  /* will be used as - */
+								    uint8_t weight_deletE,  /* will be used as - */
+								    __m128i* vProfile,
+									uint8_t terminate); 

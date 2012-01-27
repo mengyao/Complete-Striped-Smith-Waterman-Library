@@ -33,18 +33,38 @@ char* seq_reverse(const char* seq, int32_t end)	/* end is 0-based alignment endi
 }									
 
 int main (int argc, char * const argv[]) {
-	// validate argument count
-	if (argc < 2) {
-		fprintf (stderr, "USAGE: %s <ref.fa/fq> <reads.fa/fq>\n", argv[0]);
-		exit (1);
-	}
-
 	clock_t start, end;
 	float cpu_time;
 	gzFile ref_fp;
 	kseq_t *ref_seq;
-	int32_t l, m, k;
+	int32_t l, m, k, match, mismatch, insert_open, insert_extention, delet_open, delet_extention;
 	int8_t mat[25];
+	//char ref[50], read[50];
+
+	// Parse command line.
+	while ((l = getopt(argc, argv, "m:x:i:e:d:f:")) >= 0) {
+		switch (l) {
+		//	case 'd': ref = optarg; break;
+		//	case 'q': read = optarg; break;
+			case 'm': match = atoi(optarg); break;
+			case 'x': mismatch = atoi(optarg); break;
+			case 'i': insert_open = atoi(optarg); break;
+			case 'e': insert_extention = atoi(optarg); break;
+			case 'd': delet_open = atoi(optarg); break;
+			case 'f': delet_extention = atoi(optarg); break;
+		//	case 'f': forward_only = 1; break;
+		}
+	}
+	if (optind + 2 > argc) {
+		fprintf(stderr, "Usage: ssw_test [-m weight match] [-x abs(weight mismatch)] [-i abs(weight insert_open)] [-e abs(weight insert_extention)] [-d abs(weight delet_open)] [-f abs(weight delet_extention)] <target.fa> <query.fa>\n");
+		return 1;
+	}
+	// validate argument count
+/*	if (argc < 2) {
+		fprintf (stderr, "USAGE: %s <ref.fa/fq> <reads.fa/fq>\n", argv[0]);
+		exit (1);
+	}*/
+
 
 	/* This table is used to transform nucleotide letters into numbers. */
 	int8_t nt_table[128] = {
@@ -61,20 +81,25 @@ int main (int argc, char * const argv[]) {
 	// initialize scoring matrix for genome sequences
 	for (l = k = 0; l < 4; ++l) {
 		for (m = 0; m < 4; ++m)
-			mat[k++] = l == m ? 2 : -1;	/* weight_match : -weight_mismatch */
+			mat[k++] = l == m ? match : -mismatch;	/* weight_match : -weight_mismatch */
 	//		mat[k++] = l == m ? 2 : -2;	/* weight_match : -weight_mismatch */
 		mat[k++] = 0; // ambiguous base
 	}
 	for (m = 0; m < 5; ++m) mat[k++] = 0;
 
-	ref_fp = gzopen(argv[1], "r");
+	//fprintf(stderr, "argv[1]: %s\n", argv[1]);
+	ref_fp = gzopen(argv[optind], "r");
+	//ref_fp = gzopen(ref, "r");
 	ref_seq = kseq_init(ref_fp);
 
 	start = clock();
 	while ((l = kseq_read(ref_seq)) >= 0) {
+		gzFile read_fp;
+		kseq_t *read_seq;
 		printf("ref_name: %s\n", ref_seq->name.s);
-		gzFile read_fp = gzopen(argv[2], "r");
-		kseq_t*	read_seq = kseq_init(read_fp);
+		read_fp = gzopen(argv[optind + 1], "r");
+	//	read_fp = gzopen(read, "r");
+		read_seq = kseq_init(read_fp);
 		int32_t refLen = strlen(ref_seq->seq.s);
 		char* ref_reverse = seq_reverse(ref_seq->seq.s, refLen - 1); 
 		fprintf(stderr, "reverse_ref: %s\n", ref_reverse); 										
@@ -86,10 +111,8 @@ int main (int argc, char * const argv[]) {
 			
 			int32_t readLen = strlen(read_seq->seq.s);
 			__m128i* vProfile = queryProfile_constructor(read_seq->seq.s, nt_table, mat, 5, 4);
-			bests = sw_sse2_16(ref_seq->seq.s, nt_table, refLen, readLen, 2, 1, 2, 1, vProfile, 0, 4);
-		//	bests = sw_sse2_16(ref_seq->seq.s, nt_table, refLen, readLen, 3, 1, 3, 1, vProfile, 0, 4);
-		/*	fprintf(stdout, "max score: %d, 2nd score: %d, end_ref: %d, end_read: %d\n", 
-			bests[0].score, bests[1].score, bests[0].ref + 1, bests[0].read + 1);*/
+			bests = sw_sse2_byte(ref_seq->seq.s, nt_table, refLen, readLen, insert_open, insert_extention, delet_open, delet_extention, vProfile, 0, 4);
+		//	bests = sw_sse2_byte(ref_seq->seq.s, nt_table, refLen, readLen, 3, 1, 3, 1, vProfile, 0, 4);
 			free(vProfile);
 			
 			if (bests[0].score != 0) {
@@ -98,7 +121,7 @@ int main (int argc, char * const argv[]) {
 				read_reverse = seq_reverse(read_seq->seq.s, bests[0].read);
 				fprintf(stderr, "reverse_read: %s\n", read_reverse); 										
 				vProfile = queryProfile_constructor(read_reverse, nt_table, mat, 5, 4);
-				bests_reverse = sw_sse2_16(ref_reverse + refLen - bests[0].ref - 1, nt_table, bests[0].ref + 1, bests[0].read + 1, 2, 1, 2, 1, vProfile, bests[0].score, 4);
+				bests_reverse = sw_sse2_byte(ref_reverse + refLen - bests[0].ref - 1, nt_table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extention, delet_open, delet_extention, vProfile, bests[0].score, 4);
 				free(vProfile);
 				free(read_reverse);
 			
@@ -107,7 +130,7 @@ int main (int argc, char * const argv[]) {
 				fprintf(stdout, "max score: %d, 2nd score: %d, end_ref: %d, end_read: %d\nbegin_ref: %d, begin_read: %d\n", 
 				bests[0].score, bests[1].score, bests[0].ref + 1, bests[0].read + 1, begin_ref + 1, begin_read + 1);
 				if (bests[0].score != bests[1].score) {
-					cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, 2, 1, 2, 1, 2, 1, band_width, nt_table, mat, 5);
+					cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, match, mismatch, insert_open, insert_extention, delet_open, delet_extention, band_width, nt_table, mat, 5);
 					if (cigar1 != 0) {
 						fprintf(stdout, "cigar: %s\n", cigar1);
 					} else fprintf(stdout, "No alignment is available.\n");	
