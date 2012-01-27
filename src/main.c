@@ -37,7 +37,7 @@ int main (int argc, char * const argv[]) {
 	float cpu_time;
 	gzFile ref_fp;
 	kseq_t *ref_seq;
-	int32_t l, m, k, match, mismatch, insert_open, insert_extention, delet_open, delet_extention;
+	int32_t l, m, k, match = 2, mismatch = 2, insert_open = 3, insert_extention = 1, delet_open = 3, delet_extention = 1;
 	int8_t mat[25];
 
 	// Parse command line.
@@ -92,13 +92,18 @@ int main (int argc, char * const argv[]) {
 		fprintf(stderr, "reverse_ref: %s\n", ref_reverse); 										
 		while ((m = kseq_read(read_seq)) >= 0) {
 			char *read_reverse;
+			int32_t readLen, word = 0;
 			alignment_end *bests, *bests_reverse;
 			printf("read_name: %s\n", read_seq->name.s);
 			printf("read_seq: %s\n", read_seq->seq.s); 
 			
-			int32_t readLen = strlen(read_seq->seq.s);
+			readLen = strlen(read_seq->seq.s);
 			__m128i* vProfile = queryProfile_constructor(read_seq->seq.s, nt_table, mat, 5, 4);
 			bests = sw_sse2_byte(ref_seq->seq.s, nt_table, refLen, readLen, insert_open, insert_extention, delet_open, delet_extention, vProfile, 0, 4);
+			if (bests[0].score == 255) {
+				bests = sw_sse2_word(ref_seq->seq.s, nt_table, refLen, readLen, insert_open, insert_extention, delet_open, delet_extention, vProfile, 0);
+				word = 1;
+			}
 			free(vProfile);
 			
 			if (bests[0].score != 0) {
@@ -107,7 +112,8 @@ int main (int argc, char * const argv[]) {
 				read_reverse = seq_reverse(read_seq->seq.s, bests[0].read);
 				fprintf(stderr, "reverse_read: %s\n", read_reverse); 										
 				vProfile = queryProfile_constructor(read_reverse, nt_table, mat, 5, 4);
-				bests_reverse = sw_sse2_byte(ref_reverse + refLen - bests[0].ref - 1, nt_table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extention, delet_open, delet_extention, vProfile, bests[0].score, 4);
+				if (word == 0) bests_reverse = sw_sse2_byte(ref_reverse + refLen - bests[0].ref - 1, nt_table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extention, delet_open, delet_extention, vProfile, bests[0].score, 4);
+				else bests_reverse = sw_sse2_word(ref_reverse + refLen - bests[0].ref - 1, nt_table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extention, delet_open, delet_extention, vProfile, bests[0].score);
 				free(vProfile);
 				free(read_reverse);
 			

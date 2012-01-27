@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 01/26/12.
+ *	Last revision by Mengyao Zhao on 01/27/12.
  *	New features: Weight matrix is extracted. 
  *
  */
@@ -209,6 +209,7 @@ alignment_end* sw_sse2_byte (const char* ref,
 			
 			if (temp > max) {
 				max = temp;
+				if (max + bias >= 255) break;	//overflow
 				end_ref = i;
 			
 				/* Store the column with the highest alignment score in order to trace the alignment ending position on read. */
@@ -234,7 +235,7 @@ alignment_end* sw_sse2_byte (const char* ref,
 
 	/* Find the most possible 2nd best alignment. */
 	alignment_end* bests = (alignment_end*) calloc(2, sizeof(alignment_end));
-	bests[0].score = max;
+	bests[0].score = max + bias >= 255 ? 255 : max;
 	bests[0].ref = end_ref;
 	bests[0].read = end_read;
 	
