@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 01/30/12.
+ *	Last revision by Mengyao Zhao on 02/01/12.
  *	New features: Weight matrix is extracted. 
  *
  */
@@ -284,10 +284,6 @@ __m128i* qP_word (const char* read,
 			j = i; 
 			for (segNum = 0; segNum < 8 ; segNum ++) {
 				*t++ = j>= readLen ? 0 : mat[nt * n + nt_table[(int)read[j]]];
-				
-			//	int8_t temp = mat[nt * n + nt_table[(int)read[j]]];
-			//	fprintf(stderr, "temp: %d\n", temp);	
-			
 				j += segLen;
 			}
 		}
@@ -332,7 +328,6 @@ alignment_end* sw_sse2_word (const char* ref,
 	__m128i* pvHmax = (__m128i*) calloc(segLen, sizeof(__m128i));
 
 	int32_t i, j, k;
-//	int32_t j;
 	for (i = 0; i < segLen; i ++) {
 		pvHStore[i] = vZero;
 		pvE[i] = vZero;
@@ -347,13 +342,10 @@ alignment_end* sw_sse2_word (const char* ref,
 	/* 16 byte deletion begin vector */
 	__m128i vDeletB = _mm_set1_epi16(weight_deletB);
 
-//	fprintf (stderr, "weight_deletB: %d", weight_deletB);	
-
 	/* 16 byte deletion extention vector */
 	__m128i vDeletE = _mm_set1_epi16(weight_deletE);	
 
 	/* 16 byte bias vector */
-//	__m128i vBias = _mm_set1_epi16(bias);	
 
 	__m128i vMaxScore = vZero; /* Trace the highest score of the whole SW matrix. */
 	__m128i vMaxMark = vZero; /* Trace the highest score till the previous column. */	
@@ -362,7 +354,6 @@ alignment_end* sw_sse2_word (const char* ref,
 	/* outer loop to process the reference sequence */
 	for (i = 0; i < refLen; i ++) {
 
-	//fprintf (stderr, "outer loop\n");		
 		int32_t cmp;
 		__m128i vF = vZero; /* Initialize F value to 0. 
 							   Any errors to vH values will be corrected in the Lazy_F loop. 
@@ -381,23 +372,7 @@ alignment_end* sw_sse2_word (const char* ref,
 		
 		/* inner loop to process the query sequence */
 		for (j = 0; j < segLen; j ++) {
-
-	/*		int32_t t;
-			for (t = 0; t < 8; ++t) {
-				int16_t ph = _mm_extract_epi16(vH, t);
-				int16_t pp = _mm_extract_epi16(vP[j], t);
-				fprintf(stderr, "ph: %d\tpp: %d\n", ph, pp);	
-			}
-	*/		
-			
 			vH = _mm_adds_epi16(vH, vP[j]);
-
-	/*		for (t = 0; t < 8; ++t) {
-				int16_t ph = _mm_extract_epi16(vH, t);
-				//int16_t pp = _mm_extract_epi16(vP[j], t);
-				fprintf(stderr, "sub: %d\n", ph);	
-			}*/
-//			vH = _mm_subs_epu16(vH, vBias); /* vH will be always > 0 */
 
 			/* Get max from vH, vE and vF. */
 			vH = _mm_max_epi16(vH, pvE[j]);
@@ -409,33 +384,13 @@ alignment_end* sw_sse2_word (const char* ref,
 			
 			/* Save vH values. */
 			pvHStore[j] = vH;
-/*
-			for (t = 0; t < 8; ++t) {
-				int16_t ph = _mm_extract_epi16(pvHStore[j], t);
-				fprintf(stderr, "H_update: %d\n", ph);	
-			}
-*/
-	/*		uint16_t temp_in; 
-			max8(temp_in, pvHStore[j]); 
-			fprintf(stderr, "temp_in: %d\ti: %d\tj: %d\n", temp_in, i, j);
-*/
+
 			/* Update vE value. */
 			vH = _mm_subs_epu16(vH, vInserB); /* saturation arithmetic, result >= 0 */
-			//int32_t t;
-/*			for (t = 0; t < 8; ++t) {
-				int16_t ph = _mm_extract_epi16(vH, t);
-				fprintf(stderr, "open: %d\n", ph);	
-			}
-*/
 
 			pvE[j] = _mm_subs_epu16(pvE[j], vInserE);
 			pvE[j] = _mm_max_epi16(pvE[j], vH);
 
-/*			for (t = 0; t < 8; ++t) {
-				int16_t ph = _mm_extract_epi16(pvE[j], t);
-				fprintf(stderr, "pvE[j]: %d\n", ph);	
-			}
-*/			
 			/* Update vF value. */
 	//		vH = _mm_subs_epu16(vH, vDeletB);
 			vF = _mm_subs_epu16(vF, vDeletE);
@@ -445,57 +400,8 @@ alignment_end* sw_sse2_word (const char* ref,
 			vH = pvHLoad[j];
 		}
 
-//		fprintf(stderr, "before lazyF loop\n");	
 		/* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3
-		   The computed vF value is for the given column. 
-	       Since we are at the end, we need to shift the vF value over to the next column.
 		 */
-//		vF = _mm_slli_si128 (vF, 2);
-//		
-//		/* Correct the vH values until there are no element in vF that could influence the vH values. */
-//		j = 0;
-//		vTemp = _mm_subs_epu16(pvHStore[j], vDeletB);
-//		vTemp = _mm_subs_epu16(vF, vTemp);
-//		vTemp = _mm_cmpeq_epi16(vTemp, vZero); /* result >= 0 */
-////		vTemp = _mm_cmpgt_epi16(vF, vTemp);
-//		cmp = _mm_movemask_epi8(vTemp);
-//		
-//		while (cmp != 0xffff) {
-//		//while (! cmp) {
-//	//		pvHStore[j] = _mm_subs_epu16(pvHStore[j], vDeletB);
-//			pvHStore[j] = _mm_max_epi16(pvHStore[j], vF);
-//			
-//			/* Update highest score incase the new vH value would change it. (New line I added!) */
-//			vMaxScore = _mm_max_epi16(vMaxScore, pvHStore[j]);
-//			vMaxColumn = _mm_max_epi16(vMaxColumn, pvHStore[j]);
-//		
-//	/*		uint16_t temp1; 
-//			max8(temp1, pvHStore[j]); 
-//			fprintf(stderr, "temp1: %d\ti: %d\tj: %d\n", temp1, i, j);
-//	*/
-//			int32_t t;
-//			for (t = 0; t < 8; ++t) {
-//				int16_t ph = _mm_extract_epi16(pvHStore[j], t);
-//			//	int16_t pp = _mm_extract_epi16(vP[j], t);
-//				fprintf(stderr, "phf: %d\n", ph);	
-//			}
-//
-//			/* Update vF value. */
-//			vF = _mm_subs_epu16(vF, vDeletE);
-//			
-//			j ++;
-//			if (j >= segLen) {
-//				j = 0;
-//				vF = _mm_slli_si128 (vF, 2);
-//			}
-//			vTemp = _mm_subs_epu16(pvHStore[j], vDeletB);
-////			vTemp = _mm_cmpgt_epi16(vF, vTemp);
-//			vTemp = _mm_subs_epu16(vF, vTemp);
-//			vTemp = _mm_cmpeq_epi16(vTemp, vZero); /* result >= 0 */
-//			cmp = _mm_movemask_epi8(vTemp);
-//		}		
-		/* end of Lazy-F loop */
-
 		for (k = 0; k < 16; ++k) {
 			vF = _mm_slli_si128 (vF, 2);
 			for (j = 0; j < segLen; ++j) {
@@ -506,12 +412,10 @@ alignment_end* sw_sse2_word (const char* ref,
 			}
 		}
 
-//		fprintf(stderr, "after lazyF loop\n");	
 end:		
 		vTemp = _mm_cmpeq_epi16(vMaxMark, vMaxScore);
 		cmp = _mm_movemask_epi8(vTemp);
 		if (cmp != 0xffff) {
-	//	if (! cmp) {
 			uint16_t temp; 
 			vMaxMark = vMaxScore;
 			max8(temp, vMaxScore);
@@ -520,8 +424,6 @@ end:
 			if (temp > max) {
 				max = temp;
 				end_ref = i;
-//		fprintf (stderr, "max: %d\tend_ref: %d\n", max, end_ref);	
-				/* Store the column with the highest alignment score in order to trace the alignment ending position on read. */
 				for (j = 0; j < segLen; ++j) // keep the H1 vector
 					pvHmax[j] = pvHStore[j];
 			}
@@ -538,7 +440,6 @@ end:
 	for (i = 0; i < column_len; ++i, ++t) {
 		if (*t == max) {
 			end_read = i / 8 + i % 8 * segLen;
-//			fprintf (stderr, "end_read: %d\n", end_read);
 			break;
 		}
 	}
