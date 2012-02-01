@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 01/27/12.
+ *  Last revision by Mengyao Zhao on 01/29/12.
  *	New features: make weight as options 
  */
 
@@ -94,33 +94,44 @@ int main (int argc, char * const argv[]) {
 			char *read_reverse;
 			int32_t readLen, word = 0;
 			alignment_end *bests, *bests_reverse;
+			__m128i *vP;
 			printf("read_name: %s\n", read_seq->name.s);
 			printf("read_seq: %s\n", read_seq->seq.s); 
 			
 			readLen = strlen(read_seq->seq.s);
-			__m128i* vProfile = queryProfile_constructor(read_seq->seq.s, nt_table, mat, 5, 4);
-			bests = sw_sse2_byte(ref_seq->seq.s, nt_table, refLen, readLen, insert_open, insert_extention, delet_open, delet_extention, vProfile, 0, 4);
+			vP = qP_byte(read_seq->seq.s, nt_table, mat, 5, 4);
+
+		//	fprintf(stderr, "byte\n");
+			bests = sw_sse2_byte(ref_seq->seq.s, nt_table, refLen, readLen, insert_open, insert_extention, delet_open, delet_extention, vP, 0, 4);
 			if (bests[0].score == 255) {
-				bests = sw_sse2_word(ref_seq->seq.s, nt_table, refLen, readLen, insert_open, insert_extention, delet_open, delet_extention, vProfile, 0);
+
+				fprintf(stderr, "word\n");
+				vP = qP_word(read_seq->seq.s, nt_table, mat, 5);
+				bests = sw_sse2_word(ref_seq->seq.s, nt_table, refLen, readLen, insert_open, insert_extention, delet_open, delet_extention, vP, 0);
 				word = 1;
 			}
-			free(vProfile);
+			free(vP);
 			
 			if (bests[0].score != 0) {
 				char* cigar1;
 				int32_t begin_ref, begin_read, band_width;
 				read_reverse = seq_reverse(read_seq->seq.s, bests[0].read);
 				fprintf(stderr, "reverse_read: %s\n", read_reverse); 										
-				vProfile = queryProfile_constructor(read_reverse, nt_table, mat, 5, 4);
-				if (word == 0) bests_reverse = sw_sse2_byte(ref_reverse + refLen - bests[0].ref - 1, nt_table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extention, delet_open, delet_extention, vProfile, bests[0].score, 4);
-				else bests_reverse = sw_sse2_word(ref_reverse + refLen - bests[0].ref - 1, nt_table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extention, delet_open, delet_extention, vProfile, bests[0].score);
-				free(vProfile);
+				if (word == 0) {
+					vP = qP_byte(read_reverse, nt_table, mat, 5, 4);
+					bests_reverse = sw_sse2_byte(ref_reverse + refLen - bests[0].ref - 1, nt_table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extention, delet_open, delet_extention, vP, bests[0].score, 4);
+				} else {
+					vP = qP_word(read_reverse, nt_table, mat, 5);
+					bests_reverse = sw_sse2_word(ref_reverse + refLen - bests[0].ref - 1, nt_table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extention, delet_open, delet_extention, vP, bests[0].score);
+				}
+				free(vP);
 				free(read_reverse);
 			
-				begin_ref = bests[0].ref - bests_reverse[0].ref, begin_read = bests[0].read - bests_reverse[0].read, band_width = abs(bests_reverse[0].ref - bests_reverse[0].read);
+				begin_ref = bests[0].ref - bests_reverse[0].ref; 
+				begin_read = bests[0].read - bests_reverse[0].read; 
+				band_width = abs(bests_reverse[0].ref - bests_reverse[0].read);
 			
-				fprintf(stdout, "max score: %d, 2nd score: %d, end_ref: %d, end_read: %d\nbegin_ref: %d, begin_read: %d\n", 
-				bests[0].score, bests[1].score, bests[0].ref + 1, bests[0].read + 1, begin_ref + 1, begin_read + 1);
+				fprintf(stdout, "max score: %d, 2nd score: %d, end_ref: %d, end_read: %d\nbegin_ref: %d, begin_read: %d\n", bests[0].score, bests[1].score, bests[0].ref + 1, bests[0].read + 1, begin_ref + 1, begin_read + 1);
 				if (bests[0].score != bests[1].score) {
 					cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, match, mismatch, insert_open, insert_extention, delet_open, delet_extention, band_width, nt_table, mat, 5);
 					if (cigar1 != 0) {

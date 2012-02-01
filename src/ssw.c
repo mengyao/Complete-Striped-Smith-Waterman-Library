@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 01/27/12.
+ *	Last revision by Mengyao Zhao on 01/30/12.
  *	New features: Weight matrix is extracted. 
  *
  */
@@ -14,7 +14,7 @@
 #include "ssw.h"
 
 /* Generate query profile rearrange query sequence & calculate the weight of match/mismatch. */
-__m128i* queryProfile_constructor (const char* read,
+__m128i* qP_byte (const char* read,
 								   int8_t* nt_table,
 								   int8_t* mat,
 								   int32_t n,	/* the edge length of the squre matrix mat */
@@ -26,7 +26,7 @@ __m128i* queryProfile_constructor (const char* read,
 								     Each piece is 8 bit. Split the read into 16 segments. 
 								     Calculat 16 segments in parallel.
 								   */
-	__m128i* vProfile = (__m128i*)calloc(5 * segLen, sizeof(__m128i));
+	__m128i* vProfile = (__m128i*)calloc(n * segLen, sizeof(__m128i));
 	int8_t* t = (int8_t*)vProfile;
 	int32_t nt, i, j;
 	int32_t segNum;
@@ -121,6 +121,8 @@ alignment_end* sw_sse2_byte (const char* ref,
 	/* outer loop to process the reference sequence */
 	for (i = 0; i < refLen; i ++) {
 		
+//		fprintf(stderr, "in outer loop\n");
+		
 		int32_t cmp;
 		__m128i vF = vZero; /* Initialize F value to 0. 
 							   Any errors to vH values will be corrected in the Lazy_F loop. 
@@ -139,6 +141,14 @@ alignment_end* sw_sse2_byte (const char* ref,
 		
 		/* inner loop to process the query sequence */
 		for (j = 0; j < segLen; j ++) {
+
+/*			int32_t t;
+			for (t = 0; t < 8; ++t) {
+				int16_t ph = _mm_extract_epi16(vH, t);
+				int16_t pp = _mm_extract_epi16(vP[j], t);
+				fprintf(stderr, "ph: %d\tpp: %d\n", ph, pp);	
+			}*/
+
 			vH = _mm_adds_epu8(vH, vP[j]);
 			vH = _mm_subs_epu8(vH, vBias); /* vH will be always > 0 */
 
@@ -165,6 +175,8 @@ alignment_end* sw_sse2_byte (const char* ref,
 			/* Load the next vH. */
 			vH = pvHLoad[j];
 		}
+
+//		fprintf(stderr, "before lazyF\n");
 	
 		/* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3
 		   The computed vF value is for the given column. 
@@ -175,10 +187,14 @@ alignment_end* sw_sse2_byte (const char* ref,
 		/* Correct the vH values until there are no element in vF that could influence the vH values. */
 		j = 0;
 		vTemp = _mm_subs_epu8(pvHStore[j], vDeletB);
-		vTemp = _mm_cmpgt_epi8 (vF, vTemp);
+	//	vTemp = _mm_cmpgt_epi8 (vF, vTemp);
+		vTemp = _mm_subs_epu8(vF, vTemp);
+		vTemp = _mm_cmpeq_epi8 (vTemp, vZero);
 		cmp = _mm_movemask_epi8(vTemp);
-		
-		while (cmp) {
+	
+//		fprintf (stderr, "cmp: %d\n", cmp);	
+//		while (cmp) {
+		while (cmp != 0xffff) {
 			pvHStore[j] = _mm_max_epu8(pvHStore[j], vF);
 			
 			/* Update highest score incase the new vH value would change it. (New line I added!) */
@@ -194,11 +210,15 @@ alignment_end* sw_sse2_byte (const char* ref,
 				vF = _mm_slli_si128 (vF, 1);
 			}
 			vTemp = _mm_subs_epu8(pvHStore[j], vDeletB);
-			vTemp = _mm_cmpgt_epi8(vF, vTemp);
+	//		vTemp = _mm_cmpgt_epi8(vF, vTemp);
+			vTemp = _mm_subs_epu8(vF, vTemp);
+			vTemp = _mm_cmpeq_epi8 (vTemp, vZero);
 			cmp = _mm_movemask_epi8(vTemp);
+//			fprintf (stderr, "cmp: %d\n", cmp);	
 		}		
 		/* end of Lazy-F loop */
-		
+	
+//		fprintf(stderr, "after lazyF\n");	
 		vTemp = _mm_cmpeq_epi8(vMaxMark, vMaxScore);
 		cmp = _mm_movemask_epi8(vTemp);
 		if (cmp != 0xffff) {
@@ -209,7 +229,11 @@ alignment_end* sw_sse2_byte (const char* ref,
 			
 			if (temp > max) {
 				max = temp;
-				if (max + bias >= 255) break;	//overflow
+//				fprintf(stderr, "max: %d\n", max);
+				if (max + bias >= 255) {
+//					fprintf(stderr, "overflow\n");
+					break;	//overflow
+				}
 				end_ref = i;
 			
 				/* Store the column with the highest alignment score in order to trace the alignment ending position on read. */
@@ -260,6 +284,37 @@ alignment_end* sw_sse2_byte (const char* ref,
 	return bests;
 }
 
+__m128i* qP_word (const char* read,
+								   int8_t* nt_table,
+								   int8_t* mat,
+								   int32_t n) { 
+					
+	int32_t readLen = strlen(read);
+	int32_t
+	segLen = (readLen + 7) / 8; 
+	__m128i* vProfile = (__m128i*)calloc(n * segLen, sizeof(__m128i));
+	int16_t* t = (int16_t*)vProfile;
+	int32_t nt, i, j;
+	int32_t segNum;
+	
+	/* Generate query profile rearrange query sequence & calculate the weight of match/mismatch */
+	for (nt = 0; nt < n; nt ++) {
+		for (i = 0; i < segLen; i ++) {
+			j = i; 
+			for (segNum = 0; segNum < 8 ; segNum ++) {
+				*t++ = j>= readLen ? 0 : mat[nt * n + nt_table[(int)read[j]]];
+				
+				int8_t temp = mat[nt * n + nt_table[(int)read[j]]];
+				fprintf(stderr, "temp: %d\n", temp);	
+			
+				j += segLen;
+			}
+		}
+	}
+
+	return vProfile;
+}
+
 alignment_end* sw_sse2_word (const char* ref,
 									int8_t* nt_table,
 									int32_t refLen,
@@ -269,20 +324,20 @@ alignment_end* sw_sse2_word (const char* ref,
 								    uint8_t weight_deletB,  /* will be used as - */
 								    uint8_t weight_deletE,  /* will be used as - */
 								    __m128i* vProfile,
-									uint8_t terminate) { 
+									uint16_t terminate) { 
 
 #define max8(m, vm) (vm) = _mm_max_epi16((vm), _mm_srli_si128((vm), 8)); \
 					(vm) = _mm_max_epi16((vm), _mm_srli_si128((vm), 4)); \
 					(vm) = _mm_max_epi16((vm), _mm_srli_si128((vm), 2)); \
 					(m) = _mm_extract_epi16((vm), 0)
 	
-	uint8_t max = 0;		                     /* the max alignment score */
+	uint16_t max = 0;		                     /* the max alignment score */
 	int32_t end_read = 0;
 	int32_t end_ref = 0; /* 1_based best alignment ending point; Initialized as isn't aligned - 0. */
-	int32_t segLen = (readLen + 15) / 16; /* number of segment */
+	int32_t segLen = (readLen + 7) / 8; /* number of segment */
 	
 	/* array to record the largest score of each reference position */
-	uint8_t* maxColumn = (uint8_t*) calloc(refLen, 1); 
+	uint16_t* maxColumn = (uint16_t*) calloc(refLen, 1); 
 	
 	/* array to record the alignment read ending position of the largest score of each reference position */
 	int32_t* end_read_column = (int32_t*) calloc(refLen, sizeof(int32_t));
@@ -295,8 +350,8 @@ alignment_end* sw_sse2_word (const char* ref,
 	__m128i* pvE = (__m128i*) calloc(segLen, sizeof(__m128i));
 	__m128i* pvHmax = (__m128i*) calloc(segLen, sizeof(__m128i));
 
-	int32_t i;
-	int32_t j;
+	int32_t i, j, k;
+//	int32_t j;
 	for (i = 0; i < segLen; i ++) {
 		pvHStore[i] = vZero;
 		pvE[i] = vZero;
@@ -309,7 +364,9 @@ alignment_end* sw_sse2_word (const char* ref,
 	__m128i vInserE = _mm_set1_epi16(weight_insertE);	
 	
 	/* 16 byte deletion begin vector */
-	__m128i vDeletB = _mm_set1_epi16(weight_deletB);	
+	__m128i vDeletB = _mm_set1_epi16(weight_deletB);
+
+	fprintf (stderr, "weight_deletB: %d", weight_deletB);	
 
 	/* 16 byte deletion extention vector */
 	__m128i vDeletE = _mm_set1_epi16(weight_deletE);	
@@ -323,7 +380,8 @@ alignment_end* sw_sse2_word (const char* ref,
 	int32_t edge;
 	/* outer loop to process the reference sequence */
 	for (i = 0; i < refLen; i ++) {
-		
+
+	fprintf (stderr, "outer loop\n");		
 		int32_t cmp;
 		__m128i vF = vZero; /* Initialize F value to 0. 
 							   Any errors to vH values will be corrected in the Lazy_F loop. 
@@ -342,7 +400,22 @@ alignment_end* sw_sse2_word (const char* ref,
 		
 		/* inner loop to process the query sequence */
 		for (j = 0; j < segLen; j ++) {
-			vH = _mm_adds_epu16(vH, vP[j]);
+
+			int32_t t;
+			for (t = 0; t < 8; ++t) {
+				int16_t ph = _mm_extract_epi16(vH, t);
+				int16_t pp = _mm_extract_epi16(vP[j], t);
+				fprintf(stderr, "ph: %d\tpp: %d\n", ph, pp);	
+			}
+			
+			
+			vH = _mm_adds_epi16(vH, vP[j]);
+
+			for (t = 0; t < 8; ++t) {
+				int16_t ph = _mm_extract_epi16(vH, t);
+				//int16_t pp = _mm_extract_epi16(vP[j], t);
+				fprintf(stderr, "sub: %d\n", ph);	
+			}
 //			vH = _mm_subs_epu16(vH, vBias); /* vH will be always > 0 */
 
 			/* Get max from vH, vE and vF. */
@@ -356,62 +429,109 @@ alignment_end* sw_sse2_word (const char* ref,
 			/* Save vH values. */
 			pvHStore[j] = vH;
 
+			for (t = 0; t < 8; ++t) {
+				int16_t ph = _mm_extract_epi16(pvHStore[j], t);
+				fprintf(stderr, "H_update: %d\n", ph);	
+			}
+
+	/*		uint16_t temp_in; 
+			max8(temp_in, pvHStore[j]); 
+			fprintf(stderr, "temp_in: %d\ti: %d\tj: %d\n", temp_in, i, j);
+*/
 			/* Update vE value. */
 			vH = _mm_subs_epu16(vH, vInserB); /* saturation arithmetic, result >= 0 */
+			//int32_t t;
+			for (t = 0; t < 8; ++t) {
+				int16_t ph = _mm_extract_epi16(vH, t);
+				fprintf(stderr, "open: %d\n", ph);	
+			}
+
+
 			pvE[j] = _mm_subs_epu16(pvE[j], vInserE);
 			pvE[j] = _mm_max_epi16(pvE[j], vH);
+
+			for (t = 0; t < 8; ++t) {
+				int16_t ph = _mm_extract_epi16(pvE[j], t);
+				fprintf(stderr, "pvE[j]: %d\n", ph);	
+			}
 			
 			/* Update vF value. */
+	//		vH = _mm_subs_epu16(vH, vDeletB);
 			vF = _mm_subs_epu16(vF, vDeletE);
 			vF = _mm_max_epi16(vF, vH);
 			
 			/* Load the next vH. */
 			vH = pvHLoad[j];
 		}
-	
+
+		fprintf(stderr, "before lazyF loop\n");	
 		/* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3
 		   The computed vF value is for the given column. 
 	       Since we are at the end, we need to shift the vF value over to the next column.
 		 */
-		vF = _mm_slli_si128 (vF, 2);
-		
-		/* Correct the vH values until there are no element in vF that could influence the vH values. */
-		j = 0;
-		vTemp = _mm_subs_epu16(pvHStore[j], vDeletB);
-		//vTemp = _mm_subs_epu16(vF, vTemp);
-		//vTemp = _mm_cmpeq_epi16(vTemp, vZero); /* result >= 0 */
-		vTemp = _mm_cmpgt_epi16(vF, vTemp);
-		cmp = _mm_movemask_epi8(vTemp);
-		
-	//	while (cmp != 0xffff) {
-		while (! cmp) {
-			pvHStore[j] = _mm_max_epi16(pvHStore[j], vF);
-			
-			/* Update highest score incase the new vH value would change it. (New line I added!) */
-			vMaxScore = _mm_max_epi16(vMaxScore, pvHStore[j]);
-			vMaxColumn = _mm_max_epi16(vMaxColumn, pvHStore[j]);
-			
-			/* Update vF value. */
-			vF = _mm_subs_epu16(vF, vDeletE);
-			
-			j ++;
-			if (j >= segLen) {
-				j = 0;
-				vF = _mm_slli_si128 (vF, 1);
-			}
-			vTemp = _mm_subs_epu16(pvHStore[j], vDeletB);
-			vTemp = _mm_cmpgt_epi16(vF, vTemp);
-		//	vTemp = _mm_subs_epu16(vF, vTemp);
-		//	vTemp = _mm_cmpeq_epi16(vTemp, vZero); /* result >= 0 */
-			cmp = _mm_movemask_epi8(vTemp);
-		}		
+//		vF = _mm_slli_si128 (vF, 2);
+//		
+//		/* Correct the vH values until there are no element in vF that could influence the vH values. */
+//		j = 0;
+//		vTemp = _mm_subs_epu16(pvHStore[j], vDeletB);
+//		vTemp = _mm_subs_epu16(vF, vTemp);
+//		vTemp = _mm_cmpeq_epi16(vTemp, vZero); /* result >= 0 */
+////		vTemp = _mm_cmpgt_epi16(vF, vTemp);
+//		cmp = _mm_movemask_epi8(vTemp);
+//		
+//		while (cmp != 0xffff) {
+//		//while (! cmp) {
+//	//		pvHStore[j] = _mm_subs_epu16(pvHStore[j], vDeletB);
+//			pvHStore[j] = _mm_max_epi16(pvHStore[j], vF);
+//			
+//			/* Update highest score incase the new vH value would change it. (New line I added!) */
+//			vMaxScore = _mm_max_epi16(vMaxScore, pvHStore[j]);
+//			vMaxColumn = _mm_max_epi16(vMaxColumn, pvHStore[j]);
+//		
+//	/*		uint16_t temp1; 
+//			max8(temp1, pvHStore[j]); 
+//			fprintf(stderr, "temp1: %d\ti: %d\tj: %d\n", temp1, i, j);
+//	*/
+//			int32_t t;
+//			for (t = 0; t < 8; ++t) {
+//				int16_t ph = _mm_extract_epi16(pvHStore[j], t);
+//			//	int16_t pp = _mm_extract_epi16(vP[j], t);
+//				fprintf(stderr, "phf: %d\n", ph);	
+//			}
+//
+//			/* Update vF value. */
+//			vF = _mm_subs_epu16(vF, vDeletE);
+//			
+//			j ++;
+//			if (j >= segLen) {
+//				j = 0;
+//				vF = _mm_slli_si128 (vF, 2);
+//			}
+//			vTemp = _mm_subs_epu16(pvHStore[j], vDeletB);
+////			vTemp = _mm_cmpgt_epi16(vF, vTemp);
+//			vTemp = _mm_subs_epu16(vF, vTemp);
+//			vTemp = _mm_cmpeq_epi16(vTemp, vZero); /* result >= 0 */
+//			cmp = _mm_movemask_epi8(vTemp);
+//		}		
 		/* end of Lazy-F loop */
-		
-		vTemp = _mm_cmpeq_epi8(vMaxMark, vMaxScore);
+
+		for (k = 0; k < 16; ++k) {
+			vF = _mm_slli_si128 (vF, 2);
+			for (j = 0; j < segLen; ++j) {
+				pvHStore[j] = _mm_max_epi16(pvHStore[j], vF);
+				vH = _mm_subs_epu16(pvHStore[j], vDeletB);
+				vF = _mm_subs_epu16(vF, vDeletE);
+				if (! _mm_movemask_epi8(_mm_cmpgt_epi16(vF, vH))) goto end;
+			}
+		}
+
+		fprintf(stderr, "after lazyF loop\n");	
+end:		
+		vTemp = _mm_cmpeq_epi16(vMaxMark, vMaxScore);
 		cmp = _mm_movemask_epi8(vTemp);
 		if (cmp != 0xffff) {
 	//	if (! cmp) {
-			uint8_t temp; 
+			uint16_t temp; 
 			vMaxMark = vMaxScore;
 			max8(temp, vMaxScore);
 			vMaxScore = vMaxMark;
@@ -419,7 +539,7 @@ alignment_end* sw_sse2_word (const char* ref,
 			if (temp > max) {
 				max = temp;
 				end_ref = i;
-			
+		fprintf (stderr, "max: %d\tend_ref: %d\n", max, end_ref);	
 				/* Store the column with the highest alignment score in order to trace the alignment ending position on read. */
 				for (j = 0; j < segLen; ++j) // keep the H1 vector
 					pvHmax[j] = pvHStore[j];
@@ -427,7 +547,7 @@ alignment_end* sw_sse2_word (const char* ref,
 		}
 		
 		/* Record the max score of current column. */	
-		max16(maxColumn[i], vMaxColumn);
+		max8(maxColumn[i], vMaxColumn);
 		if (terminate > 0 && maxColumn[i] == terminate) break;
 	} 	
 
@@ -437,6 +557,7 @@ alignment_end* sw_sse2_word (const char* ref,
 	for (i = 0; i < column_len; ++i, ++t) {
 		if (*t == max) {
 			end_read = i / 8 + i % 8 * segLen;
+			fprintf (stderr, "end_read: %d\n", end_read);
 			break;
 		}
 	}

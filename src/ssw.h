@@ -19,7 +19,7 @@
  *	@field	ref	1-based position in the reference
  */
 typedef struct {
-	uint8_t score;
+	uint16_t score;
 	int32_t ref;	/* 0-based position */
 	int32_t read;	/* alignment ending position on read, 0-based */
 } alignment_end;
@@ -31,7 +31,7 @@ typedef struct {
  *	@parameter	bias	a number used to expend the max capacity of the values in the scoreing matrix; suggest to set to 4
  *  @return		pointer to the query profile 
  */
-__m128i* queryProfile_constructor (const char* read,
+__m128i* qP_byte (const char* read, //FIXME: need a new one
 								   int8_t* nt_table,
 								   int8_t* mat,
 								   int32_t n,	/* the edge length of the squre matrix mat */
@@ -75,6 +75,11 @@ alignment_end* sw_sse2_byte (const char* ref,
 														   is set to 0, it will not be used */
 	 							    uint8_t bias);	
 
+__m128i* qP_word (const char* read,
+								   int8_t* nt_table,
+								   int8_t* mat,
+								   int32_t n);
+ 
 alignment_end* sw_sse2_word (const char* ref,
 									int8_t* nt_table,
 									int32_t refLen,
@@ -84,4 +89,4 @@ alignment_end* sw_sse2_word (const char* ref,
 								    uint8_t weight_deletB,  /* will be used as - */
 								    uint8_t weight_deletE,  /* will be used as - */
 								    __m128i* vProfile,
-									uint8_t terminate); 
+									uint16_t terminate); 
