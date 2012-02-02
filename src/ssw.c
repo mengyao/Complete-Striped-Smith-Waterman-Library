@@ -92,8 +92,7 @@ alignment_end* sw_sse2_byte (const char* ref,
 	__m128i* pvE = (__m128i*) calloc(segLen, sizeof(__m128i));
 	__m128i* pvHmax = (__m128i*) calloc(segLen, sizeof(__m128i));
 
-	int32_t i;
-	int32_t j;
+	int32_t i, j, k;
 	for (i = 0; i < segLen; i ++) {
 		pvHStore[i] = vZero;
 		pvE[i] = vZero;
@@ -167,41 +166,19 @@ alignment_end* sw_sse2_byte (const char* ref,
 			vH = pvHLoad[j];
 		}
 
-		/* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3
-		   The computed vF value is for the given column. 
-	       Since we are at the end, we need to shift the vF value over to the next column.
-		 */
-		vF = _mm_slli_si128 (vF, 1);
-		
-		/* Correct the vH values until there are no element in vF that could influence the vH values. */
-		j = 0;
-		vTemp = _mm_subs_epu8(pvHStore[j], vDeletB);
-		vTemp = _mm_subs_epu8(vF, vTemp);
-		vTemp = _mm_cmpeq_epi8 (vTemp, vZero);
-		cmp = _mm_movemask_epi8(vTemp);
-	
-		while (cmp != 0xffff) {
-			pvHStore[j] = _mm_max_epu8(pvHStore[j], vF);
-			
-			/* Update highest score incase the new vH value would change it. (New line I added!) */
-			vMaxScore = _mm_max_epu8(vMaxScore, pvHStore[j]);
-			vMaxColumn = _mm_max_epu8(vMaxColumn, pvHStore[j]);
-			
-			/* Update vF value. */
-			vF = _mm_subs_epu8(vF, vDeletE);
-			
-			j ++;
-			if (j >= segLen) {
-				j = 0;
-				vF = _mm_slli_si128 (vF, 1);
+		/* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3 */
+		for (k = 0; k < 16; ++k) {
+			vF = _mm_slli_si128 (vF, 1);
+			for (j = 0; j < segLen; ++j) {
+				pvHStore[j] = _mm_max_epu8(pvHStore[j], vF);
+				vH = _mm_subs_epu8(pvHStore[j], vDeletB);
+				vF = _mm_subs_epu8(vF, vDeletE);
+				cmp = _mm_movemask_epi8(_mm_cmpeq_epi8(_mm_subs_epu8(vF, vH), vZero));
+				if (cmp == 0xffff) goto end;
 			}
-			vTemp = _mm_subs_epu8(pvHStore[j], vDeletB);
-			vTemp = _mm_subs_epu8(vF, vTemp);
-			vTemp = _mm_cmpeq_epi8 (vTemp, vZero);
-			cmp = _mm_movemask_epi8(vTemp);
-		}		
-		/* end of Lazy-F loop */
-	
+		}
+
+end:		
 		vTemp = _mm_cmpeq_epi8(vMaxMark, vMaxScore);
 		cmp = _mm_movemask_epi8(vTemp);
 		if (cmp != 0xffff) {
@@ -400,8 +377,7 @@ alignment_end* sw_sse2_word (const char* ref,
 			vH = pvHLoad[j];
 		}
 
-		/* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3
-		 */
+		/* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3 */
 		for (k = 0; k < 16; ++k) {
 			vF = _mm_slli_si128 (vF, 2);
 			for (j = 0; j < segLen; ++j) {
