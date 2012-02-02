@@ -314,7 +314,7 @@ alignment_end* sw_sse2_word (const char* ref,
 	int32_t segLen = (readLen + 7) / 8; /* number of segment */
 	
 	/* array to record the largest score of each reference position */
-	uint16_t* maxColumn = (uint16_t*) calloc(refLen, 1); 
+	uint16_t* maxColumn = (uint16_t*) calloc(refLen, 2); 
 	
 	/* array to record the alignment read ending position of the largest score of each reference position */
 	int32_t* end_read_column = (int32_t*) calloc(refLen, sizeof(int32_t));

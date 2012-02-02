@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 01/29/12.
+ *  Last revision by Mengyao Zhao on 02/02/12.
  *	New features: make weight as options 
  */
 
@@ -89,7 +89,7 @@ int main (int argc, char * const argv[]) {
 		read_seq = kseq_init(read_fp);
 		int32_t refLen = strlen(ref_seq->seq.s);
 		char* ref_reverse = seq_reverse(ref_seq->seq.s, refLen - 1); 
-		fprintf(stderr, "reverse_ref: %s\n", ref_reverse); 										
+//		fprintf(stderr, "reverse_ref: %s\n", ref_reverse); 										
 		while ((m = kseq_read(read_seq)) >= 0) {
 			char *read_reverse;
 			int32_t readLen, word = 0;
@@ -105,7 +105,7 @@ int main (int argc, char * const argv[]) {
 			bests = sw_sse2_byte(ref_seq->seq.s, nt_table, refLen, readLen, insert_open, insert_extention, delet_open, delet_extention, vP, 0, 4);
 			if (bests[0].score == 255) {
 
-				fprintf(stderr, "word\n");
+//				fprintf(stderr, "word\n");
 				vP = qP_word(read_seq->seq.s, nt_table, mat, 5);
 				bests = sw_sse2_word(ref_seq->seq.s, nt_table, refLen, readLen, insert_open, insert_extention, delet_open, delet_extention, vP, 0);
 				word = 1;
@@ -116,7 +116,7 @@ int main (int argc, char * const argv[]) {
 				char* cigar1;
 				int32_t begin_ref, begin_read, band_width;
 				read_reverse = seq_reverse(read_seq->seq.s, bests[0].read);
-				fprintf(stderr, "reverse_read: %s\n", read_reverse); 										
+//				fprintf(stderr, "reverse_read: %s\n", read_reverse); 										
 				if (word == 0) {
 					vP = qP_byte(read_reverse, nt_table, mat, 5, 4);
 					bests_reverse = sw_sse2_byte(ref_reverse + refLen - bests[0].ref - 1, nt_table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extention, delet_open, delet_extention, vP, bests[0].score, 4);
@@ -129,11 +129,11 @@ int main (int argc, char * const argv[]) {
 			
 				begin_ref = bests[0].ref - bests_reverse[0].ref; 
 				begin_read = bests[0].read - bests_reverse[0].read; 
-				band_width = abs(bests_reverse[0].ref - bests_reverse[0].read);
+				band_width = abs(bests_reverse[0].ref - bests_reverse[0].read) + 1;
 			
 				fprintf(stdout, "max score: %d, 2nd score: %d, end_ref: %d, end_read: %d\nbegin_ref: %d, begin_read: %d\n", bests[0].score, bests[1].score, bests[0].ref + 1, bests[0].read + 1, begin_ref + 1, begin_read + 1);
 				if (bests[0].score != bests[1].score) {
-					cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, match, mismatch, insert_open, insert_extention, delet_open, delet_extention, band_width, nt_table, mat, 5);
+					cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, bests[0].score, match, mismatch, insert_open, insert_extention, delet_open, delet_extention, band_width, nt_table, mat, 5);
 					if (cigar1 != 0) {
 						fprintf(stdout, "cigar: %s\n", cigar1);
 					} else fprintf(stdout, "No alignment is available.\n");	

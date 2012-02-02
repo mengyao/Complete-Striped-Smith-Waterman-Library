@@ -1,9 +1,8 @@
-/*
- *  banded_sw.c
+/*  banded_sw.c
  *
  *  Created by Mengyao Zhao on 01/10/12.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 01/26/12.
+ *	Last revision by Mengyao Zhao on 02/02/12.
  *
  */
 
@@ -45,6 +44,7 @@ char* banded_sw (const char* ref,
 				 	const char* read, 
 				 	int32_t refLen, 
 				 	int32_t readLen,
+					int32_t score,
 				 	uint32_t weight_match,    /* will be used as + */
 				 	uint32_t weight_mismatch, /* will be used as - */
 				 	uint32_t weight_insertB,  /* will be used as - */
@@ -58,51 +58,69 @@ char* banded_sw (const char* ref,
 
 	char* cigar = (char*)calloc(16, sizeof(char)), *p = cigar, ci = 'M';
 	char* cigar1, *p1;	// reverse cigar
-	int32_t width = band_width * 2 + 3, width_d = band_width * 2 + 1;
-	int32_t *h_b = (int32_t*)calloc(width, sizeof(int32_t)); 
-	int32_t *e_b = (int32_t*)calloc(width, sizeof(int32_t)); 
-	int32_t *h_c = (int32_t*)calloc(width, sizeof(int32_t)); 
-	int32_t i, j, e, f, temp1, temp2, s = 16, c = 0, l;
-	int8_t *direction = (int8_t*)calloc(width_d * readLen, sizeof(int8_t)), *direction_line = direction;
-	for (j = 1; j < width - 1; j ++) h_b[j] = 0;
-	for (i = 0; i < readLen; i ++) {
-		int32_t beg = 0, end = refLen - 1, u = 0, edge;
-		j = i - band_width;	beg = beg > j ? beg : j; // band start
-		j = i + band_width; end = end < j ? end : j; // band end
-		edge = end + 1 < width - 1 ? end + 1 : width - 1;
-		f = h_b[0] = e_b[0] = h_b[edge] = e_b[edge] = h_c[0] = 0;
-		direction_line = direction + width_d * i;
+	int32_t i, j, e, f, temp1, temp2, s = 16, c = 0, l, max = 0;
+	int32_t width, width_d, *h_b, *e_b, *h_c;
+	int8_t *direction, *direction_line;
 
-		for (j = beg; j <= end; j ++) {
-			int32_t b, e1, f1, d;
-			set_u(u, band_width, i, j);	set_u(e, band_width, i - 1, j); 
-			set_u(b, band_width, i, j - 1); set_u(d, band_width, i - 1, j - 1);
-			temp1 = i == 0 ? -weight_insertB : h_b[e] - weight_insertB;
-			temp2 = i == 0 ? -weight_insertE : e_b[e] - weight_insertE;
-			e_b[u] = temp1 > temp2 ? temp1 : temp2;
-	
-			temp1 = h_c[b] - weight_deletB;
-			temp2 = f - weight_deletE;
-			f = temp1 > temp2 ? temp1 : temp2;
-			
-			e1 = e_b[u] > 0 ? e_b[u] : 0;
-			f1 = f > 0 ? f : 0;
-			temp1 = e1 > f1 ? e1 : f1;
-			temp2 = h_b[d] + mat[nt_table[(int)ref[j]] * n + nt_table[(int)read[i]]];
-			h_c[u] = temp1 > temp2 ? temp1 : temp2;
+	while (max < score) {
+		width = band_width * 2 + 3, width_d = band_width * 2 + 1;
+		h_b = (int32_t*)calloc(width, sizeof(int32_t)); 
+		e_b = (int32_t*)calloc(width, sizeof(int32_t)); 
+		h_c = (int32_t*)calloc(width, sizeof(int32_t)); 
+		direction = (int8_t*)calloc(width_d * readLen, sizeof(int8_t));
+		direction_line = direction;
+		for (j = 1; j < width - 1; j ++) h_b[j] = 0;
+		for (i = 0; i < readLen; i ++) {
+			int32_t beg = 0, end = refLen - 1, u = 0, edge;
+			j = i - band_width;	beg = beg > j ? beg : j; // band start
+			j = i + band_width; end = end < j ? end : j; // band end
+			edge = end + 1 < width - 1 ? end + 1 : width - 1;
+			f = h_b[0] = e_b[0] = h_b[edge] = e_b[edge] = h_c[0] = 0;
+			direction_line = direction + width_d * i;
+
+			for (j = beg; j <= end; j ++) {
+				int32_t b, e1, f1, d;
+				set_u(u, band_width, i, j);	set_u(e, band_width, i - 1, j); 
+				set_u(b, band_width, i, j - 1); set_u(d, band_width, i - 1, j - 1);
+				temp1 = i == 0 ? -weight_insertB : h_b[e] - weight_insertB;
+				temp2 = i == 0 ? -weight_insertE : e_b[e] - weight_insertE;
+				e_b[u] = temp1 > temp2 ? temp1 : temp2;
 		
-			if (temp1 <= temp2) direction_line[u - 1] = 1;
-			else direction_line[u - 1] = e1 > f1 ? 2 : 3;
+				temp1 = h_c[b] - weight_deletB;
+				temp2 = f - weight_deletE;
+				f = temp1 > temp2 ? temp1 : temp2;
+				
+				e1 = e_b[u] > 0 ? e_b[u] : 0;
+				f1 = f > 0 ? f : 0;
+				temp1 = e1 > f1 ? e1 : f1;
+				temp2 = h_b[d] + mat[nt_table[(int)ref[j]] * n + nt_table[(int)read[i]]];
+				h_c[u] = temp1 > temp2 ? temp1 : temp2;
+		
+				if (h_c[u] > max) max = h_c[u];
+				fprintf (stderr, "i: %d\tj: %d\tH[%d]: %dband_width: %d\n", i, j, u, h_c[u], band_width);
+		
+				if (temp1 <= temp2) direction_line[u - 1] = 1;
+				else direction_line[u - 1] = e1 > f1 ? 2 : 3;
+			}
+			for (j = 1; j <= u; j ++) h_b[j] = h_c[j];
 		}
-		for (j = 1; j <= u; j ++) h_b[j] = h_c[j];
+		band_width *= 2;
 	}
+	band_width /= 2;
+
+	fprintf(stderr, "width_d: %d\treadLen: %d\n", width_d, readLen);
+	for (j = 0; j < width_d * readLen; j ++) fprintf(stderr, "direction[%d]: %d\n", j, direction[j]);
+
 	// trace back
 	i = readLen - 1;
 	j = refLen - 1;
 	e = 0;	// Count the number of M, D or I.
 	f = 'M';
+	
+	fprintf(stderr, "band_width: %d\n", band_width);
 	while (i > 0) {
 		set_u(temp1, band_width, i, j);	// alignment ending position
+		fprintf(stderr, "i: %d\tj: %d\tindex: %d\n", i, j, temp1 - 1);
 		switch (direction_line[temp1 - 1]) {
 			case 1: 
 				--i;
@@ -177,6 +195,8 @@ char* banded_sw (const char* ref,
 		*p = 'M';
 	}
 	++p; *p = '\0';
+
+	fprintf(stderr, "cigar: %s\n", cigar);
 
 	// reverse cigar
 	cigar1 = (char*)calloc(strlen(cigar) + 1, sizeof(char));
