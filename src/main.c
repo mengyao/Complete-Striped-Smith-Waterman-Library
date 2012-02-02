@@ -89,7 +89,6 @@ int main (int argc, char * const argv[]) {
 		read_seq = kseq_init(read_fp);
 		int32_t refLen = strlen(ref_seq->seq.s);
 		char* ref_reverse = seq_reverse(ref_seq->seq.s, refLen - 1); 
-//		fprintf(stderr, "reverse_ref: %s\n", ref_reverse); 										
 		while ((m = kseq_read(read_seq)) >= 0) {
 			char *read_reverse;
 			int32_t readLen, word = 0;
@@ -116,7 +115,6 @@ int main (int argc, char * const argv[]) {
 				char* cigar1;
 				int32_t begin_ref, begin_read, band_width;
 				read_reverse = seq_reverse(read_seq->seq.s, bests[0].read);
-//				fprintf(stderr, "reverse_read: %s\n", read_reverse); 										
 				if (word == 0) {
 					vP = qP_byte(read_reverse, nt_table, mat, 5, 4);
 					bests_reverse = sw_sse2_byte(ref_reverse + refLen - bests[0].ref - 1, nt_table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extention, delet_open, delet_extention, vP, bests[0].score, 4);
