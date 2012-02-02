@@ -62,7 +62,8 @@ char* banded_sw (const char* ref,
 	int32_t width, width_d, *h_b, *e_b, *h_c;
 	int8_t *direction, *direction_line;
 
-	while (max < score) {
+	//while (max < score) {
+	do {
 		width = band_width * 2 + 3, width_d = band_width * 2 + 1;
 		h_b = (int32_t*)calloc(width, sizeof(int32_t)); 
 		e_b = (int32_t*)calloc(width, sizeof(int32_t)); 
@@ -104,7 +105,7 @@ char* banded_sw (const char* ref,
 			for (j = 1; j <= u; j ++) h_b[j] = h_c[j];
 		}
 		band_width *= 2;
-	}
+	} while (max < score);
 	band_width /= 2;
 
 	// trace back
