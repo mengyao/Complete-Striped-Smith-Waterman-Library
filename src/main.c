@@ -37,11 +37,11 @@ int main (int argc, char * const argv[]) {
 	float cpu_time;
 	gzFile ref_fp;
 	kseq_t *ref_seq;
-	int32_t l, m, k, match = 2, mismatch = 2, insert_open = 3, insert_extention = 1, delet_open = 3, delet_extention = 1;
+	int32_t l, m, k, match = 2, mismatch = 2, insert_open = 3, insert_extention = 1, delet_open = 3, delet_extention = 1, path = 0;
 	int8_t mat[25];
 
 	// Parse command line.
-	while ((l = getopt(argc, argv, "m:x:i:e:d:f:")) >= 0) {
+	while ((l = getopt(argc, argv, "m:x:i:e:d:f:p")) >= 0) {
 		switch (l) {
 			case 'm': match = atoi(optarg); break;
 			case 'x': mismatch = atoi(optarg); break;
@@ -49,11 +49,11 @@ int main (int argc, char * const argv[]) {
 			case 'e': insert_extention = atoi(optarg); break;
 			case 'd': delet_open = atoi(optarg); break;
 			case 'f': delet_extention = atoi(optarg); break;
-		//	case 'f': forward_only = 1; break;
+			case 'p': path = 1; break;
 		}
 	}
 	if (optind + 2 > argc) {
-		fprintf(stderr, "Usage: ssw_test [-m weight match] [-x abs(weight mismatch)] [-i abs(weight insert_open)] [-e abs(weight insert_extention)] [-d abs(weight delet_open)] [-f abs(weight delet_extention)] <target.fa> <query.fa>\n");
+		fprintf(stderr, "Usage: ssw_test [-m weight match] [-x abs(weight mismatch)] [-i abs(weight insert_open)] [-e abs(weight insert_extention)] [-d abs(weight delet_open)] [-f abs(weight delet_extention)] [-p] <target.fa> <query.fa>\n");
 		return 1;
 	}
 
@@ -129,14 +129,16 @@ int main (int argc, char * const argv[]) {
 				begin_read = bests[0].read - bests_reverse[0].read; 
 				band_width = abs(bests_reverse[0].ref - bests_reverse[0].read) + 1;
 			
-				fprintf(stdout, "max score: %d, 2nd score: %d, end_ref: %d, end_read: %d\nbegin_ref: %d, begin_read: %d\n", bests[0].score, bests[1].score, bests[0].ref + 1, bests[0].read + 1, begin_ref + 1, begin_read + 1);
-				if (bests[0].score != bests[1].score) {
-					cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, bests[0].score, match, mismatch, insert_open, insert_extention, delet_open, delet_extention, band_width, nt_table, mat, 5);
-					if (cigar1 != 0) {
-						fprintf(stdout, "cigar: %s\n", cigar1);
-					} else fprintf(stdout, "No alignment is available.\n");	
-					free(cigar1);		
-				} else fprintf(stdout, "Two alignments available.\n");
+				fprintf(stdout, "max score: %d, 2nd score: %d, begin_ref: %d, begin_read: %d\n", bests[0].score, bests[1].score, begin_ref + 1, begin_read + 1);
+				if (path == 1) {
+					if (bests[0].score != bests[1].score) {
+						cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, bests[0].score, match, mismatch, insert_open, insert_extention, delet_open, delet_extention, band_width, nt_table, mat, 5);
+						if (cigar1 != 0) {
+							fprintf(stdout, "cigar: %s\n", cigar1);
+						} else fprintf(stdout, "No alignment is available.\n");	
+						free(cigar1);		
+					} else fprintf(stdout, "Two alignments available.\n");
+				}
 			}else fprintf(stdout, "No alignment found for this read.\n");
 		}
 		free(ref_reverse);

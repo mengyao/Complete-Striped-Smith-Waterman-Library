@@ -173,8 +173,9 @@ alignment_end* sw_sse2_byte (const char* ref,
 				pvHStore[j] = _mm_max_epu8(pvHStore[j], vF);
 				vH = _mm_subs_epu8(pvHStore[j], vDeletB);
 				vF = _mm_subs_epu8(vF, vDeletE);
-				cmp = _mm_movemask_epi8(_mm_cmpeq_epi8(_mm_subs_epu8(vF, vH), vZero));
-				if (cmp == 0xffff) goto end;
+			//	cmp = _mm_movemask_epi8(_mm_cmpeq_epi8(_mm_subs_epu8(vF, vH), vZero));
+			//	if (cmp == 0xffff) goto end;
+				if (! _mm_movemask_epi8(_mm_cmpgt_epi8(vF, vH))) goto end;
 			}
 		}
 
@@ -378,7 +379,7 @@ alignment_end* sw_sse2_word (const char* ref,
 		}
 
 		/* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3 */
-		for (k = 0; k < 16; ++k) {
+		for (k = 0; k < 8; ++k) {
 			vF = _mm_slli_si128 (vF, 2);
 			for (j = 0; j < segLen; ++j) {
 				pvHStore[j] = _mm_max_epi16(pvHStore[j], vF);
