@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 02/02/12.
+ *  Last revision by Mengyao Zhao on 02/03/12.
  *	New features: make weight as options 
  */
 
@@ -96,15 +96,10 @@ int main (int argc, char * const argv[]) {
 			__m128i *vP;
 			printf("read_name: %s\n", read_seq->name.s);
 			printf("read_seq: %s\n", read_seq->seq.s); 
-			
 			readLen = strlen(read_seq->seq.s);
 			vP = qP_byte(read_seq->seq.s, nt_table, mat, 5, 4);
-
-		//	fprintf(stderr, "byte\n");
 			bests = sw_sse2_byte(ref_seq->seq.s, nt_table, refLen, readLen, insert_open, insert_extention, delet_open, delet_extention, vP, 0, 4);
 			if (bests[0].score == 255) {
-
-//				fprintf(stderr, "word\n");
 				vP = qP_word(read_seq->seq.s, nt_table, mat, 5);
 				bests = sw_sse2_word(ref_seq->seq.s, nt_table, refLen, readLen, insert_open, insert_extention, delet_open, delet_extention, vP, 0);
 				word = 1;

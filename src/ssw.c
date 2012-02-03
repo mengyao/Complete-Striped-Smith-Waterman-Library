@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 02/01/12.
+ *	Last revision by Mengyao Zhao on 02/03/12.
  *	New features: Weight matrix is extracted. 
  *
  */
@@ -173,8 +173,6 @@ alignment_end* sw_sse2_byte (const char* ref,
 				pvHStore[j] = _mm_max_epu8(pvHStore[j], vF);
 				vH = _mm_subs_epu8(pvHStore[j], vDeletB);
 				vF = _mm_subs_epu8(vF, vDeletE);
-			//	cmp = _mm_movemask_epi8(_mm_cmpeq_epi8(_mm_subs_epu8(vF, vH), vZero));
-			//	if (cmp == 0xffff) goto end;
 				if (! _mm_movemask_epi8(_mm_cmpgt_epi8(vF, vH))) goto end;
 			}
 		}
@@ -370,7 +368,6 @@ alignment_end* sw_sse2_word (const char* ref,
 			pvE[j] = _mm_max_epi16(pvE[j], vH);
 
 			/* Update vF value. */
-	//		vH = _mm_subs_epu16(vH, vDeletB);
 			vF = _mm_subs_epu16(vF, vDeletE);
 			vF = _mm_max_epi16(vF, vH);
 			
