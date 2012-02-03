@@ -16,6 +16,14 @@
 #include "kseq.h"
 #include "banded_sw.h"
 
+#ifdef __GNUC__
+#define LIKELY(x) __builtin_expect((x),1)
+#define UNLIKELY(x) __builtin_expect((x),0)
+#else
+#define LIKELY(x) (x)
+#define UNLIKELY(x) (x)
+#endif
+
 KSEQ_INIT(gzFile, gzread)
 
 char* seq_reverse(const char* seq, int32_t end)	/* end is 0-based alignment ending position */	
@@ -23,7 +31,7 @@ char* seq_reverse(const char* seq, int32_t end)	/* end is 0-based alignment endi
 	char* reverse = (char*)calloc(end + 2, sizeof(char*));	
 	int32_t start = 0;
 	reverse[end + 1] = '\0';				
-	while (start <= end) {			
+	while (LIKELY(start <= end)) {			
 		reverse[start] = seq[end];		
 		reverse[end] = seq[start];		
 		++ start;					
@@ -70,12 +78,12 @@ int main (int argc, char * const argv[]) {
 	};
 
 	// initialize scoring matrix for genome sequences
-	for (l = k = 0; l < 4; ++l) {
-		for (m = 0; m < 4; ++m)
+	for (l = k = 0; LIKELY(l < 4); ++l) {
+		for (m = 0; LIKELY(m < 4); ++m)
 			mat[k++] = l == m ? match : -mismatch;	/* weight_match : -weight_mismatch */
 		mat[k++] = 0; // ambiguous base
 	}
-	for (m = 0; m < 5; ++m) mat[k++] = 0;
+	for (m = 0; LIKELY(m < 5); ++m) mat[k++] = 0;
 
 	ref_fp = gzopen(argv[optind], "r");
 	ref_seq = kseq_init(ref_fp);

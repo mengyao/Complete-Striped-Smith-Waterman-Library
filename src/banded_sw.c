@@ -12,6 +12,14 @@
 #include <string.h>
 #include "banded_sw.h"
 
+#ifdef __GNUC__
+#define LIKELY(x) __builtin_expect((x),1)
+#define UNLIKELY(x) __builtin_expect((x),0)
+#else
+#define LIKELY(x) (x)
+#define UNLIKELY(x) (x)
+#endif
+
 /* Convert the coordinate in the scoring matrix into the coordinate in one line of the band. */
 #define set_u(u, w, i, j) { int x=(i)-(w); x=x>0?x:0; (u)=(j)-x+1; }
 
@@ -69,8 +77,8 @@ char* banded_sw (const char* ref,
 		h_c = (int32_t*)calloc(width, sizeof(int32_t)); 
 		direction = (int8_t*)calloc(width_d * readLen, sizeof(int8_t));
 		direction_line = direction;
-		for (j = 1; j < width - 1; j ++) h_b[j] = 0;
-		for (i = 0; i < readLen; i ++) {
+		for (j = 1; LIKELY(j < width - 1); j ++) h_b[j] = 0;
+		for (i = 0; LIKELY(i < readLen); i ++) {
 			int32_t beg = 0, end = refLen - 1, u = 0, edge;
 			j = i - band_width;	beg = beg > j ? beg : j; // band start
 			j = i + band_width; end = end < j ? end : j; // band end
@@ -78,7 +86,7 @@ char* banded_sw (const char* ref,
 			f = h_b[0] = e_b[0] = h_b[edge] = e_b[edge] = h_c[0] = 0;
 			direction_line = direction + width_d * i;
 
-			for (j = beg; j <= end; j ++) {
+			for (j = beg; LIKELY(j <= end); j ++) {
 				int32_t b, e1, f1, d;
 				set_u(u, band_width, i, j);	set_u(e, band_width, i - 1, j); 
 				set_u(b, band_width, i, j - 1); set_u(d, band_width, i - 1, j - 1);
@@ -104,7 +112,7 @@ char* banded_sw (const char* ref,
 			for (j = 1; j <= u; j ++) h_b[j] = h_c[j];
 		}
 		band_width *= 2;
-	} while (max < score);
+	} while (LIKELY(max < score));
 	band_width /= 2;
 
 	// trace back
@@ -112,7 +120,7 @@ char* banded_sw (const char* ref,
 	j = refLen - 1;
 	e = 0;	// Count the number of M, D or I.
 	f = 'M';
-	while (i > 0) {
+	while (LIKELY(i > 0)) {
 		set_u(temp1, band_width, i, j);	// alignment ending position
 		switch (direction_line[temp1 - 1]) {
 			case 1: 
@@ -195,7 +203,7 @@ char* banded_sw (const char* ref,
 	l = 0;
 	ci = 'M';
 	p = cigar + strlen(cigar) - 1;
-	while (p >= cigar) {
+	while (LIKELY(p >= cigar)) {
 		if (*p == 'M' || *p == 'I' || *p == 'D') {
 			if (l > 0) {
 				strncpy(p1, p + 1, l);

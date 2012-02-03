@@ -13,6 +13,14 @@
 #include <stdint.h>
 #include "ssw.h"
 
+#ifdef __GNUC__
+#define LIKELY(x) __builtin_expect((x),1)
+#define UNLIKELY(x) __builtin_expect((x),0)
+#else
+#define LIKELY(x) (x)
+#define UNLIKELY(x) (x)
+#endif
+
 /* Generate query profile rearrange query sequence & calculate the weight of match/mismatch. */
 __m128i* qP_byte (const char* read,
 								   int8_t* nt_table,
@@ -32,10 +40,10 @@ __m128i* qP_byte (const char* read,
 	int32_t segNum;
 	
 	/* Generate query profile rearrange query sequence & calculate the weight of match/mismatch */
-	for (nt = 0; nt < n; nt ++) {
+	for (nt = 0; LIKELY(nt < n); nt ++) {
 		for (i = 0; i < segLen; i ++) {
 			j = i; 
-			for (segNum = 0; segNum < 16 ; segNum ++) {
+			for (segNum = 0; LIKELY(segNum < 16) ; segNum ++) {
 				*t++ = j>= readLen ? 0 : mat[nt * n + nt_table[(int)read[j]]] + bias;
 				j += segLen;
 			}
@@ -93,7 +101,7 @@ alignment_end* sw_sse2_byte (const char* ref,
 	__m128i* pvHmax = (__m128i*) calloc(segLen, sizeof(__m128i));
 
 	int32_t i, j, k;
-	for (i = 0; i < segLen; i ++) {
+	for (i = 0; LIKELY(i < segLen); i ++) {
 		pvHStore[i] = vZero;
 		pvE[i] = vZero;
 	}
@@ -118,7 +126,7 @@ alignment_end* sw_sse2_byte (const char* ref,
 	__m128i vTemp;
 	int32_t edge;
 	/* outer loop to process the reference sequence */
-	for (i = 0; i < refLen; i ++) {
+	for (i = 0; LIKELY(i < refLen); i ++) {
 		
 		int32_t cmp;
 		__m128i vF = vZero; /* Initialize F value to 0. 
@@ -137,7 +145,7 @@ alignment_end* sw_sse2_byte (const char* ref,
 		pvHStore = pv;
 		
 		/* inner loop to process the query sequence */
-		for (j = 0; j < segLen; j ++) {
+		for (j = 0; LIKELY(j < segLen); j ++) {
 
 			vH = _mm_adds_epu8(vH, vP[j]);
 			vH = _mm_subs_epu8(vH, vBias); /* vH will be always > 0 */
@@ -167,13 +175,13 @@ alignment_end* sw_sse2_byte (const char* ref,
 		}
 
 		/* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3 */
-		for (k = 0; k < 16; ++k) {
+		for (k = 0; LIKELY(k < 16); ++k) {
 			vF = _mm_slli_si128 (vF, 1);
-			for (j = 0; j < segLen; ++j) {
+			for (j = 0; LIKELY(j < segLen); ++j) {
 				pvHStore[j] = _mm_max_epu8(pvHStore[j], vF);
 				vH = _mm_subs_epu8(pvHStore[j], vDeletB);
 				vF = _mm_subs_epu8(vF, vDeletE);
-				if (! _mm_movemask_epi8(_mm_cmpgt_epi8(vF, vH))) goto end;
+				if (UNLIKELY(! _mm_movemask_epi8(_mm_cmpgt_epi8(vF, vH)))) goto end;
 			}
 		}
 
@@ -186,7 +194,7 @@ end:
 			max16(temp, vMaxScore);
 			vMaxScore = vMaxMark;
 			
-			if (temp > max) {
+			if (LIKELY(temp > max)) {
 				max = temp;
 				if (max + bias >= 255) {
 					break;	//overflow
@@ -194,7 +202,7 @@ end:
 				end_ref = i;
 			
 				/* Store the column with the highest alignment score in order to trace the alignment ending position on read. */
-				for (j = 0; j < segLen; ++j) // keep the H1 vector
+				for (j = 0; LIKELY(j < segLen); ++j) // keep the H1 vector
 					pvHmax[j] = pvHStore[j];
 			}
 		}
@@ -207,7 +215,7 @@ end:
 	/* Trace the alignment ending position on read. */
 	uint8_t *t = (uint8_t*)pvHmax;
 	int32_t column_len = segLen * 16;
-	for (i = 0; i < column_len; ++i, ++t) {
+	for (i = 0; LIKELY(i < column_len); ++i, ++t) {
 		if (*t == max) {
 			end_read = i / 16 + i % 16 * segLen;
 			break;
@@ -255,10 +263,10 @@ __m128i* qP_word (const char* read,
 	int32_t segNum;
 	
 	/* Generate query profile rearrange query sequence & calculate the weight of match/mismatch */
-	for (nt = 0; nt < n; nt ++) {
+	for (nt = 0; LIKELY(nt < n); nt ++) {
 		for (i = 0; i < segLen; i ++) {
 			j = i; 
-			for (segNum = 0; segNum < 8 ; segNum ++) {
+			for (segNum = 0; LIKELY(segNum < 8) ; segNum ++) {
 				*t++ = j>= readLen ? 0 : mat[nt * n + nt_table[(int)read[j]]];
 				j += segLen;
 			}
@@ -304,7 +312,7 @@ alignment_end* sw_sse2_word (const char* ref,
 	__m128i* pvHmax = (__m128i*) calloc(segLen, sizeof(__m128i));
 
 	int32_t i, j, k;
-	for (i = 0; i < segLen; i ++) {
+	for (i = 0; LIKELY(i < segLen); i ++) {
 		pvHStore[i] = vZero;
 		pvE[i] = vZero;
 	}
@@ -328,7 +336,7 @@ alignment_end* sw_sse2_word (const char* ref,
 	__m128i vTemp;
 	int32_t edge;
 	/* outer loop to process the reference sequence */
-	for (i = 0; i < refLen; i ++) {
+	for (i = 0; LIKELY(i < refLen); i ++) {
 
 		int32_t cmp;
 		__m128i vF = vZero; /* Initialize F value to 0. 
@@ -347,7 +355,7 @@ alignment_end* sw_sse2_word (const char* ref,
 		pvHStore = pv;
 		
 		/* inner loop to process the query sequence */
-		for (j = 0; j < segLen; j ++) {
+		for (j = 0; LIKELY(j < segLen); j ++) {
 			vH = _mm_adds_epi16(vH, vP[j]);
 
 			/* Get max from vH, vE and vF. */
@@ -376,13 +384,13 @@ alignment_end* sw_sse2_word (const char* ref,
 		}
 
 		/* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3 */
-		for (k = 0; k < 8; ++k) {
+		for (k = 0; LIKELY(k < 8); ++k) {
 			vF = _mm_slli_si128 (vF, 2);
-			for (j = 0; j < segLen; ++j) {
+			for (j = 0; LIKELY(j < segLen); ++j) {
 				pvHStore[j] = _mm_max_epi16(pvHStore[j], vF);
 				vH = _mm_subs_epu16(pvHStore[j], vDeletB);
 				vF = _mm_subs_epu16(vF, vDeletE);
-				if (! _mm_movemask_epi8(_mm_cmpgt_epi16(vF, vH))) goto end;
+				if (UNLIKELY(! _mm_movemask_epi8(_mm_cmpgt_epi16(vF, vH)))) goto end;
 			}
 		}
 
@@ -395,10 +403,10 @@ end:
 			max8(temp, vMaxScore);
 			vMaxScore = vMaxMark;
 			
-			if (temp > max) {
+			if (LIKELY(temp > max)) {
 				max = temp;
 				end_ref = i;
-				for (j = 0; j < segLen; ++j) // keep the H1 vector
+				for (j = 0; LIKELY(j < segLen); ++j) // keep the H1 vector
 					pvHmax[j] = pvHStore[j];
 			}
 		}
@@ -411,7 +419,7 @@ end:
 	/* Trace the alignment ending position on read. */
 	uint16_t *t = (uint16_t*)pvHmax;
 	int32_t column_len = segLen * 8;
-	for (i = 0; i < column_len; ++i, ++t) {
+	for (i = 0; LIKELY(i < column_len); ++i, ++t) {
 		if (*t == max) {
 			end_read = i / 8 + i % 8 * segLen;
 			break;
