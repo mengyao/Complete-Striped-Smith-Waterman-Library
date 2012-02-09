@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 02/03/12.
+ *  Last revision by Mengyao Zhao on 02/07/12.
  *	New features: make weight as options 
  */
 
@@ -46,24 +46,9 @@ int main (int argc, char * const argv[]) {
 	gzFile ref_fp;
 	kseq_t *ref_seq;
 	int32_t l, m, k, match = 2, mismatch = 2, insert_open = 3, insert_extention = 1, delet_open = 3, delet_extention = 1, path = 0;
-	int8_t mat[25];
-
-	// Parse command line.
-	while ((l = getopt(argc, argv, "m:x:i:e:d:f:p")) >= 0) {
-		switch (l) {
-			case 'm': match = atoi(optarg); break;
-			case 'x': mismatch = atoi(optarg); break;
-			case 'i': insert_open = atoi(optarg); break;
-			case 'e': insert_extention = atoi(optarg); break;
-			case 'd': delet_open = atoi(optarg); break;
-			case 'f': delet_extention = atoi(optarg); break;
-			case 'p': path = 1; break;
-		}
-	}
-	if (optind + 2 > argc) {
-		fprintf(stderr, "Usage: ssw_test [-m weight match] [-x abs(weight mismatch)] [-i abs(weight insert_open)] [-e abs(weight insert_extention)] [-d abs(weight delet_open)] [-f abs(weight delet_extention)] [-p] <target.fa> <query.fa>\n");
-		return 1;
-	}
+	int8_t* mat = (int8_t*)calloc(25, sizeof(int8_t));
+	char mat_name[16];
+	mat_name[0] = '\0';
 
 	/* This table is used to transform nucleotide letters into numbers. */
 	int8_t nt_table[128] = {
@@ -84,6 +69,60 @@ int main (int argc, char * const argv[]) {
 		mat[k++] = 0; // ambiguous base
 	}
 	for (m = 0; LIKELY(m < 5); ++m) mat[k++] = 0;
+
+	// Parse command line.
+	while ((l = getopt(argc, argv, "m:x:i:e:d:f:a:p")) >= 0) {
+		switch (l) {
+			case 'm': match = atoi(optarg); break;
+			case 'x': mismatch = atoi(optarg); break;
+			case 'i': insert_open = atoi(optarg); break;
+			case 'e': insert_extention = atoi(optarg); break;
+			case 'd': delet_open = atoi(optarg); break;
+			case 'f': delet_extention = atoi(optarg); break;
+			case 'a': strcpy(mat_name, optarg); break;
+			case 'p': path = 1; break;
+		}
+	}
+	if (optind + 2 > argc) {
+		fprintf(stderr, "Usage: ssw_test [-m weight match] [-x abs(weight mismatch)] [-i abs(weight insert_open)] [-e abs(weight insert_extention)] [-d abs(weight delet_open)] [-f abs(weight delet_extention)] [-p] <target.fa> <query.fa>\n");
+		return 1;
+	}
+
+	// Parse score matrix.
+	if (strcmp(mat_name, "\0"))	{
+		FILE *f_mat = fopen(mat_name, "r");
+		char line[128];
+		mat = realloc(mat, 1024 * sizeof(int8_t));
+		k = 0;
+		while (fgets(line, 128, f_mat)) {
+			if (line[0] == '*' || (line[0] >= 'A' && line[0] <= 'Z')) {
+				char str[4], *s = str;
+				str[0] = '\0';
+				l = 1;
+				while (line[l]) {
+					if ((line[l] >= '0' && line[l] <= '9') || line[l] == '-') *s++ = line[l];	
+					else if (str[0] != '\0') {					
+						*s = '\0';
+						mat[k++] = (int8_t)atoi(str);
+						s = str;
+						str[0] = '\0';			
+					}
+					++l;
+				}
+				if (str[0] != '\0') {
+					*s = '\0';
+					mat[k++] = (int8_t)atoi(str);
+					s = str;
+					str[0] = '\0';			
+				}
+			}
+		} 
+		fclose(f_mat);	
+	}
+	for (l = 0; l < 24; l ++) {
+		for (k = 0; k < 24; k ++) fprintf(stderr, "%d\t", mat[l * 24 + k]);
+		fprintf(stderr, "\n");
+	}
 
 	ref_fp = gzopen(argv[optind], "r");
 	ref_seq = kseq_init(ref_fp);
@@ -152,6 +191,7 @@ int main (int argc, char * const argv[]) {
 	cpu_time = ((float) (end - start)) / CLOCKS_PER_SEC;
 	fprintf(stdout, "CPU time: %f seconds\n", cpu_time);
 
+	free(mat);
 	kseq_destroy(ref_seq);
 	gzclose(ref_fp);
 	return 0;
