@@ -45,7 +45,7 @@ int main (int argc, char * const argv[]) {
 	float cpu_time;
 	gzFile ref_fp;
 	kseq_t *ref_seq;
-	int32_t l, m, k, match = 2, mismatch = 2, insert_open = 3, insert_extention = 1, delet_open = 3, delet_extention = 1, path = 0;
+	int32_t l, m, k, n = 5, match = 2, mismatch = 2, insert_open = 3, insert_extention = 1, delet_open = 3, delet_extention = 1, path = 0;
 	int8_t* mat = (int8_t*)calloc(25, sizeof(int8_t));
 	char mat_name[16];
 	mat_name[0] = '\0';
@@ -130,10 +130,23 @@ int main (int argc, char * const argv[]) {
 					str[0] = '\0';			
 				}
 			}
+			m = k%24;
+			while ((m%23 == 0 || m%22 == 0 || m%21 == 0 || m%20 == 0) && m != 0) {
+				k++;
+				m = k%24;
+			} // If the weight matrix doesn't BZX*, set their values 0.
+		}
+		if (k == 0) {
+			fprintf(stderr, "Problem of reading the weight matrix file.\n");
+			return 1;
 		} 
 		fclose(f_mat);	
-		if (mat[525] <= 0) fprintf(stderr, "Improper weight matrix file format. Please use standard Blosum or Pam files.\n");
-		else table = aa_table;
+		if (mat[525] <= 0) {
+			fprintf(stderr, "Improper weight matrix file format. Please use standard Blosum or Pam files.\n");
+			return 1;
+		}
+		table = aa_table;
+		n = 24;
 	}
 	for (l = 0; l < 24; l ++) {
 		for (k = 0; k < 24; k ++) fprintf(stderr, "%d\t", mat[l * 24 + k]);
@@ -160,10 +173,10 @@ int main (int argc, char * const argv[]) {
 			printf("read_name: %s\n", read_seq->name.s);
 			printf("read_seq: %s\n", read_seq->seq.s); 
 			readLen = strlen(read_seq->seq.s);
-			vP = qP_byte(read_seq->seq.s, table, mat, 5, 4);
+			vP = qP_byte(read_seq->seq.s, table, mat, n, 4);
 			bests = sw_sse2_byte(ref_seq->seq.s, table, refLen, readLen, insert_open, insert_extention, delet_open, delet_extention, vP, 0, 4);
 			if (bests[0].score == 255) {
-				vP = qP_word(read_seq->seq.s, table, mat, 5);
+				vP = qP_word(read_seq->seq.s, table, mat, n);
 				bests = sw_sse2_word(ref_seq->seq.s, table, refLen, readLen, insert_open, insert_extention, delet_open, delet_extention, vP, 0);
 				word = 1;
 			}
@@ -174,10 +187,10 @@ int main (int argc, char * const argv[]) {
 				int32_t begin_ref, begin_read, band_width;
 				read_reverse = seq_reverse(read_seq->seq.s, bests[0].read);
 				if (word == 0) {
-					vP = qP_byte(read_reverse, table, mat, 5, 4);
+					vP = qP_byte(read_reverse, table, mat, n, 4);
 					bests_reverse = sw_sse2_byte(ref_reverse + refLen - bests[0].ref - 1, table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extention, delet_open, delet_extention, vP, bests[0].score, 4);
 				} else {
-					vP = qP_word(read_reverse, table, mat, 5);
+					vP = qP_word(read_reverse, table, mat, n);
 					bests_reverse = sw_sse2_word(ref_reverse + refLen - bests[0].ref - 1, table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extention, delet_open, delet_extention, vP, bests[0].score);
 				}
 				free(vP);
@@ -190,7 +203,7 @@ int main (int argc, char * const argv[]) {
 				fprintf(stdout, "max score: %d, 2nd score: %d, begin_ref: %d, begin_read: %d\n", bests[0].score, bests[1].score, begin_ref + 1, begin_read + 1);
 				if (path == 1) {
 					if (bests[0].score != bests[1].score) {
-						cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, bests[0].score, match, mismatch, insert_open, insert_extention, delet_open, delet_extention, band_width, table, mat, 5);
+						cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, bests[0].score, match, mismatch, insert_open, insert_extention, delet_open, delet_extention, band_width, table, mat, n);
 						if (cigar1 != 0) {
 							fprintf(stdout, "cigar: %s\n", cigar1);
 						} else fprintf(stdout, "No alignment is available.\n");	
