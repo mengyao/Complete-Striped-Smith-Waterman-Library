@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 02/07/12.
+ *  Last revision by Mengyao Zhao on 02/10/12.
  *	New features: make weight as options 
  */
 
@@ -50,6 +50,18 @@ int main (int argc, char * const argv[]) {
 	char mat_name[16];
 	mat_name[0] = '\0';
 
+	/* This table is used to transform amino acid letters into numbers. */
+	int8_t aa_table[128] = {
+		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 
+		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 
+		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 
+		23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23, 
+		14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23, 
+		23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23, 
+		14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23 
+	};
+
 	/* This table is used to transform nucleotide letters into numbers. */
 	int8_t nt_table[128] = {
 		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
@@ -61,6 +73,8 @@ int main (int argc, char * const argv[]) {
 		4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
 		4, 4, 4, 4,  3, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4 
 	};
+	
+	int8_t* table = nt_table;
 
 	// initialize scoring matrix for genome sequences
 	for (l = k = 0; LIKELY(l < 4); ++l) {
@@ -118,6 +132,8 @@ int main (int argc, char * const argv[]) {
 			}
 		} 
 		fclose(f_mat);	
+		if (mat[525] <= 0) fprintf(stderr, "Improper weight matrix file format. Please use standard Blosum or Pam files.\n");
+		else table = aa_table;
 	}
 	for (l = 0; l < 24; l ++) {
 		for (k = 0; k < 24; k ++) fprintf(stderr, "%d\t", mat[l * 24 + k]);
@@ -144,11 +160,11 @@ int main (int argc, char * const argv[]) {
 			printf("read_name: %s\n", read_seq->name.s);
 			printf("read_seq: %s\n", read_seq->seq.s); 
 			readLen = strlen(read_seq->seq.s);
-			vP = qP_byte(read_seq->seq.s, nt_table, mat, 5, 4);
-			bests = sw_sse2_byte(ref_seq->seq.s, nt_table, refLen, readLen, insert_open, insert_extention, delet_open, delet_extention, vP, 0, 4);
+			vP = qP_byte(read_seq->seq.s, table, mat, 5, 4);
+			bests = sw_sse2_byte(ref_seq->seq.s, table, refLen, readLen, insert_open, insert_extention, delet_open, delet_extention, vP, 0, 4);
 			if (bests[0].score == 255) {
-				vP = qP_word(read_seq->seq.s, nt_table, mat, 5);
-				bests = sw_sse2_word(ref_seq->seq.s, nt_table, refLen, readLen, insert_open, insert_extention, delet_open, delet_extention, vP, 0);
+				vP = qP_word(read_seq->seq.s, table, mat, 5);
+				bests = sw_sse2_word(ref_seq->seq.s, table, refLen, readLen, insert_open, insert_extention, delet_open, delet_extention, vP, 0);
 				word = 1;
 			}
 			free(vP);
@@ -158,11 +174,11 @@ int main (int argc, char * const argv[]) {
 				int32_t begin_ref, begin_read, band_width;
 				read_reverse = seq_reverse(read_seq->seq.s, bests[0].read);
 				if (word == 0) {
-					vP = qP_byte(read_reverse, nt_table, mat, 5, 4);
-					bests_reverse = sw_sse2_byte(ref_reverse + refLen - bests[0].ref - 1, nt_table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extention, delet_open, delet_extention, vP, bests[0].score, 4);
+					vP = qP_byte(read_reverse, table, mat, 5, 4);
+					bests_reverse = sw_sse2_byte(ref_reverse + refLen - bests[0].ref - 1, table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extention, delet_open, delet_extention, vP, bests[0].score, 4);
 				} else {
-					vP = qP_word(read_reverse, nt_table, mat, 5);
-					bests_reverse = sw_sse2_word(ref_reverse + refLen - bests[0].ref - 1, nt_table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extention, delet_open, delet_extention, vP, bests[0].score);
+					vP = qP_word(read_reverse, table, mat, 5);
+					bests_reverse = sw_sse2_word(ref_reverse + refLen - bests[0].ref - 1, table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extention, delet_open, delet_extention, vP, bests[0].score);
 				}
 				free(vP);
 				free(read_reverse);
@@ -174,7 +190,7 @@ int main (int argc, char * const argv[]) {
 				fprintf(stdout, "max score: %d, 2nd score: %d, begin_ref: %d, begin_read: %d\n", bests[0].score, bests[1].score, begin_ref + 1, begin_read + 1);
 				if (path == 1) {
 					if (bests[0].score != bests[1].score) {
-						cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, bests[0].score, match, mismatch, insert_open, insert_extention, delet_open, delet_extention, band_width, nt_table, mat, 5);
+						cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, bests[0].score, match, mismatch, insert_open, insert_extention, delet_open, delet_extention, band_width, table, mat, 5);
 						if (cigar1 != 0) {
 							fprintf(stdout, "cigar: %s\n", cigar1);
 						} else fprintf(stdout, "No alignment is available.\n");	
