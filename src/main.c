@@ -85,7 +85,7 @@ int main (int argc, char * const argv[]) {
 	for (m = 0; LIKELY(m < 5); ++m) mat[k++] = 0;
 
 	// Parse command line.
-	while ((l = getopt(argc, argv, "m:x:i:e:d:f:a:p")) >= 0) {
+	while ((l = getopt(argc, argv, "m:x:i:e:d:f:a:c")) >= 0) {
 		switch (l) {
 			case 'm': match = atoi(optarg); break;
 			case 'x': mismatch = atoi(optarg); break;
@@ -94,11 +94,21 @@ int main (int argc, char * const argv[]) {
 			case 'd': delet_open = atoi(optarg); break;
 			case 'f': delet_extention = atoi(optarg); break;
 			case 'a': strcpy(mat_name, optarg); break;
-			case 'p': path = 1; break;
+			case 'c': path = 1; break;
 		}
 	}
 	if (optind + 2 > argc) {
-		fprintf(stderr, "Usage: ssw_test [-m weight match] [-x abs(weight mismatch)] [-i abs(weight insert_open)] [-e abs(weight insert_extention)] [-d abs(weight delet_open)] [-f abs(weight delet_extention)] [-p] <target.fa> <query.fa>\n");
+		fprintf(stderr, "\n");
+		fprintf(stderr, "Usage: ssw_test [options] ... <target.fa> <query.fa>\n");	
+		fprintf(stderr, "Options:\n");
+		fprintf(stderr, "\t-m N\tN is a positive integer for weight match in genome sequence alignment.\n");
+		fprintf(stderr, "\t-x N\tN is a positive integer. -N will be used as weight mismatch in genome sequence alignment.\n");
+		fprintf(stderr, "\t-i N\tN is a positive integer. -N will be used as the weight for insertion opening in genome sequence alignment.\n");
+		fprintf(stderr, "\t-e N\tN is a positive integer. -N will be used as the weight for insertion extension in genome sequence alignment.\n");
+		fprintf(stderr,	"\t-d N\tN is a positive integer. -N will be used as the weight for deletion opening in genome sequence alignment.\n");
+		fprintf(stderr, "\t-f N\tN is a positive integer. -N will be used as the weight for deletion extension in genome sequence alignment.\n");
+		fprintf(stderr, "\t-a FILE\tFor protein sequence alignment. FILE is either the Blosum or Pam weight matrix. Recommand to use the matrix\n\t\tincluding B Z X * columns. Otherwise, corresponding scores will be signed to 0.\n"); 
+		fprintf(stderr, "\t-c\tReturn the alignment in cigar format.\n\n");
 		return 1;
 	}
 
