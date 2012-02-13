@@ -115,6 +115,13 @@ char* banded_sw (const char* ref,
 	} while (LIKELY(max < score));
 	band_width /= 2;
 
+	for (i = 0; i < readLen; i ++) {
+		fprintf(stderr, "%d:\t", i);
+		for (j = 0; j < width_d; j ++) fprintf(stderr, "%d\t", direction[i * width_d + j]);
+		fprintf(stderr, "\n");
+	}
+	fprintf(stderr, "\n");
+
 	// trace back
 	i = readLen - 1;
 	j = refLen - 1;
@@ -122,15 +129,18 @@ char* banded_sw (const char* ref,
 	f = 'M';
 	while (LIKELY(i > 0)) {
 		set_u(temp1, band_width, i, j);	// alignment ending position
+		fprintf(stderr, "i: %d\tj: %d\td: %d | ", i, j, direction_line[temp1 - 1]);
 		switch (direction_line[temp1 - 1]) {
 			case 1: 
 				--i;
+				fprintf(stderr, "\n");
 				--j;
 				direction_line -= width_d;
 				f = 'M';
 				break;
 			case 2:
 			 	--i;
+				fprintf(stderr, "\n");
 				direction_line -= width_d;
 				f = 'I';
 				break;		
