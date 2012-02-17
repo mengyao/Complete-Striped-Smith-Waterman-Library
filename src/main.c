@@ -210,7 +210,7 @@ int main (int argc, char * const argv[]) {
 				begin_read = bests[0].read - bests_reverse[0].read; 
 				band_width = abs(bests_reverse[0].ref - bests_reverse[0].read) + 1;
 			
-				fprintf(stdout, "max score: %d, 2nd score: %d, begin_ref: %d, begin_read: %d\n", bests[0].score, bests[1].score, begin_ref + 1, begin_read + 1);
+				fprintf(stdout, "max score: %d, 2nd score: %d, begin_ref: %d, begin_read: %d, end_ref: %d, end_read: %d\n", bests[0].score, bests[1].score, begin_ref + 1, begin_read + 1, bests[0].ref + 1, bests[0].read + 1);
 				if (path == 1) {
 					//if (bests[0].score != bests[1].score) {
 						cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, bests[0].score, match, mismatch, insert_open, insert_extention, delet_open, delet_extention, band_width, table, mat, n);

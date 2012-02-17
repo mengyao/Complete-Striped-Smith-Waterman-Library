@@ -2,7 +2,7 @@
  *
  *  Created by Mengyao Zhao on 01/10/12.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 02/02/12.
+ *	Last revision by Mengyao Zhao on 02/02/17.
  *
  */
 
@@ -22,6 +22,9 @@
 
 /* Convert the coordinate in the scoring matrix into the coordinate in one line of the band. */
 #define set_u(u, w, i, j) { int x=(i)-(w); x=x>0?x:0; (u)=(j)-x+1; }
+
+/* Convert the coordinate in the direction matrix into the coordinate in one line of the band. */
+#define set_d(u, w, i, j, p) { int x=(i)-(w); x=x>0?x:0; x=(j)-x; (u)=x*3+p; }
 
 /*! @function
   @abstract  Round an integer to the next closest power-2 integer.
@@ -75,7 +78,10 @@ char* banded_sw (const char* ref,
 		h_b = (int32_t*)calloc(width, sizeof(int32_t)); 
 		e_b = (int32_t*)calloc(width, sizeof(int32_t)); 
 		h_c = (int32_t*)calloc(width, sizeof(int32_t)); 
-		direction = (int8_t*)calloc(width_d * readLen, sizeof(int8_t));
+		//direction = (int8_t*)calloc(width_d * readLen, sizeof(int8_t));
+
+		fprintf(stderr, "width_d: %d\n", width_d);
+		direction = (int8_t*)calloc(width_d * readLen * 3, sizeof(int8_t));
 		direction_line = direction;
 		for (j = 1; LIKELY(j < width - 1); j ++) h_b[j] = 0;
 		for (i = 0; LIKELY(i < readLen); i ++) {
@@ -84,19 +90,27 @@ char* banded_sw (const char* ref,
 			j = i + band_width; end = end < j ? end : j; // band end
 			edge = end + 1 < width - 1 ? end + 1 : width - 1;
 			f = h_b[0] = e_b[0] = h_b[edge] = e_b[edge] = h_c[0] = 0;
-			direction_line = direction + width_d * i;
+			//direction_line = direction + width_d * i;
+			direction_line = direction + width_d * i * 3;
 
+			fprintf(stderr, "%d:\t", i);
 			for (j = beg; LIKELY(j <= end); j ++) {
-				int32_t b, e1, f1, d;
+				int32_t b, e1, f1, d, de, df, dh;
 				set_u(u, band_width, i, j);	set_u(e, band_width, i - 1, j); 
 				set_u(b, band_width, i, j - 1); set_u(d, band_width, i - 1, j - 1);
+				set_d(de, band_width, i, j, 0);
+				set_d(df, band_width, i, j, 1);
+				set_d(dh, band_width, i, j, 2);
+
 				temp1 = i == 0 ? -weight_insertB : h_b[e] - weight_insertB;
 				temp2 = i == 0 ? -weight_insertE : e_b[e] - weight_insertE;
 				e_b[u] = temp1 > temp2 ? temp1 : temp2;
+				direction_line[de] = temp1 > temp2 ? 3 : 2;
 		
 				temp1 = h_c[b] - weight_deletB;
 				temp2 = f - weight_deletE;
 				f = temp1 > temp2 ? temp1 : temp2;
+				direction_line[df] = temp1 > temp2 ? 5 : 4;
 				
 				e1 = e_b[u] > 0 ? e_b[u] : 0;
 				f1 = f > 0 ? f : 0;
@@ -106,18 +120,25 @@ char* banded_sw (const char* ref,
 		
 				if (h_c[u] > max) max = h_c[u];
 		
-				if (temp1 <= temp2) direction_line[u - 1] = 1;
-				else direction_line[u - 1] = e1 > f1 ? 2 : 3;
+				//if (temp1 <= temp2) direction_line[u - 1] = 1;
+				//else direction_line[u - 1] = e1 >= f1 ? 2 : 3;
+				if (temp1 <= temp2) direction_line[dh] = 1;
+				else direction_line[dh] = e1 > f1 ? direction_line[de] : direction_line[df];
+
+				fprintf(stderr, "%d, %d, %d |", e1, f1, h_c[u]);
 			}
 			for (j = 1; j <= u; j ++) h_b[j] = h_c[j];
+
+			fprintf(stderr, "\n");
 		}
 		band_width *= 2;
 	} while (LIKELY(max < score));
 	band_width /= 2;
 
+	fprintf(stderr, "\n");
 	for (i = 0; i < readLen; i ++) {
 		fprintf(stderr, "%d:\t", i);
-		for (j = 0; j < width_d; j ++) fprintf(stderr, "%d\t", direction[i * width_d + j]);
+		for (j = 0; j < width_d; j ++) fprintf(stderr, "%d, %d, %d |", direction[(i * width_d + j)*3], direction[(i * width_d + j)*3 + 1], direction[(i * width_d + j)*3 + 2]);
 		fprintf(stderr, "\n");
 	}
 	fprintf(stderr, "\n");
@@ -127,25 +148,41 @@ char* banded_sw (const char* ref,
 	j = refLen - 1;
 	e = 0;	// Count the number of M, D or I.
 	f = 'M';
+	temp2 = 2;	// h
 	while (LIKELY(i > 0)) {
-		set_u(temp1, band_width, i, j);	// alignment ending position
-		fprintf(stderr, "i: %d\tj: %d\td: %d | ", i, j, direction_line[temp1 - 1]);
-		switch (direction_line[temp1 - 1]) {
+		//set_u(temp1, band_width, i, j);	// alignment ending position
+		set_d(temp1, band_width, i, j, temp2);
+		fprintf(stderr, "i: %d\tj: %d\ttemp1: %d\td: %d | ", i, j, temp1, direction_line[temp1]);
+		switch (direction_line[temp1]) {
 			case 1: 
 				--i;
 				fprintf(stderr, "\n");
 				--j;
-				direction_line -= width_d;
+				temp2 = 2;
+				direction_line -= width_d * 3;
 				f = 'M';
 				break;
 			case 2:
 			 	--i;
 				fprintf(stderr, "\n");
-				direction_line -= width_d;
+				temp2 = 0;	// e
+				direction_line -= width_d * 3;
 				f = 'I';
 				break;		
 			case 3:
+				--i;
+				temp2 = 2;
+				direction_line -= width_d * 3;
+				f = 'I';
+				break;
+			case 4:
 				--j;
+				temp2 = 1;
+				f = 'D';
+				break;
+			case 5:
+				--j;
+				temp2 = 2;
 				f = 'D';
 				break;
 			default: 
