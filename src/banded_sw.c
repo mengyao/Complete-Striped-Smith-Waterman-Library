@@ -79,7 +79,6 @@ char* banded_sw (const char* ref,
 		e_b = (int32_t*)calloc(width, sizeof(int32_t)); 
 		h_c = (int32_t*)calloc(width, sizeof(int32_t)); 
 
-//		fprintf(stderr, "width_d: %d\n", width_d);
 		direction = (int8_t*)calloc(width_d * readLen * 3, sizeof(int8_t));
 		direction_line = direction;
 		for (j = 1; LIKELY(j < width - 1); j ++) h_b[j] = 0;
@@ -91,7 +90,6 @@ char* banded_sw (const char* ref,
 			f = h_b[0] = e_b[0] = h_b[edge] = e_b[edge] = h_c[0] = 0;
 			direction_line = direction + width_d * i * 3;
 
-			//fprintf(stderr, "%d:\t", i);
 			for (j = beg; LIKELY(j <= end); j ++) {
 				int32_t b, e1, f1, d, de, df, dh;
 				set_u(u, band_width, i, j);	set_u(e, band_width, i - 1, j); 
@@ -120,25 +118,13 @@ char* banded_sw (const char* ref,
 		
 				if (temp1 <= temp2) direction_line[dh] = 1;
 				else direction_line[dh] = e1 > f1 ? direction_line[de] : direction_line[df];
-
-				//fprintf(stderr, "%d, %d, %d |", e1, f1, h_c[u]);
 			}
 			for (j = 1; j <= u; j ++) h_b[j] = h_c[j];
-
-		//	fprintf(stderr, "\n");
 		}
 		band_width *= 2;
 	} while (LIKELY(max < score));
 	band_width /= 2;
-/*
-	fprintf(stderr, "\n");
-	for (i = 0; i < readLen; i ++) {
-		fprintf(stderr, "%d:\t", i);
-		for (j = 0; j < width_d; j ++) fprintf(stderr, "%d, %d, %d |", direction[(i * width_d + j)*3], direction[(i * width_d + j)*3 + 1], direction[(i * width_d + j)*3 + 2]);
-		fprintf(stderr, "\n");
-	}
-	fprintf(stderr, "\n");
-*/
+
 	// trace back
 	i = readLen - 1;
 	j = refLen - 1;
@@ -146,13 +132,10 @@ char* banded_sw (const char* ref,
 	f = 'M';
 	temp2 = 2;	// h
 	while (LIKELY(i > 0)) {
-		//set_u(temp1, band_width, i, j);	// alignment ending position
 		set_d(temp1, band_width, i, j, temp2);
-//		fprintf(stderr, "i: %d\tj: %d\ttemp1: %d\td: %d | ", i, j, temp1, direction_line[temp1]);
 		switch (direction_line[temp1]) {
 			case 1: 
 				--i;
-//				fprintf(stderr, "\n");
 				--j;
 				temp2 = 2;
 				direction_line -= width_d * 3;
@@ -160,7 +143,6 @@ char* banded_sw (const char* ref,
 				break;
 			case 2:
 			 	--i;
-//				fprintf(stderr, "\n");
 				temp2 = 0;	// e
 				direction_line -= width_d * 3;
 				f = 'I';
