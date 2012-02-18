@@ -2,7 +2,7 @@
  *
  *  Created by Mengyao Zhao on 01/10/12.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 02/02/17.
+ *	Last revision by Mengyao Zhao on 02/02/18.
  *
  */
 
@@ -78,9 +78,8 @@ char* banded_sw (const char* ref,
 		h_b = (int32_t*)calloc(width, sizeof(int32_t)); 
 		e_b = (int32_t*)calloc(width, sizeof(int32_t)); 
 		h_c = (int32_t*)calloc(width, sizeof(int32_t)); 
-		//direction = (int8_t*)calloc(width_d * readLen, sizeof(int8_t));
 
-		fprintf(stderr, "width_d: %d\n", width_d);
+//		fprintf(stderr, "width_d: %d\n", width_d);
 		direction = (int8_t*)calloc(width_d * readLen * 3, sizeof(int8_t));
 		direction_line = direction;
 		for (j = 1; LIKELY(j < width - 1); j ++) h_b[j] = 0;
@@ -90,10 +89,9 @@ char* banded_sw (const char* ref,
 			j = i + band_width; end = end < j ? end : j; // band end
 			edge = end + 1 < width - 1 ? end + 1 : width - 1;
 			f = h_b[0] = e_b[0] = h_b[edge] = e_b[edge] = h_c[0] = 0;
-			//direction_line = direction + width_d * i;
 			direction_line = direction + width_d * i * 3;
 
-			fprintf(stderr, "%d:\t", i);
+			//fprintf(stderr, "%d:\t", i);
 			for (j = beg; LIKELY(j <= end); j ++) {
 				int32_t b, e1, f1, d, de, df, dh;
 				set_u(u, band_width, i, j);	set_u(e, band_width, i - 1, j); 
@@ -120,21 +118,19 @@ char* banded_sw (const char* ref,
 		
 				if (h_c[u] > max) max = h_c[u];
 		
-				//if (temp1 <= temp2) direction_line[u - 1] = 1;
-				//else direction_line[u - 1] = e1 >= f1 ? 2 : 3;
 				if (temp1 <= temp2) direction_line[dh] = 1;
 				else direction_line[dh] = e1 > f1 ? direction_line[de] : direction_line[df];
 
-				fprintf(stderr, "%d, %d, %d |", e1, f1, h_c[u]);
+				//fprintf(stderr, "%d, %d, %d |", e1, f1, h_c[u]);
 			}
 			for (j = 1; j <= u; j ++) h_b[j] = h_c[j];
 
-			fprintf(stderr, "\n");
+		//	fprintf(stderr, "\n");
 		}
 		band_width *= 2;
 	} while (LIKELY(max < score));
 	band_width /= 2;
-
+/*
 	fprintf(stderr, "\n");
 	for (i = 0; i < readLen; i ++) {
 		fprintf(stderr, "%d:\t", i);
@@ -142,7 +138,7 @@ char* banded_sw (const char* ref,
 		fprintf(stderr, "\n");
 	}
 	fprintf(stderr, "\n");
-
+*/
 	// trace back
 	i = readLen - 1;
 	j = refLen - 1;
@@ -152,11 +148,11 @@ char* banded_sw (const char* ref,
 	while (LIKELY(i > 0)) {
 		//set_u(temp1, band_width, i, j);	// alignment ending position
 		set_d(temp1, band_width, i, j, temp2);
-		fprintf(stderr, "i: %d\tj: %d\ttemp1: %d\td: %d | ", i, j, temp1, direction_line[temp1]);
+//		fprintf(stderr, "i: %d\tj: %d\ttemp1: %d\td: %d | ", i, j, temp1, direction_line[temp1]);
 		switch (direction_line[temp1]) {
 			case 1: 
 				--i;
-				fprintf(stderr, "\n");
+//				fprintf(stderr, "\n");
 				--j;
 				temp2 = 2;
 				direction_line -= width_d * 3;
@@ -164,7 +160,7 @@ char* banded_sw (const char* ref,
 				break;
 			case 2:
 			 	--i;
-				fprintf(stderr, "\n");
+//				fprintf(stderr, "\n");
 				temp2 = 0;	// e
 				direction_line -= width_d * 3;
 				f = 'I';
