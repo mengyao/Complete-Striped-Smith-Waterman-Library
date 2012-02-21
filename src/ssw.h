@@ -31,7 +31,7 @@ typedef struct {
  *	@parameter	bias	a number used to expend the max capacity of the values in the scoreing matrix; suggest to set to 4
  *  @return		pointer to the query profile 
  */
-__m128i* qP_byte (const char* read, //FIXME: need a new one
+__m128i* qP_byte (const char* read, 
 								   int8_t* nt_table,
 								   int8_t* mat,
 								   int32_t n,	/* the edge length of the squre matrix mat */

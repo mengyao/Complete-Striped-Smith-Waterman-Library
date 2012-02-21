@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 02/11/12.
+ *  Last revision by Mengyao Zhao on 02/21/12.
  *	New features: make weight as options 
  */
 
@@ -40,12 +40,72 @@ char* seq_reverse(const char* seq, int32_t end)	/* end is 0-based alignment endi
 	return reverse;					
 }									
 
+void align(kseq_t* ref_seq, 
+		   kseq_t* read_seq, 
+	  	   int8_t* table, 
+		   int8_t* mat,
+	 	   char* ref_reverse,
+	  	   int32_t n, 
+	 	   int32_t refLen,
+		   int32_t match,
+		   int32_t mismatch, 
+		   int32_t insert_open, 
+	 	   int32_t insert_extension,
+	 	   int32_t delet_open,
+	 	   int32_t delet_extension,
+	 	   int32_t path){
+
+	char *read_reverse;
+	int32_t readLen, word = 0;
+	alignment_end *bests, *bests_reverse;
+	__m128i *vP;
+	printf("read_name: %s\n", read_seq->name.s);
+	printf("read_seq: %s\n", read_seq->seq.s); 
+	readLen = strlen(read_seq->seq.s);
+	vP = qP_byte(read_seq->seq.s, table, mat, n, 4);
+	bests = sw_sse2_byte(ref_seq->seq.s, table, refLen, readLen, insert_open, insert_extension, delet_open, delet_extension, vP, 0, 4);
+	if (bests[0].score == 255) {
+		vP = qP_word(read_seq->seq.s, table, mat, n);
+		bests = sw_sse2_word(ref_seq->seq.s, table, refLen, readLen, insert_open, insert_extension, delet_open, delet_extension, vP, 0);
+		word = 1;
+	}
+	free(vP);
+	
+	if (bests[0].score != 0) {
+		char* cigar1;
+		int32_t begin_ref, begin_read, band_width;
+		read_reverse = seq_reverse(read_seq->seq.s, bests[0].read);
+		if (word == 0) {
+			vP = qP_byte(read_reverse, table, mat, n, 4);
+			bests_reverse = sw_sse2_byte(ref_reverse + refLen - bests[0].ref - 1, table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extension, delet_open, delet_extension, vP, bests[0].score, 4);
+		} else {
+			vP = qP_word(read_reverse, table, mat, n);
+			bests_reverse = sw_sse2_word(ref_reverse + refLen - bests[0].ref - 1, table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extension, delet_open, delet_extension, vP, bests[0].score);
+		}
+		free(vP);
+		free(read_reverse);
+	
+		begin_ref = bests[0].ref - bests_reverse[0].ref; 
+		begin_read = bests[0].read - bests_reverse[0].read; 
+		band_width = abs(bests_reverse[0].ref - bests_reverse[0].read) + 1;
+	
+		fprintf(stdout, "max score: %d, 2nd score: %d, begin_ref: %d, begin_read: %d, end_ref: %d, end_read: %d\n", bests[0].score, bests[1].score, begin_ref + 1, begin_read + 1, bests[0].ref + 1, bests[0].read + 1);
+		if (path == 1) {
+			cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, bests[0].score, match, mismatch, insert_open, insert_extension, delet_open, delet_extension, band_width, table, mat, n);
+			if (cigar1 != 0) {
+				fprintf(stdout, "cigar: %s\n", cigar1);
+			} else fprintf(stdout, "No alignment is available.\n");	
+			free(cigar1);		
+		}
+	}else fprintf(stdout, "No alignment found for this read.\n");
+}
+
 int main (int argc, char * const argv[]) {
 	clock_t start, end;
 	float cpu_time;
 	gzFile ref_fp;
 	kseq_t *ref_seq;
-	int32_t l, m, k, n = 5, match = 2, mismatch = 2, insert_open = 3, insert_extention = 1, delet_open = 3, delet_extention = 1, path = 0;
+	int32_t l, m, k, n = 5, match = 2, mismatch = 2, insert_open = 3, insert_extension = 1, delet_open = 3, delet_extension = 1, path = 0, reverse = 0;
 	int8_t* mat = (int8_t*)calloc(25, sizeof(int8_t));
 	char mat_name[16];
 	mat_name[0] = '\0';
@@ -85,16 +145,17 @@ int main (int argc, char * const argv[]) {
 	for (m = 0; LIKELY(m < 5); ++m) mat[k++] = 0;
 
 	// Parse command line.
-	while ((l = getopt(argc, argv, "m:x:i:e:d:f:a:c")) >= 0) {
+	while ((l = getopt(argc, argv, "m:x:i:e:d:f:a:cr")) >= 0) {
 		switch (l) {
 			case 'm': match = atoi(optarg); break;
 			case 'x': mismatch = atoi(optarg); break;
 			case 'i': insert_open = atoi(optarg); break;
-			case 'e': insert_extention = atoi(optarg); break;
+			case 'e': insert_extension = atoi(optarg); break;
 			case 'd': delet_open = atoi(optarg); break;
-			case 'f': delet_extention = atoi(optarg); break;
+			case 'f': delet_extension = atoi(optarg); break;
 			case 'a': strcpy(mat_name, optarg); break;
 			case 'c': path = 1; break;
+			case 'r': reverse = 1; break;
 		}
 	}
 	if (optind + 2 > argc) {
@@ -107,8 +168,9 @@ int main (int argc, char * const argv[]) {
 		fprintf(stderr, "\t-e N\tN is a positive integer. -N will be used as the weight for insertion extension in genome sequence alignment.\n");
 		fprintf(stderr,	"\t-d N\tN is a positive integer. -N will be used as the weight for deletion opening in genome sequence alignment.\n");
 		fprintf(stderr, "\t-f N\tN is a positive integer. -N will be used as the weight for deletion extension in genome sequence alignment.\n");
-		fprintf(stderr, "\t-a FILE\tFor protein sequence alignment. FILE is either the Blosum or Pam weight matrix. Recommand to use the matrix\n\t\tincluding B Z X * columns. Otherwise, corresponding scores will be signed to 0.\n"); 
-		fprintf(stderr, "\t-c\tReturn the alignment in cigar format.\n\n");
+		fprintf(stderr, "\t-a FILE\tFor protein sequence alignment. FILE is either the Blosum or Pam weight matrix. Recommend to use the matrix\n\t\tincluding B Z X * columns. Otherwise, corresponding scores will be signed to 0.\n"); 
+		fprintf(stderr, "\t-c\tReturn the alignment in cigar format.\n");
+		fprintf(stderr, "\t-r\tThe best alignment will be picked between the original read alignment and the reverse complement read alignment.\n\n");
 		return 1;
 	}
 
@@ -158,10 +220,6 @@ int main (int argc, char * const argv[]) {
 		table = aa_table;
 		n = 24;
 	}
-/*	for (l = 0; l < 24; l ++) {
-		for (k = 0; k < 24; k ++) fprintf(stderr, "%d\t", mat[l * 24 + k]);
-		fprintf(stderr, "\n");
-	}*/
 
 	ref_fp = gzopen(argv[optind], "r");
 	ref_seq = kseq_init(ref_fp);
@@ -176,51 +234,7 @@ int main (int argc, char * const argv[]) {
 		int32_t refLen = strlen(ref_seq->seq.s);
 		char* ref_reverse = seq_reverse(ref_seq->seq.s, refLen - 1); 
 		while ((m = kseq_read(read_seq)) >= 0) {
-			char *read_reverse;
-			int32_t readLen, word = 0;
-			alignment_end *bests, *bests_reverse;
-			__m128i *vP;
-			printf("read_name: %s\n", read_seq->name.s);
-			printf("read_seq: %s\n", read_seq->seq.s); 
-			readLen = strlen(read_seq->seq.s);
-			vP = qP_byte(read_seq->seq.s, table, mat, n, 4);
-			bests = sw_sse2_byte(ref_seq->seq.s, table, refLen, readLen, insert_open, insert_extention, delet_open, delet_extention, vP, 0, 4);
-			if (bests[0].score == 255) {
-				vP = qP_word(read_seq->seq.s, table, mat, n);
-				bests = sw_sse2_word(ref_seq->seq.s, table, refLen, readLen, insert_open, insert_extention, delet_open, delet_extention, vP, 0);
-				word = 1;
-			}
-			free(vP);
-			
-			if (bests[0].score != 0) {
-				char* cigar1;
-				int32_t begin_ref, begin_read, band_width;
-				read_reverse = seq_reverse(read_seq->seq.s, bests[0].read);
-				if (word == 0) {
-					vP = qP_byte(read_reverse, table, mat, n, 4);
-					bests_reverse = sw_sse2_byte(ref_reverse + refLen - bests[0].ref - 1, table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extention, delet_open, delet_extention, vP, bests[0].score, 4);
-				} else {
-					vP = qP_word(read_reverse, table, mat, n);
-					bests_reverse = sw_sse2_word(ref_reverse + refLen - bests[0].ref - 1, table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extention, delet_open, delet_extention, vP, bests[0].score);
-				}
-				free(vP);
-				free(read_reverse);
-			
-				begin_ref = bests[0].ref - bests_reverse[0].ref; 
-				begin_read = bests[0].read - bests_reverse[0].read; 
-				band_width = abs(bests_reverse[0].ref - bests_reverse[0].read) + 1;
-			
-				fprintf(stdout, "max score: %d, 2nd score: %d, begin_ref: %d, begin_read: %d, end_ref: %d, end_read: %d\n", bests[0].score, bests[1].score, begin_ref + 1, begin_read + 1, bests[0].ref + 1, bests[0].read + 1);
-				if (path == 1) {
-					//if (bests[0].score != bests[1].score) {
-						cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, bests[0].score, match, mismatch, insert_open, insert_extention, delet_open, delet_extention, band_width, table, mat, n);
-						if (cigar1 != 0) {
-							fprintf(stdout, "cigar: %s\n", cigar1);
-						} else fprintf(stdout, "No alignment is available.\n");	
-						free(cigar1);		
-					//} else fprintf(stdout, "Two alignments available.\n");
-				}
-			}else fprintf(stdout, "No alignment found for this read.\n");
+			align(ref_seq, read_seq, table, mat, ref_reverse, n, refLen, match, mismatch, insert_open, insert_extension, delet_open, delet_extension, path);
 		}
 		free(ref_reverse);
 		kseq_destroy(read_seq);

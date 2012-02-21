@@ -56,7 +56,7 @@ __m128i* qP_byte (const char* read,
 /* Striped Smith-Waterman
    Record the highest score of each reference position. 
    Return the alignment score and ending position of the best alignment, 2nd best alignment, etc. 
-   Gap begin and gap extention are different. 
+   Gap begin and gap extension are different. 
    wight_match > 0, all other weights < 0.
    The returned positions are 0-based.
  */ 
@@ -109,13 +109,13 @@ alignment_end* sw_sse2_byte (const char* ref,
 	/* 16 byte insertion begin vector */
 	__m128i vInserB = _mm_set1_epi8(weight_insertB);
 	
-	/* 16 byte insertion extention vector */
+	/* 16 byte insertion extension vector */
 	__m128i vInserE = _mm_set1_epi8(weight_insertE);	
 	
 	/* 16 byte deletion begin vector */
 	__m128i vDeletB = _mm_set1_epi8(weight_deletB);	
 
-	/* 16 byte deletion extention vector */
+	/* 16 byte deletion extension vector */
 	__m128i vDeletE = _mm_set1_epi8(weight_deletE);	
 
 	/* 16 byte bias vector */
@@ -320,13 +320,13 @@ alignment_end* sw_sse2_word (const char* ref,
 	/* 16 byte insertion begin vector */
 	__m128i vInserB = _mm_set1_epi16(weight_insertB);
 	
-	/* 16 byte insertion extention vector */
+	/* 16 byte insertion extension vector */
 	__m128i vInserE = _mm_set1_epi16(weight_insertE);	
 	
 	/* 16 byte deletion begin vector */
 	__m128i vDeletB = _mm_set1_epi16(weight_deletB);
 
-	/* 16 byte deletion extention vector */
+	/* 16 byte deletion extension vector */
 	__m128i vDeletE = _mm_set1_epi16(weight_deletE);	
 
 	/* 16 byte bias vector */
