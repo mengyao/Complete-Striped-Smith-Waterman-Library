@@ -88,7 +88,6 @@ void align(char* ref_seq,
 			alignment_end* bests){
 
 	char *read_reverse;
-//	int32_t readLen, word = 0;
 	alignment_end *bests_reverse;
 	__m128i *vP;
 	printf("read_seq: %s\n", read_seq);
