@@ -40,9 +40,39 @@ char* seq_reverse(const char* seq, int32_t end)	/* end is 0-based alignment endi
 	return reverse;					
 }									
 
-void align(kseq_t* ref_seq, 
-		   kseq_t* read_seq, 
-	  	   int8_t* table, 
+alignment_end* find_bests(char* ref_seq,
+		   char* read_seq, 
+	  	   int8_t* ref_table, 
+		   int8_t* read_table,
+		   int8_t* mat,
+	  	   int32_t n, 
+	 	   int32_t refLen,
+		   int32_t readLen,
+		   int32_t insert_open, 
+	 	   int32_t insert_extension,
+	 	   int32_t delet_open,
+	 	   int32_t delet_extension,
+			int32_t* word){
+
+	__m128i *vP;
+	alignment_end* bests;
+	if (*word == 0) {
+		vP = qP_byte(read_seq, read_table, mat, n, 4);
+		bests = sw_sse2_byte(ref_seq, ref_table, refLen, readLen, insert_open, insert_extension, delet_open, delet_extension, vP, 0, 4);
+	}
+	if (*word == 1 || bests[0].score == 255) {
+		vP = qP_word(read_seq, read_table, mat, n);
+		bests = sw_sse2_word(ref_seq, ref_table, refLen, readLen, insert_open, insert_extension, delet_open, delet_extension, vP, 0);
+		*word = 1;
+	}
+	free(vP);
+	return bests;	
+}
+
+void align(char* ref_seq,	 
+		   char* read_seq, 
+	  	   int8_t* ref_table,
+		   int8_t* read_table, 
 		   int8_t* mat,
 	 	   char* ref_reverse,
 	  	   int32_t n, 
@@ -53,34 +83,26 @@ void align(kseq_t* ref_seq,
 	 	   int32_t insert_extension,
 	 	   int32_t delet_open,
 	 	   int32_t delet_extension,
-	 	   int32_t path){
+	 	   int32_t path,
+			int32_t word,
+			alignment_end* bests){
 
 	char *read_reverse;
-	int32_t readLen, word = 0;
-	alignment_end *bests, *bests_reverse;
+//	int32_t readLen, word = 0;
+	alignment_end *bests_reverse;
 	__m128i *vP;
-	printf("read_name: %s\n", read_seq->name.s);
-	printf("read_seq: %s\n", read_seq->seq.s); 
-	readLen = strlen(read_seq->seq.s);
-	vP = qP_byte(read_seq->seq.s, table, mat, n, 4);
-	bests = sw_sse2_byte(ref_seq->seq.s, table, refLen, readLen, insert_open, insert_extension, delet_open, delet_extension, vP, 0, 4);
-	if (bests[0].score == 255) {
-		vP = qP_word(read_seq->seq.s, table, mat, n);
-		bests = sw_sse2_word(ref_seq->seq.s, table, refLen, readLen, insert_open, insert_extension, delet_open, delet_extension, vP, 0);
-		word = 1;
-	}
-	free(vP);
-	
+	printf("read_seq: %s\n", read_seq);
+ 
 	if (bests[0].score != 0) {
 		char* cigar1;
 		int32_t begin_ref, begin_read, band_width;
-		read_reverse = seq_reverse(read_seq->seq.s, bests[0].read);
+		read_reverse = seq_reverse(read_seq, bests[0].read);
 		if (word == 0) {
-			vP = qP_byte(read_reverse, table, mat, n, 4);
-			bests_reverse = sw_sse2_byte(ref_reverse + refLen - bests[0].ref - 1, table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extension, delet_open, delet_extension, vP, bests[0].score, 4);
+			vP = qP_byte(read_reverse, read_table, mat, n, 4);
+			bests_reverse = sw_sse2_byte(ref_reverse + refLen - bests[0].ref - 1, ref_table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extension, delet_open, delet_extension, vP, bests[0].score, 4);
 		} else {
-			vP = qP_word(read_reverse, table, mat, n);
-			bests_reverse = sw_sse2_word(ref_reverse + refLen - bests[0].ref - 1, table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extension, delet_open, delet_extension, vP, bests[0].score);
+			vP = qP_word(read_reverse, read_table, mat, n);
+			bests_reverse = sw_sse2_word(ref_reverse + refLen - bests[0].ref - 1, ref_table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extension, delet_open, delet_extension, vP, bests[0].score);
 		}
 		free(vP);
 		free(read_reverse);
@@ -91,13 +113,13 @@ void align(kseq_t* ref_seq,
 	
 		fprintf(stdout, "max score: %d, 2nd score: %d, begin_ref: %d, begin_read: %d, end_ref: %d, end_read: %d\n", bests[0].score, bests[1].score, begin_ref + 1, begin_read + 1, bests[0].ref + 1, bests[0].read + 1);
 		if (path == 1) {
-			cigar1 = banded_sw(ref_seq->seq.s + begin_ref, read_seq->seq.s + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, bests[0].score, match, mismatch, insert_open, insert_extension, delet_open, delet_extension, band_width, table, mat, n);
+			cigar1 = banded_sw(ref_seq + begin_ref, read_seq + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, bests[0].score, match, mismatch, insert_open, insert_extension, delet_open, delet_extension, band_width, ref_table, read_table, mat, n);
 			if (cigar1 != 0) {
 				fprintf(stdout, "cigar: %s\n", cigar1);
 			} else fprintf(stdout, "No alignment is available.\n");	
 			free(cigar1);		
 		}
-	}else fprintf(stdout, "No alignment found for this read.\n");
+	}else fprintf(stdout, "No alignment is found for this read.\n");
 }
 
 int main (int argc, char * const argv[]) {
@@ -129,9 +151,9 @@ int main (int argc, char * const argv[]) {
 		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
 		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
 		4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4, 4, 4,  3, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 4, 4, 4,  3, 0, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
 		4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4, 4, 4,  3, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4 
+		4, 4, 4, 4,  3, 0, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4 
 	};
 	
 	int8_t* table = nt_table;
@@ -225,6 +247,8 @@ int main (int argc, char * const argv[]) {
 	ref_seq = kseq_init(ref_fp);
 
 	start = clock();
+
+	// alignment
 	while ((l = kseq_read(ref_seq)) >= 0) {
 		gzFile read_fp;
 		kseq_t *read_seq;
@@ -234,7 +258,33 @@ int main (int argc, char * const argv[]) {
 		int32_t refLen = strlen(ref_seq->seq.s);
 		char* ref_reverse = seq_reverse(ref_seq->seq.s, refLen - 1); 
 		while ((m = kseq_read(read_seq)) >= 0) {
-			align(ref_seq, read_seq, table, mat, ref_reverse, n, refLen, match, mismatch, insert_open, insert_extension, delet_open, delet_extension, path);
+			alignment_end* plus;
+			int32_t word = 0;
+			printf("read_name: %s\n", read_seq->name.s);
+			int32_t readLen = strlen(read_seq->seq.s);
+			plus = find_bests(ref_seq->seq.s, read_seq->seq.s, nt_table, nt_table, mat, n, refLen, readLen, insert_open, insert_extension, delet_open, delet_extension, &word);
+			if (reverse == 0) align (ref_seq->seq.s, read_seq->seq.s, nt_table, nt_table, mat, ref_reverse, 5, refLen, match, mismatch, insert_open, insert_extension, delet_open, delet_extension, path, word, plus);
+			else if (!strcmp(mat_name, "\0")){
+				char* reverse;
+				alignment_end* minus;
+				int8_t complement_nt_table[128] = {
+					4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+					4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+					4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+					4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+					4, 3, 4, 2,  4, 4, 4, 1,  4, 4, 4, 4,  4, 4, 4, 4, 
+					4, 4, 4, 4,  0, 0, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+					4, 3, 4, 2,  4, 4, 4, 1,  4, 4, 4, 4,  4, 4, 4, 4, 
+					4, 4, 4, 4,  0, 0, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4 
+				};
+				reverse = seq_reverse(read_seq->seq.s, readLen - 1);
+				minus = find_bests(ref_seq->seq.s, reverse, nt_table, complement_nt_table, mat, n, refLen, readLen, insert_open, insert_extension, delet_open, delet_extension, &word);
+				if (minus[0].score > plus[0].score) align (ref_seq->seq.s, reverse, nt_table, complement_nt_table, mat, ref_reverse, 5, refLen, match, mismatch, insert_open, insert_extension, delet_open, delet_extension, path, word, minus);
+				else align (ref_seq->seq.s, read_seq->seq.s, nt_table, nt_table, mat, ref_reverse, 5, refLen, match, mismatch, insert_open, insert_extension, delet_open, delet_extension, path, word, plus);
+			} else {
+				fprintf(stderr, "The reverse complement alignment is not available for protein sequences.\n");
+				return 1;
+			}
 		}
 		free(ref_reverse);
 		kseq_destroy(read_seq);

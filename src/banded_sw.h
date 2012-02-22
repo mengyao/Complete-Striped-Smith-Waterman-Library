@@ -23,6 +23,7 @@ char* banded_sw (const char* ref,
 				 	uint32_t weight_deletB,   /* will be used as - */
 				 	uint32_t weight_deletE,   /* will be used as - */
 				 	int32_t band_width,
-					int8_t* nt_table,
+					int8_t* ref_table,
+					int8_t* read_table,
 				 	int8_t* mat,			   /* pointer to the weight matrix */
 				 	int32_t n);	

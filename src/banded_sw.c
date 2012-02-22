@@ -2,7 +2,7 @@
  *
  *  Created by Mengyao Zhao on 01/10/12.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 02/02/18.
+ *	Last revision by Mengyao Zhao on 02/02/21.
  *
  */
 
@@ -63,7 +63,8 @@ char* banded_sw (const char* ref,
 				 	uint32_t weight_deletB,   /* will be used as - */
 				 	uint32_t weight_deletE,   /* will be used as - */
 				 	int32_t band_width,
-					int8_t* nt_table,		   
+					int8_t* ref_table,
+					int8_t* read_table,		   
 				 	int8_t* mat,	/* pointer to the weight matrix */
 				 	int32_t n) {	
 
@@ -111,7 +112,7 @@ char* banded_sw (const char* ref,
 				e1 = e_b[u] > 0 ? e_b[u] : 0;
 				f1 = f > 0 ? f : 0;
 				temp1 = e1 > f1 ? e1 : f1;
-				temp2 = h_b[d] + mat[nt_table[(int)ref[j]] * n + nt_table[(int)read[i]]];
+				temp2 = h_b[d] + mat[ref_table[(int)ref[j]] * n + read_table[(int)read[i]]];
 				h_c[u] = temp1 > temp2 ? temp1 : temp2;
 		
 				if (h_c[u] > max) max = h_c[u];
