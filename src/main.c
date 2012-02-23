@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 02/21/12.
+ *  Last revision by Mengyao Zhao on 02/23/12.
  *	New features: make weight as options 
  */
 
@@ -90,8 +90,6 @@ void align(char* ref_seq,
 	char *read_reverse;
 	alignment_end *bests_reverse;
 	__m128i *vP;
-	printf("read_seq: %s\n", read_seq);
- 
 	if (bests[0].score != 0) {
 		char* cigar1;
 		int32_t begin_ref, begin_read, band_width;
@@ -262,8 +260,10 @@ int main (int argc, char * const argv[]) {
 			printf("read_name: %s\n", read_seq->name.s);
 			int32_t readLen = strlen(read_seq->seq.s);
 			plus = find_bests(ref_seq->seq.s, read_seq->seq.s, nt_table, nt_table, mat, n, refLen, readLen, insert_open, insert_extension, delet_open, delet_extension, &word);
-			if (reverse == 0) align (ref_seq->seq.s, read_seq->seq.s, nt_table, nt_table, mat, ref_reverse, 5, refLen, match, mismatch, insert_open, insert_extension, delet_open, delet_extension, path, word, plus);
-			else if (!strcmp(mat_name, "\0")){
+			if (reverse == 0) {
+				printf("(+ aligned) original read seq: %s\n", read_seq->seq.s);
+				align (ref_seq->seq.s, read_seq->seq.s, nt_table, nt_table, mat, ref_reverse, 5, refLen, match, mismatch, insert_open, insert_extension, delet_open, delet_extension, path, word, plus);
+			} else if (!strcmp(mat_name, "\0")){
 				char* reverse;
 				alignment_end* minus;
 				int8_t complement_nt_table[128] = {
@@ -278,8 +278,13 @@ int main (int argc, char * const argv[]) {
 				};
 				reverse = seq_reverse(read_seq->seq.s, readLen - 1);
 				minus = find_bests(ref_seq->seq.s, reverse, nt_table, complement_nt_table, mat, n, refLen, readLen, insert_open, insert_extension, delet_open, delet_extension, &word);
-				if (minus[0].score > plus[0].score) align (ref_seq->seq.s, reverse, nt_table, complement_nt_table, mat, ref_reverse, 5, refLen, match, mismatch, insert_open, insert_extension, delet_open, delet_extension, path, word, minus);
-				else align (ref_seq->seq.s, read_seq->seq.s, nt_table, nt_table, mat, ref_reverse, 5, refLen, match, mismatch, insert_open, insert_extension, delet_open, delet_extension, path, word, plus);
+				if (minus[0].score > plus[0].score) {
+					printf("(- aligned) original read seq: %s\n", read_seq->seq.s);
+					align (ref_seq->seq.s, reverse, nt_table, complement_nt_table, mat, ref_reverse, 5, refLen, match, mismatch, insert_open, insert_extension, delet_open, delet_extension, path, word, minus);
+				} else {
+					printf("(+ aligned) original read seq: %s\n", read_seq->seq.s);
+					align (ref_seq->seq.s, read_seq->seq.s, nt_table, nt_table, mat, ref_reverse, 5, refLen, match, mismatch, insert_open, insert_extension, delet_open, delet_extension, path, word, plus);
+				}
 			} else {
 				fprintf(stderr, "The reverse complement alignment is not available for protein sequences.\n");
 				return 1;
