@@ -185,10 +185,10 @@ int main (int argc, char * const argv[]) {
 		fprintf(stderr, "Options:\n");
 		fprintf(stderr, "\t-m N\tN is a positive integer for weight match in genome sequence alignment.\n");
 		fprintf(stderr, "\t-x N\tN is a positive integer. -N will be used as weight mismatch in genome sequence alignment.\n");
-		fprintf(stderr, "\t-i N\tN is a positive integer. -N will be used as the weight for insertion opening in genome sequence alignment.\n");
-		fprintf(stderr, "\t-e N\tN is a positive integer. -N will be used as the weight for insertion extension in genome sequence alignment.\n");
-		fprintf(stderr,	"\t-d N\tN is a positive integer. -N will be used as the weight for deletion opening in genome sequence alignment.\n");
-		fprintf(stderr, "\t-f N\tN is a positive integer. -N will be used as the weight for deletion extension in genome sequence alignment.\n");
+		fprintf(stderr, "\t-i N\tN is a positive integer. -N will be used as the weight for the insertion opening.\n");
+		fprintf(stderr, "\t-e N\tN is a positive integer. -N will be used as the weight for the insertion extension.\n");
+		fprintf(stderr,	"\t-d N\tN is a positive integer. -N will be used as the weight for the deletion opening.\n");
+		fprintf(stderr, "\t-f N\tN is a positive integer. -N will be used as the weight for the deletion extension.\n");
 		fprintf(stderr, "\t-a FILE\tFor protein sequence alignment. FILE is either the Blosum or Pam weight matrix. Recommend to use the matrix\n\t\tincluding B Z X * columns. Otherwise, corresponding scores will be signed to 0.\n"); 
 		fprintf(stderr, "\t-c\tReturn the alignment in cigar format.\n");
 		fprintf(stderr, "\t-r\tThe best alignment will be picked between the original read alignment and the reverse complement read alignment.\n\n");
