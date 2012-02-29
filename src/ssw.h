@@ -4,8 +4,8 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 01/26/12.
- *	New features: add sw_sse2_word.
+ *	Last revision by Mengyao Zhao on 02/29/12.
+ *	New features: This is the api file.
  *
  */
 
@@ -14,79 +14,45 @@
 #include <string.h>
 #include <emmintrin.h>
 
-/*! @typedef	struct of the alignment results
- *  @field score	the alignment score
- *	@field	ref	1-based position in the reference
- */
 typedef struct {
-	uint16_t score;
-	int32_t ref;	/* 0-based position */
-	int32_t read;	/* alignment ending position on read, 0-based */
-} alignment_end;
+	const char* read;
+	int8_t* mat;
+	int8_t score_size;	// 0: best alignment score will be < 225; 1: > 225; 2: can be either
+	int8_t reverse;	// 1: reverse complement alignment will also be done; 0: otherwise  
+} init_param;
 
-/*! @function	Generate query profile rearrange query sequence & calculate the weight of match/mismatch. 
- *  @parameter	read	sequence
- *  @parameter	weight_match	score for a pair of matched reference and read bases
- *  @parameter	weight_mismatch	score (absolute value) for a pair of mismached reference and read bases
- *	@parameter	bias	a number used to expend the max capacity of the values in the scoreing matrix; suggest to set to 4
- *  @return		pointer to the query profile 
- */
-__m128i* qP_byte (const char* read, 
-								   int8_t* nt_table,
-								   int8_t* mat,
-								   int32_t n,	/* the edge length of the squre matrix mat */
-								   uint8_t bias);
+struct profile;
 
-/*! @function	Transform the reference sequence to a number sequence. 
- *	@parameter	ref	reference sequence
- *	@parameter	refLen	reference length
- *	@return		reference sequence represented by numbers
- */
-int32_t* ref_nt2num (const char* ref, int32_t refLen);
+typedef struct {
+	profile* prof;
+	const char* ref;
+	int32_t refLen;
+	uint8_t weight_insertB; /* will be used as - */
+	uint8_t weight_insertE; /* will be used as - */
+	uint8_t weight_deletB;  /* will be used as - */
+	uint8_t weight_deletE;  /* will be used as - */
+	int8_t begin;	// 1: the best alignment beginning position is needed; 0: otherwise
+	int8_t align;	// 1: the best alignment path (cigar) is needed; 0: otherwise
+} align_param;
 
+// Positions are all 1-based.
+typedef struct {
+	const char* read;	// if strand == 0: original read seq; else reverse complement read seq
+	int8_t strand;	// 0: forward aligned; 1: reverse complement aligned 
+	int16_t score1;	// best alignment score, 225: 
+	int16_t score2;	// sub-optimal alignment score
+	int32_t ref_begin1;	// 0: none
+	int32_t ref_end1;
+	int32_t	read_begin1;	// 0: none
+	int32_t read_end1;
+	int32_t ref_end2;
+	char* cigar;	// best alignment cigar, 0: none
+} align;
 
-/*! @function	striped Smith-Waterman
- *  			Record the highest score of each reference position. 
- *  			Find the ending position of the optimal and sub-optimal alignment.
- *  @parameter	ref	reference sequence represented by numbers; can be generated using funceion ref_nt2num
- *  @parameter	refLen	reference length
- *  @parameter	readLen	read length
- *  @parameter	weight_insertB	score (absolute value) for opening a insertion 
- *  @parameter	weight_insertE	score (absolute value) for extending a insertion 
- *  @parameter	weight_deletB	score (absolute value) for opening a deletion 
- *  @parameter	weight_deletE	score (absolute value) for extending a deletion 
- *  @parameter	vProfile	pointer to the query profile
- *	@parameter	bias	a number used to expend the max capacity of the values in the scoreing matrix; suggest to set to 4
- *  @return		a pointer to the array of structure alignment_end; the optimal (1st member of the array) and 
- *				sub-optimal (2nd member of the array) alignment score and ending positions
- */
-alignment_end* sw_sse2_byte (const char* ref,
-									int8_t* nt_table,
-									int32_t refLen,
-								    int32_t readLen, 
-								    uint8_t weight_insertB, /* will be used as - */
-								    uint8_t weight_insertE, /* will be used as - */
-								    uint8_t weight_deletB,  /* will be used as - */
-								    uint8_t weight_deletE,  /* will be used as - */
-								    __m128i* vProfile,
-									uint8_t terminate,	/* the best alignment score: used to terminate 
-														   the matrix calculation when locating the 
-														   alignment beginning point. If this score 
-														   is set to 0, it will not be used */
-	 							    uint8_t bias);	
+profile* ssw_init (init_param* init);
 
-__m128i* qP_word (const char* read,
-								   int8_t* nt_table,
-								   int8_t* mat,
-								   int32_t n);
- 
-alignment_end* sw_sse2_word (const char* ref,
-									int8_t* nt_table,
-									int32_t refLen,
-								    int32_t readLen, 
-								    uint8_t weight_insertB, /* will be used as - */
-								    uint8_t weight_insertE, /* will be used as - */
-								    uint8_t weight_deletB,  /* will be used as - */
-								    uint8_t weight_deletE,  /* will be used as - */
-								    __m128i* vProfile,
-									uint16_t terminate); 
+void init_destroy (profile* p);
+
+align* ssw_align (align_param* a);
+
+void align_destroy (align* c);

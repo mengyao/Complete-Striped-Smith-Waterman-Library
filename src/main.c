@@ -40,34 +40,6 @@ char* seq_reverse(const char* seq, int32_t end)	/* end is 0-based alignment endi
 	return reverse;					
 }									
 
-alignment_end* find_bests(char* ref_seq,
-		   char* read_seq, 
-	  	   int8_t* ref_table, 
-		   int8_t* read_table,
-		   int8_t* mat,
-	  	   int32_t n, 
-	 	   int32_t refLen,
-		   int32_t readLen,
-		   int32_t insert_open, 
-	 	   int32_t insert_extension,
-	 	   int32_t delet_open,
-	 	   int32_t delet_extension,
-			int32_t* word){
-
-	__m128i *vP;
-	alignment_end* bests;
-	if (*word == 0) {
-		vP = qP_byte(read_seq, read_table, mat, n, 4);
-		bests = sw_sse2_byte(ref_seq, ref_table, refLen, readLen, insert_open, insert_extension, delet_open, delet_extension, vP, 0, 4);
-	}
-	if (*word == 1 || bests[0].score == 255) {
-		vP = qP_word(read_seq, read_table, mat, n);
-		bests = sw_sse2_word(ref_seq, ref_table, refLen, readLen, insert_open, insert_extension, delet_open, delet_extension, vP, 0);
-		*word = 1;
-	}
-	free(vP);
-	return bests;	
-}
 
 void align(char* ref_seq,	 
 		   char* read_seq, 
