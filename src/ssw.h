@@ -21,7 +21,18 @@ typedef struct {
 	int8_t reverse;	// 1: reverse complement alignment will also be done; 0: otherwise  
 } init_param;
 
-typedef struct profile;
+//struct profile;
+typedef struct {
+	__m128i* profile_byte;	// 0: none
+	__m128i* profile_word;	// 0: none
+	__m128i* reverse_byte;	// 0: none
+	__m128i* reverse_word;	// 0: none
+	const char* read;
+	char* rc_read;	// reverse complement sequence of the read, 0: none
+	int8_t type;	// 0: genome sequence; 1: protein sequence
+	int8_t* mat;
+	int8_t* table;
+} profile;
 
 typedef struct {
 	profile* prof;

@@ -30,7 +30,7 @@ int main (int argc, char * const argv[]) {
 	float cpu_time;
 	gzFile read_fp;
 	kseq_t *read_seq;
-	int32_t l, m, k, n = 5, match = 2, mismatch = 2, insert_open = 3, insert_extension = 1, delet_open = 3, delet_extension = 1, path = 0, reverse = 0;
+	int32_t l, m, k, match = 2, mismatch = 2, insert_open = 3, insert_extension = 1, delet_open = 3, delet_extension = 1, path = 0, reverse = 0;
 	int8_t* mat = (int8_t*)calloc(25, sizeof(int8_t));
 	char mat_name[16];
 	mat_name[0] = '\0';
@@ -116,8 +116,6 @@ int main (int argc, char * const argv[]) {
 			fprintf(stderr, "Improper weight matrix file format. Please use standard Blosum or Pam files.\n");
 			return 1;
 		}
-		table = aa_table;
-		n = 24;
 	}
 
 
@@ -129,7 +127,7 @@ int main (int argc, char * const argv[]) {
 	while ((m = kseq_read(read_seq)) >= 0) {
 		gzFile ref_fp;
 		kseq_t *ref_seq;
-		init_param* init;
+		init_param* init = (init_param*)calloc(1, sizeof(init_param));
 		profile* p;
 
 		printf("read_name: %s\n", read_seq->name.s);
@@ -139,24 +137,28 @@ int main (int argc, char * const argv[]) {
 		init->score_size = 2;
 		init->reverse = 1;
 		p = ssw_init(init);
+		free(init);		
+
 		ref_fp = gzopen(argv[optind], "r");
 		ref_seq = kseq_init(ref_fp);
 
 		while ((l = kseq_read(ref_seq)) >= 0) {
-			align_param* a;
+			align_param* a = (align_param*)calloc(1, sizeof(align_param));
 			align* result;
 
-			align_param->prof = p;
-			align_param->ref = ref_seq->seq.s;
-			align_param->refLen = strlen(ref_seq->seq.s);
-			align_param->weight_insertB = insert_open;
-			align_param->weight_insertE = insert_extension;
-			align_param->weight_deletB = delet_open;
-			align_param->weight_deletE = delet_extension;
-			align_param->begin = 1;
-			align_param->align = 1;
+			a->prof = p;
+			a->ref = ref_seq->seq.s;
+			a->refLen = strlen(ref_seq->seq.s);
+			a->weight_insertB = insert_open;
+			a->weight_insertE = insert_extension;
+			a->weight_deletB = delet_open;
+			a->weight_deletE = delet_extension;
+			a->begin = 1;
+			a->align = 1;
 			printf("ref_name: %s\n", ref_seq->name.s);
 			result = ssw_align (a);
+			free(a);
+
 			fprintf(stdout, "%d\t%s\n", result->strand, result->read);
 			fprintf(stdout, "score1: %d\tscore2: %d\tref_begin1: %d\tref_end1: %d\tread_begin1: %d\tread_end1: %d\tref_end2: %d\n", result->score1, result->score2, result->ref_begin1, result->ref_end1, result->read_begin1, result->read_end1, result->ref_end2);
 			fprintf(stdout, "cigar: %s\n\n", result->cigar);
