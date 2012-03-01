@@ -21,7 +21,7 @@ typedef struct {
 	int8_t reverse;	// 1: reverse complement alignment will also be done; 0: otherwise  
 } init_param;
 
-struct profile;
+typedef struct profile;
 
 typedef struct {
 	profile* prof;

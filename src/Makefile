@@ -1,6 +1,6 @@
 CC=			gcc
 CFLAGS=		-g -Wall #-O2 #-pg 
-LOBJS=		ssw.o banded_sw.o	
+LOBJS=		ssw.o	
 PROG=		ssw_test
 all:$(PROG)
 

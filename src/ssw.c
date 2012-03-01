@@ -931,3 +931,9 @@ align* ssw_align (align_param* a) {
 end: 
 	return r;
 }
+
+void align_destroy (align* c) {
+	free(c->cigar);
+	free(c);
+}
+

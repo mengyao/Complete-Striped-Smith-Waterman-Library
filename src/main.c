@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 02/23/12.
+ *  Last revision by Mengyao Zhao on 03/01/12.
  *	New features: make weight as options 
  */
 
@@ -14,7 +14,6 @@
 #include <string.h>
 #include "ssw.h"
 #include "kseq.h"
-#include "banded_sw.h"
 
 #ifdef __GNUC__
 #define LIKELY(x) __builtin_expect((x),1)
@@ -26,106 +25,15 @@
 
 KSEQ_INIT(gzFile, gzread)
 
-char* seq_reverse(const char* seq, int32_t end)	/* end is 0-based alignment ending position */	
-{									
-	char* reverse = (char*)calloc(end + 2, sizeof(char*));	
-	int32_t start = 0;
-	reverse[end + 1] = '\0';				
-	while (LIKELY(start <= end)) {			
-		reverse[start] = seq[end];		
-		reverse[end] = seq[start];		
-		++ start;					
-		-- end;						
-	}								
-	return reverse;					
-}									
-
-
-void align(char* ref_seq,	 
-		   char* read_seq, 
-	  	   int8_t* ref_table,
-		   int8_t* read_table, 
-		   int8_t* mat,
-	 	   char* ref_reverse,
-	  	   int32_t n, 
-	 	   int32_t refLen,
-		   int32_t match,
-		   int32_t mismatch, 
-		   int32_t insert_open, 
-	 	   int32_t insert_extension,
-	 	   int32_t delet_open,
-	 	   int32_t delet_extension,
-	 	   int32_t path,
-			int32_t word,
-			alignment_end* bests){
-
-	char *read_reverse;
-	alignment_end *bests_reverse;
-	__m128i *vP;
-	if (bests[0].score != 0) {
-		char* cigar1;
-		int32_t begin_ref, begin_read, band_width;
-		read_reverse = seq_reverse(read_seq, bests[0].read);
-		if (word == 0) {
-			vP = qP_byte(read_reverse, read_table, mat, n, 4);
-			bests_reverse = sw_sse2_byte(ref_reverse + refLen - bests[0].ref - 1, ref_table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extension, delet_open, delet_extension, vP, bests[0].score, 4);
-		} else {
-			vP = qP_word(read_reverse, read_table, mat, n);
-			bests_reverse = sw_sse2_word(ref_reverse + refLen - bests[0].ref - 1, ref_table, bests[0].ref + 1, bests[0].read + 1, insert_open, insert_extension, delet_open, delet_extension, vP, bests[0].score);
-		}
-		free(vP);
-		free(read_reverse);
-	
-		begin_ref = bests[0].ref - bests_reverse[0].ref; 
-		begin_read = bests[0].read - bests_reverse[0].read; 
-		band_width = abs(bests_reverse[0].ref - bests_reverse[0].read) + 1;
-	
-		fprintf(stdout, "max score: %d, 2nd score: %d, begin_ref: %d, begin_read: %d, end_ref: %d, end_read: %d\n", bests[0].score, bests[1].score, begin_ref + 1, begin_read + 1, bests[0].ref + 1, bests[0].read + 1);
-		if (path == 1) {
-			cigar1 = banded_sw(ref_seq + begin_ref, read_seq + begin_read, bests_reverse[0].ref + 1, bests_reverse[0].read + 1, bests[0].score, match, mismatch, insert_open, insert_extension, delet_open, delet_extension, band_width, ref_table, read_table, mat, n);
-			if (cigar1 != 0) {
-				fprintf(stdout, "cigar: %s\n", cigar1);
-			} else fprintf(stdout, "No alignment is available.\n");	
-			free(cigar1);		
-		}
-	}else fprintf(stdout, "No alignment is found for this read.\n");
-}
-
 int main (int argc, char * const argv[]) {
 	clock_t start, end;
 	float cpu_time;
-	gzFile ref_fp;
-	kseq_t *ref_seq;
+	gzFile read_fp;
+	kseq_t *read_seq;
 	int32_t l, m, k, n = 5, match = 2, mismatch = 2, insert_open = 3, insert_extension = 1, delet_open = 3, delet_extension = 1, path = 0, reverse = 0;
 	int8_t* mat = (int8_t*)calloc(25, sizeof(int8_t));
 	char mat_name[16];
 	mat_name[0] = '\0';
-
-	/* This table is used to transform amino acid letters into numbers. */
-	int8_t aa_table[128] = {
-		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 
-		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 
-		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
-		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 
-		23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23, 
-		14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23, 
-		23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23, 
-		14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23 
-	};
-
-	/* This table is used to transform nucleotide letters into numbers. */
-	int8_t nt_table[128] = {
-		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4, 4, 4,  3, 0, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4, 4, 4,  3, 0, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4 
-	};
-	
-	int8_t* table = nt_table;
 
 	// initialize scoring matrix for genome sequences
 	for (l = k = 0; LIKELY(l < 4); ++l) {
@@ -212,66 +120,59 @@ int main (int argc, char * const argv[]) {
 		n = 24;
 	}
 
-	ref_fp = gzopen(argv[optind], "r");
-	ref_seq = kseq_init(ref_fp);
 
+	read_fp = gzopen(argv[optind + 1], "r");
+	read_seq = kseq_init(read_fp);
 	start = clock();
 
 	// alignment
-	while ((l = kseq_read(ref_seq)) >= 0) {
-		gzFile read_fp;
-		kseq_t *read_seq;
-		printf("ref_name: %s\n", ref_seq->name.s);
-		read_fp = gzopen(argv[optind + 1], "r");
-		read_seq = kseq_init(read_fp);
-		int32_t refLen = strlen(ref_seq->seq.s);
-		char* ref_reverse = seq_reverse(ref_seq->seq.s, refLen - 1); 
-		while ((m = kseq_read(read_seq)) >= 0) {
-			alignment_end* plus;
-			int32_t word = 0;
-			printf("read_name: %s\n", read_seq->name.s);
-			int32_t readLen = strlen(read_seq->seq.s);
-			plus = find_bests(ref_seq->seq.s, read_seq->seq.s, nt_table, nt_table, mat, n, refLen, readLen, insert_open, insert_extension, delet_open, delet_extension, &word);
-			if (reverse == 0) {
-				printf("(+ aligned) original read seq: %s\n", read_seq->seq.s);
-				align (ref_seq->seq.s, read_seq->seq.s, nt_table, nt_table, mat, ref_reverse, 5, refLen, match, mismatch, insert_open, insert_extension, delet_open, delet_extension, path, word, plus);
-			} else if (!strcmp(mat_name, "\0")){
-				char* reverse;
-				alignment_end* minus;
-				int8_t complement_nt_table[128] = {
-					4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-					4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-					4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-					4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-					4, 3, 4, 2,  4, 4, 4, 1,  4, 4, 4, 4,  4, 4, 4, 4, 
-					4, 4, 4, 4,  0, 0, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-					4, 3, 4, 2,  4, 4, 4, 1,  4, 4, 4, 4,  4, 4, 4, 4, 
-					4, 4, 4, 4,  0, 0, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4 
-				};
-				reverse = seq_reverse(read_seq->seq.s, readLen - 1);
-				minus = find_bests(ref_seq->seq.s, reverse, nt_table, complement_nt_table, mat, n, refLen, readLen, insert_open, insert_extension, delet_open, delet_extension, &word);
-				if (minus[0].score > plus[0].score) {
-					printf("(- aligned) original read seq: %s\n", read_seq->seq.s);
-					align (ref_seq->seq.s, reverse, nt_table, complement_nt_table, mat, ref_reverse, 5, refLen, match, mismatch, insert_open, insert_extension, delet_open, delet_extension, path, word, minus);
-				} else {
-					printf("(+ aligned) original read seq: %s\n", read_seq->seq.s);
-					align (ref_seq->seq.s, read_seq->seq.s, nt_table, nt_table, mat, ref_reverse, 5, refLen, match, mismatch, insert_open, insert_extension, delet_open, delet_extension, path, word, plus);
-				}
-			} else {
-				fprintf(stderr, "The reverse complement alignment is not available for protein sequences.\n");
-				return 1;
-			}
+	while ((m = kseq_read(read_seq)) >= 0) {
+		gzFile ref_fp;
+		kseq_t *ref_seq;
+		init_param* init;
+		profile* p;
+
+		printf("read_name: %s\n", read_seq->name.s);
+		printf("read_seq: %s\n\n", read_seq->seq.s);
+		init->read = read_seq->seq.s;
+		init->mat = mat;
+		init->score_size = 2;
+		init->reverse = 1;
+		p = ssw_init(init);
+		ref_fp = gzopen(argv[optind], "r");
+		ref_seq = kseq_init(ref_fp);
+
+		while ((l = kseq_read(ref_seq)) >= 0) {
+			align_param* a;
+			align* result;
+
+			align_param->prof = p;
+			align_param->ref = ref_seq->seq.s;
+			align_param->refLen = strlen(ref_seq->seq.s);
+			align_param->weight_insertB = insert_open;
+			align_param->weight_insertE = insert_extension;
+			align_param->weight_deletB = delet_open;
+			align_param->weight_deletE = delet_extension;
+			align_param->begin = 1;
+			align_param->align = 1;
+			printf("ref_name: %s\n", ref_seq->name.s);
+			result = ssw_align (a);
+			fprintf(stdout, "%d\t%s\n", result->strand, result->read);
+			fprintf(stdout, "score1: %d\tscore2: %d\tref_begin1: %d\tref_end1: %d\tread_begin1: %d\tread_end1: %d\tref_end2: %d\n", result->score1, result->score2, result->ref_begin1, result->ref_end1, result->read_begin1, result->read_end1, result->ref_end2);
+			fprintf(stdout, "cigar: %s\n\n", result->cigar);
+			align_destroy(result);
 		}
-		free(ref_reverse);
-		kseq_destroy(read_seq);
-		gzclose(read_fp);
+		
+		init_destroy(p);
+		kseq_destroy(ref_seq);
+		gzclose(ref_fp);
 	}
 	end = clock();
 	cpu_time = ((float) (end - start)) / CLOCKS_PER_SEC;
 	fprintf(stdout, "CPU time: %f seconds\n", cpu_time);
 
 	free(mat);
-	kseq_destroy(ref_seq);
-	gzclose(ref_fp);
+	kseq_destroy(read_seq);
+	gzclose(read_fp);
 	return 0;
 }
