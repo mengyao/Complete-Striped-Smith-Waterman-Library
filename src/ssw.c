@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 03/01/12.
+ *	Last revision by Mengyao Zhao on 03/02/12.
  *	New features: Combine files for api wrapping. 
  *
  */
@@ -193,7 +193,6 @@ alignment_end* sw_sse2_byte (const char* ref,
 #else
 	for (i = refLen - 1; LIKELY(i >= 0); i --) {
 #endif
-		//fprintf(stderr, "ref[%d]: %c\n", i, ref[i]);	
 		int32_t cmp;
 		__m128i vF = vZero; /* Initialize F value to 0. 
 							   Any errors to vH values will be corrected in the Lazy_F loop. 
@@ -488,9 +487,6 @@ end:
 		/* Record the max score of current column. */	
 		max8(maxColumn[i], vMaxColumn);
 		if (terminate > 0 && maxColumn[i] == terminate) break;
-/*
-		if (ref_dir == 0) ++i;
-		else --i;*/
 	} 	
 
 	/* Trace the alignment ending position on read. */
@@ -906,7 +902,6 @@ align* ssw_align (align_param* a) {
 
 	// Find the beginning position of the best alignment.
 	read_reverse = seq_reverse(r->read, r->read_end1 - 1);
-	//fprintf(stderr, "read_reverse: %s\n", read_reverse);
 	if (mat_size == 576) n = 24;	
 	if (word == 0) {
 		vP = qP_byte(read_reverse, a->prof->table, a->prof->mat, n, 4);
@@ -923,13 +918,9 @@ align* ssw_align (align_param* a) {
 	if (a->align == 0) goto end;
 
 	// Generate cigar.
-	//fprintf(stderr, "ref_end: %d\tref_begin: %d\tread_end: %d\tread_begin: %d\n", r->ref_end1, r->ref_begin1, r->read_end1, r->read_begin1);
 	refLen = r->ref_end1 - r->ref_begin1 + 1;
 	readLen = r->read_end1 - r->read_begin1 + 1;
 	band_width = abs(refLen - readLen) + 1;
-	//FIXME: print out ref and read parameters
-	//fprintf(stderr, "ref: %s\nread:%s\n", a->ref + r->ref_begin1 - 1, r->read + r->read_begin1 - 1);
-	//fprintf(stderr, "refLen: %d\treadLen: %d\tscore: %d\tband_width: %d\n", refLen, readLen, r->score1, band_width);
 	r->cigar = banded_sw(a->ref + r->ref_begin1 - 1, r->read + r->read_begin1 - 1, refLen, readLen, r->score1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, band_width, table, a->prof->mat, n);
 	
 end: 
