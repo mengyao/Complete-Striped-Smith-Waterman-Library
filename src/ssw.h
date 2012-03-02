@@ -18,7 +18,8 @@ typedef struct {
 	const char* read;
 	int8_t* mat;
 	int8_t score_size;	// 0: best alignment score will be < 225; 1: > 225; 2: can be either
-	int8_t reverse;	// 1: reverse complement alignment will also be done; 0: otherwise  
+	int8_t type;	// 0: genome sequence; 1: protein sequence
+	int8_t reverse;	// 1: reverse complement alignment will also be done; 0: otherwise
 } init_param;
 
 //struct profile;

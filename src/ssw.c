@@ -184,17 +184,16 @@ alignment_end* sw_sse2_byte (const char* ref,
 	__m128i vMaxMark = vZero; /* Trace the highest score till the previous column. */	
 	__m128i vTemp;
 	int32_t edge;
-/*
-	if (ref_dir == 1) {
-		begin = refLen; end = 0;
-	}*/
+
 	/* outer loop to process the reference sequence */
-#if (ref_dir == 0)
+	if (ref_dir == 0) 
+#define REF_DIR
+#ifdef REF_DIR
 	for (i = 0; LIKELY(i < refLen); i ++) {
 #else
 	for (i = refLen - 1; LIKELY(i >= 0); i --) {
 #endif
-//	for (i = begin; LIKELY(i < end);) {		
+		//fprintf(stderr, "ref[%d]: %c\n", i, ref[i]);	
 		int32_t cmp;
 		__m128i vF = vZero; /* Initialize F value to 0. 
 							   Any errors to vH values will be corrected in the Lazy_F loop. 
@@ -403,17 +402,15 @@ alignment_end* sw_sse2_word (const char* ref,
 	__m128i vMaxMark = vZero; /* Trace the highest score till the previous column. */	
 	__m128i vTemp;
 	int32_t edge;
-/*
-	if (ref_dir == 1) {
-		begin = refLen; end = 0;
-	}*/
+
 	/* outer loop to process the reference sequence */
-#if (ref_dir == 0)
+	if (ref_dir == 0) 
+#define REF_DIR
+#ifdef REF_DIR
 	for (i = 0; LIKELY(i < refLen); i ++) {
 #else
 	for (i = refLen - 1; LIKELY(i >= 0); i --) {
 #endif
-	//for (i = begin; LIKELY(i < end);) {		
 
 		int32_t cmp;
 		__m128i vF = vZero; /* Initialize F value to 0. 
@@ -783,51 +780,51 @@ char* reverse_comple(const char* seq) {
 		4, 54, 4, 47, 4,  4,  4, 43, 4, 4, 4, 4,  4, 4, 4, 4, 
 		4, 4,  4, 4,  41, 41, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4 
 	};
-	rc[end + 1] = '\0';				
-	while (LIKELY(start <= end)) {			
+	rc[end] = '\0';
+	-- end;				
+	while (LIKELY(start < end)) {			
 		rc[start] = (char)rc_table[(int8_t)seq[end]];		
 		rc[end] = (char)rc_table[(int8_t)seq[start]];		
 		++ start;					
 		-- end;						
-	}								
+	}					
+	if (start == end) rc[start] = (char)rc_table[(int8_t)seq[start]];			
 	return rc;					
 }							
 
 profile* ssw_init (init_param* init) {
 	int8_t* table;
-	int32_t n = 5, mat_size = strlen((char*)init->mat);	
+	int32_t n = 5;	
 	profile* p = (profile*)calloc(1, sizeof(profile));
 	p->profile_byte = 0;
 	p->profile_word = 0;
 	p->reverse_byte = 0;
 	p->reverse_word = 0;
 	p->rc_read = 0;
-	
-	if (mat_size == 25) {
+
+		
+	if (init->type == 0) {
 		table = nt_table;
-		p->type = 0;
-	}else if (mat_size == 576){
+		n = 5;
+	}else{
 		table = aa_table;
 		n = 24;
-		p->type = 1;
-	} else {
-		fprintf (stderr, "The substitution weight matrix is wrong. \n");
-		return 0;
 	}
 	
 	if (init->score_size ==	0 || init->score_size == 2) p->profile_byte = qP_byte (init->read, table, init->mat, n, 4);
 	if (init->score_size ==	1 || init->score_size == 2) p->profile_word = qP_word (init->read, table, init->mat, n);
-	if (init->reverse == 1 && mat_size == 25) {
+	if (init->reverse == 1 && init->type == 0) {
 		p->rc_read = reverse_comple(init->read);	
 		if (init->score_size ==	0 || init->score_size == 2) p->reverse_byte = qP_byte (p->rc_read, table, init->mat, n, 4);
 		if (init->score_size ==	1 || init->score_size == 2) p->reverse_word = qP_word (p->rc_read, table, init->mat, n);
-	} else if (init->reverse == 1 && mat_size == 576) {
+	} else if (init->reverse == 1 && init->type == 1) {
 		fprintf (stderr, "Reverse complement alignment is not available for protein sequences. \n");
 		return 0;
 	}
 	p->read = init->read;
 	p->mat = init->mat;
 	p->table = table;
+	p->type = init->type;
 	return p;
 }
 
@@ -844,7 +841,10 @@ align* ssw_align (align_param* a) {
 	int8_t* table;
 	alignment_end* bests_reverse = 0, *bests = 0, *reverse = 0;
 	__m128i* vP = 0;
-	int32_t refLen = strlen(a->ref), readLen = strlen(a->prof->read), word = 0, rc_word = 0, n = 5, mat_size = strlen((char*)a->prof->mat), band_width = 0;
+
+	//fprintf(stderr, "read: %s\n", a->prof->read);
+	int32_t readLen = strlen(a->prof->read), word = 0, rc_word = 0, refLen = 0;
+	int32_t n = 5, mat_size = strlen((char*)a->prof->mat), band_width = 0;
 	char* read_reverse = 0;
 	align* r = (align*)calloc(1, sizeof(align));
 	r->read = 0;
@@ -863,13 +863,13 @@ align* ssw_align (align_param* a) {
 
 	// Find the alignment scores and ending positions
 	if (a->prof->profile_byte) {
-		bests = sw_sse2_byte(a->ref, 0, table, refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->profile_byte, 0, 4);
+		bests = sw_sse2_byte(a->ref, 0, table, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->profile_byte, 0, 4);
 		if (a->prof->profile_word && bests[0].score == 225) {
-			bests = sw_sse2_word(a->ref, 0, table, refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->profile_word, 0);
+			bests = sw_sse2_word(a->ref, 0, table, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->profile_word, 0);
 			word = 1;
 		}
 	}else if (a->prof->profile_word) {
-		bests = sw_sse2_word(a->ref, 0, table, refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->profile_word, 0);
+		bests = sw_sse2_word(a->ref, 0, table, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->profile_word, 0);
 		word = 1;
 	}else {
 		fprintf(stderr, "The score_size variable of the init_param structure is not correctly assigned.\n");
@@ -881,13 +881,13 @@ align* ssw_align (align_param* a) {
 	r->read_end1 = bests[0].read + 1;
 	r->ref_end2 = bests[1].ref + 1;
 	if (a->prof->reverse_byte) {
-		reverse = sw_sse2_byte(a->ref, 0, table, refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->reverse_byte, 0, 4);
+		reverse = sw_sse2_byte(a->ref, 0, table, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->reverse_byte, 0, 4);
 		if (a->prof->reverse_word && reverse[0].score == 225) {
-			reverse = sw_sse2_word(a->ref, 0, table, refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->reverse_word, 0);
+			reverse = sw_sse2_word(a->ref, 0, table, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->reverse_word, 0);
 			rc_word = 1;
 		}
 	}else if (a->prof->reverse_word) {
-		reverse = sw_sse2_word(a->ref, 0, table, refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->reverse_word, 0);
+		reverse = sw_sse2_word(a->ref, 0, table, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->reverse_word, 0);
 		rc_word = 1;
 	}
 	if (reverse[0].score > bests[0].score) {
@@ -905,7 +905,8 @@ align* ssw_align (align_param* a) {
 	if ((a->begin == 0 && a->align == 0) || r->score1 == 225) goto end;
 
 	// Find the beginning position of the best alignment.
-	read_reverse = seq_reverse(r->read, r->ref_end1);
+	read_reverse = seq_reverse(r->read, r->read_end1 - 1);
+	//fprintf(stderr, "read_reverse: %s\n", read_reverse);
 	if (mat_size == 576) n = 24;	
 	if (word == 0) {
 		vP = qP_byte(read_reverse, a->prof->table, a->prof->mat, n, 4);
@@ -922,9 +923,13 @@ align* ssw_align (align_param* a) {
 	if (a->align == 0) goto end;
 
 	// Generate cigar.
+	//fprintf(stderr, "ref_end: %d\tref_begin: %d\tread_end: %d\tread_begin: %d\n", r->ref_end1, r->ref_begin1, r->read_end1, r->read_begin1);
 	refLen = r->ref_end1 - r->ref_begin1 + 1;
 	readLen = r->read_end1 - r->read_begin1 + 1;
 	band_width = abs(refLen - readLen) + 1;
+	//FIXME: print out ref and read parameters
+	//fprintf(stderr, "ref: %s\nread:%s\n", a->ref + r->ref_begin1 - 1, r->read + r->read_begin1 - 1);
+	//fprintf(stderr, "refLen: %d\treadLen: %d\tscore: %d\tband_width: %d\n", refLen, readLen, r->score1, band_width);
 	r->cigar = banded_sw(a->ref + r->ref_begin1 - 1, r->read + r->read_begin1 - 1, refLen, readLen, r->score1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, band_width, table, a->prof->mat, n);
 	
 end: 

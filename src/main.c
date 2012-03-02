@@ -30,7 +30,7 @@ int main (int argc, char * const argv[]) {
 	float cpu_time;
 	gzFile read_fp;
 	kseq_t *read_seq;
-	int32_t l, m, k, match = 2, mismatch = 2, insert_open = 3, insert_extension = 1, delet_open = 3, delet_extension = 1, path = 0, reverse = 0;
+	int32_t l, m, k, match = 2, mismatch = 2, insert_open = 3, insert_extension = 1, delet_open = 3, delet_extension = 1, path = 0, reverse = 0, type = 0;
 	int8_t* mat = (int8_t*)calloc(25, sizeof(int8_t));
 	char mat_name[16];
 	mat_name[0] = '\0';
@@ -116,6 +116,7 @@ int main (int argc, char * const argv[]) {
 			fprintf(stderr, "Improper weight matrix file format. Please use standard Blosum or Pam files.\n");
 			return 1;
 		}
+		type = 1;
 	}
 
 
@@ -136,7 +137,9 @@ int main (int argc, char * const argv[]) {
 		init->mat = mat;
 		init->score_size = 2;
 		init->reverse = 1;
+		init->type = type;
 		p = ssw_init(init);
+		if (p == 0) return 1;
 		free(init);		
 
 		ref_fp = gzopen(argv[optind], "r");
