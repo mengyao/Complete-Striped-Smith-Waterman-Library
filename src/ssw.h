@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 02/29/12.
+ *	Last revision by Mengyao Zhao on 03/03/12.
  *	New features: This is the api file.
  *
  */
@@ -22,18 +22,8 @@ typedef struct {
 	int8_t reverse;	// 1: reverse complement alignment will also be done; 0: otherwise
 } init_param;
 
-//struct profile;
-typedef struct {
-	__m128i* profile_byte;	// 0: none
-	__m128i* profile_word;	// 0: none
-	__m128i* reverse_byte;	// 0: none
-	__m128i* reverse_word;	// 0: none
-	const char* read;
-	char* rc_read;	// reverse complement sequence of the read, 0: none
-	int8_t type;	// 0: genome sequence; 1: protein sequence
-	int8_t* mat;
-	int8_t* table;
-} profile;
+struct _profile;
+typedef struct _profile profile;
 
 typedef struct {
 	profile* prof;

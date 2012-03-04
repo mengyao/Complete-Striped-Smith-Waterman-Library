@@ -136,7 +136,8 @@ int main (int argc, char * const argv[]) {
 		init->read = read_seq->seq.s;
 		init->mat = mat;
 		init->score_size = 2;
-		init->reverse = 1;
+		if (reverse == 1) init->reverse = 1;
+		else init->reverse = 0;
 		init->type = type;
 		p = ssw_init(init);
 		if (p == 0) return 1;
@@ -156,15 +157,23 @@ int main (int argc, char * const argv[]) {
 			a->weight_insertE = insert_extension;
 			a->weight_deletB = delet_open;
 			a->weight_deletE = delet_extension;
-			a->begin = 1;
-			a->align = 1;
+			if (path == 1) {
+				a->begin = 1;
+				a->align = 1;
+			} else {
+				a->begin = 0;
+				a->align = 0;
+			}
 			printf("ref_name: %s\n", ref_seq->name.s);
 			result = ssw_align (a);
 			free(a);
 
 			fprintf(stdout, "%d\t%s\n", result->strand, result->read);
-			fprintf(stdout, "score1: %d\tscore2: %d\tref_begin1: %d\tref_end1: %d\tread_begin1: %d\tread_end1: %d\tref_end2: %d\n", result->score1, result->score2, result->ref_begin1, result->ref_end1, result->read_begin1, result->read_end1, result->ref_end2);
+			fprintf(stdout, "score1: %d\tscore2: %d\tref_end1: %d\tread_end1: %d\tref_end2: %d\n", result->score1, result->score2, result->ref_end1, result->read_end1, result->ref_end2);
+			if (path == 1) {
+				fprintf(stdout, "ref_begin1: %d\tread_begin1: %d\n", result->ref_begin1, result->read_begin1);
 			fprintf(stdout, "cigar: %s\n\n", result->cigar);
+			}
 			align_destroy(result);
 		}
 		
