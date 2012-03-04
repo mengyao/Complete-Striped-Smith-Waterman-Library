@@ -140,8 +140,6 @@ alignment_end* sw_sse2_byte (const char* ref,
 					  (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 1)); \
 					  (m) = _mm_extract_epi16((vm), 0)
 
-
-	//fprintf(stderr, "terminate: %d\n", terminate);	
 	uint8_t max = 0;		                     /* the max alignment score */
 	int32_t end_read = 0;
 	int32_t end_ref = 0; /* 1_based best alignment ending point; Initialized as isn't aligned - 0. */
@@ -193,12 +191,7 @@ alignment_end* sw_sse2_byte (const char* ref,
 		end = -1;
 		step = -1;
 	}
-//#define REF_DIR
-//#ifdef REF_DIR
 	for (i = begin; LIKELY(i != end); i += step) {
-//#else
-//	for (i = refLen - 1; LIKELY(i >= 0); i --) {
-//#endif
 		int32_t cmp;
 		__m128i vF = vZero; /* Initialize F value to 0. 
 							   Any errors to vH values will be corrected in the Lazy_F loop. 
@@ -280,14 +273,9 @@ end:
 		
 		/* Record the max score of current column. */	
 		max16(maxColumn[i], vMaxColumn);
-//		fprintf(stderr, "terminate: %d\n", terminate);
-		if (terminate > 0 && maxColumn[i] == terminate) {
-			fprintf(stderr, "break: %d\n", i);
-			break;
-		}
+		if (terminate > 0 && maxColumn[i] == terminate) break;
 	} 	
 
-//#ifdef REF_DIR
 	/* Trace the alignment ending position on read. */
 	uint8_t *t = (uint8_t*)pvHmax;
 	int32_t column_len = segLen * 16;
@@ -297,7 +285,6 @@ end:
 			break;
 		}
 	}
-//#endif
 
 	/* Find the most possible 2nd best alignment. */
 	alignment_end* bests = (alignment_end*) calloc(2, sizeof(alignment_end));
@@ -309,7 +296,6 @@ end:
 	bests[1].ref = 0;
 	bests[1].read = 0;
 
-//#ifdef REF_DIR
 	edge = (end_ref - readLen / 2 - 1) > 0 ? (end_ref - readLen / 2 - 1) : 0;
 	for (i = 0; i < edge; i ++) {
 		if (maxColumn[i] > bests[1].score) 
@@ -320,7 +306,6 @@ end:
 		if (maxColumn[i] > bests[1].score) 
 			bests[1].score = maxColumn[i];
 	}
-//#endif
 	
 	free(pvHStore);
 	free(maxColumn);
@@ -422,13 +407,7 @@ alignment_end* sw_sse2_word (const char* ref,
 		end = -1;
 		step = -1;
 	}
-//#define REF_DIR
-//#ifdef REF_DIR
 	for (i = begin; LIKELY(i != end); i += step) {
-//#else
-//	for (i = refLen - 1; LIKELY(i >= 0); i --) {
-//#endif
-
 		int32_t cmp;
 		__m128i vF = vZero; /* Initialize F value to 0. 
 							   Any errors to vH values will be corrected in the Lazy_F loop. 
@@ -507,7 +486,6 @@ end:
 		if (terminate > 0 && maxColumn[i] == terminate) break;
 	} 	
 
-//#ifdef REF_DIR
 	/* Trace the alignment ending position on read. */
 	uint16_t *t = (uint16_t*)pvHmax;
 	int32_t column_len = segLen * 8;
@@ -517,7 +495,6 @@ end:
 			break;
 		}
 	}
-//#endif
 
 	/* Find the most possible 2nd best alignment. */
 	alignment_end* bests = (alignment_end*) calloc(2, sizeof(alignment_end));
@@ -529,7 +506,6 @@ end:
 	bests[1].ref = 0;
 	bests[1].read = 0;
 
-//#ifdef REF_DIR
 	edge = (end_ref - readLen / 2 - 1) > 0 ? (end_ref - readLen / 2 - 1) : 0;
 	for (i = 0; i < edge; i ++) {
 		if (maxColumn[i] > bests[1].score) 
@@ -540,7 +516,6 @@ end:
 		if (maxColumn[i] > bests[1].score) 
 			bests[1].score = maxColumn[i];
 	}
-//#endif
 	
 	free(pvHStore);
 	free(maxColumn);
@@ -783,21 +758,8 @@ char* seq_reverse(const char* seq, int32_t end)	/* end is 0-based alignment endi
 		-- end;						
 	}								
 	return reverse;					
-}		
-/*
-void ref_reverse(char* ref, int32_t end)	 end is 0-based alignment ending position 
-{	
-	char temp;								
-	int32_t start = 0;
-	while (LIKELY(start < end)) {			
-		temp = ref[end];		
-		ref[end] = ref[start];
-		ref[start] = temp;		
-		++ start;					
-		-- end;						
-	}								
 }
-*/		
+		
 char* reverse_comple(const char* seq) {
 	int32_t end = strlen(seq), start = 0;
 	char* rc = (char*)calloc(end + 1, sizeof(char));
