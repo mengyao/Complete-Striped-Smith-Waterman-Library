@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 03/01/12.
+ *  Last revision by Mengyao Zhao on 03/05/12.
  *	New features: make weight as options 
  */
 
@@ -25,15 +25,74 @@
 
 KSEQ_INIT(gzFile, gzread)
 
+int8_t* char2num (char* seq, int8_t* table, int32_t* l) {	// input l: 0; output l: length of the sequence
+	*l = strlen(seq);
+	int32_t i;
+	int8_t* num = (int8_t*)calloc(*l, sizeof(int8_t));
+	for (i = 0; i < *l; ++i) num[i] = table[(int)seq[i]];
+	return num;
+}
+
+char* reverse_comple(const char* seq) {
+	int32_t end = strlen(seq), start = 0;
+	char* rc = (char*)calloc(end + 1, sizeof(char));
+	int8_t rc_table[128] = {
+		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 54, 4, 47, 4,  4,  4, 43, 4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 4,  4, 4,  41, 41, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 54, 4, 47, 4,  4,  4, 43, 4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 4,  4, 4,  41, 41, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4 
+	};
+	rc[end] = '\0';
+	-- end;				
+	while (LIKELY(start < end)) {			
+		rc[start] = (char)rc_table[(int8_t)seq[end]];		
+		rc[end] = (char)rc_table[(int8_t)seq[start]];		
+		++ start;					
+		-- end;						
+	}					
+	if (start == end) rc[start] = (char)rc_table[(int8_t)seq[start]];			
+	return rc;					
+}							
+
 int main (int argc, char * const argv[]) {
 	clock_t start, end;
 	float cpu_time;
 	gzFile read_fp;
 	kseq_t *read_seq;
-	int32_t l, m, k, match = 2, mismatch = 2, insert_open = 3, insert_extension = 1, delet_open = 3, delet_extension = 1, path = 0, reverse = 0, type = 0;
+	int32_t l, m, k, match = 2, mismatch = 2, insert_open = 3, insert_extension = 1, delet_open = 3, delet_extension = 1, path = 0, reverse = 0, n = 5;
 	int8_t* mat = (int8_t*)calloc(25, sizeof(int8_t));
 	char mat_name[16];
 	mat_name[0] = '\0';
+
+	/* This table is used to transform amino acid letters into numbers. */
+	int8_t aa_table[128] = {
+		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 
+		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 
+		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 
+		23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23, 
+		14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23, 
+		23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23, 
+		14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23 
+	};
+
+	/* This table is used to transform nucleotide letters into numbers. */
+	int8_t nt_table[128] = {
+		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 4, 4, 4,  3, 0, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 4, 4, 4,  3, 0, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4 
+	};
+	
+	int8_t* table = nt_table;
 
 	// initialize scoring matrix for genome sequences
 	for (l = k = 0; LIKELY(l < 4); ++l) {
@@ -116,10 +175,18 @@ int main (int argc, char * const argv[]) {
 			fprintf(stderr, "Improper weight matrix file format. Please use standard Blosum or Pam files.\n");
 			return 1;
 		}
-		type = 1;
+		n = 24;
+		table = aa_table;
 	}
-
-
+/*
+	if (init->type == 0) {
+		table = nt_table;
+		n = 5;
+	}else{
+		table = aa_table;
+		n = 24;
+	}
+*/
 	read_fp = gzopen(argv[optind + 1], "r");
 	read_seq = kseq_init(read_fp);
 	start = clock();
@@ -129,30 +196,43 @@ int main (int argc, char * const argv[]) {
 		gzFile ref_fp;
 		kseq_t *ref_seq;
 		init_param* init = (init_param*)calloc(1, sizeof(init_param));
-		profile* p;
+		profile* p = 0;
+		int32_t readLen = 0; 
+		char* read_rc = 0;
 
 		printf("read_name: %s\n", read_seq->name.s);
 		printf("read_seq: %s\n\n", read_seq->seq.s);
-		init->read = read_seq->seq.s;
+		init->read = char2num(read_seq->seq.s, table, &readLen);
+		init->rc_read = 0;
+		init->readLen = readLen;
 		init->mat = mat;
 		init->score_size = 2;
-		if (reverse == 1) init->reverse = 1;
-		else init->reverse = 0;
-		init->type = type;
+		init->n = n;
+		if (reverse == 1 && n == 5) {
+			read_rc = reverse_comple(read_seq->seq.s);
+			init->rc_read = char2num(read_rc, table, &readLen);
+		//	p_rc = ssw_init(init);
+		}else if (reverse == 1 && n == 24) {
+			fprintf (stderr, "Reverse complement alignment is not available for protein sequences. \n");
+			return 1;
+		}
 		p = ssw_init(init);
-		if (p == 0) return 1;
+	//	init->type = type;
+	//	p = ssw_init(init);
+		//if (p == 0) return 1;
 		free(init);		
 
 		ref_fp = gzopen(argv[optind], "r");
 		ref_seq = kseq_init(ref_fp);
-
 		while ((l = kseq_read(ref_seq)) >= 0) {
 			align_param* a = (align_param*)calloc(1, sizeof(align_param));
 			align* result;
+	//		int8_t dir = 0;	// dir == 0: forward mapped; dir == 1: reverse complement mapped
+			int32_t refLen = 0;
 
 			a->prof = p;
-			a->ref = ref_seq->seq.s;
-			a->refLen = strlen(ref_seq->seq.s);
+			a->ref = char2num(ref_seq->seq.s, table, &refLen);
+			a->refLen = refLen;
 			a->weight_insertB = insert_open;
 			a->weight_insertE = insert_extension;
 			a->weight_deletB = delet_open;
@@ -160,15 +240,21 @@ int main (int argc, char * const argv[]) {
 			if (path == 1) {
 				a->begin = 1;
 				a->align = 1;
+		//		a->align = 0;
 			} else {
 				a->begin = 0;
 				a->align = 0;
 			}
 			printf("ref_name: %s\n", ref_seq->name.s);
 			result = ssw_align (a);
+	/*		if (reverse == 1) {
+				a->prof = p_rc;
+				rc = ssw_align(a);
+			}*/
 			free(a);
 
-			fprintf(stdout, "%d\t%s\n", result->strand, result->read);
+			if (result->strand == 0) fprintf(stdout, "%d\t%s\n", result->strand, read_seq->seq.s);
+			else fprintf(stdout, "%d\t%s\n", result->strand, read_rc);
 			fprintf(stdout, "score1: %d\tscore2: %d\tref_end1: %d\tread_end1: %d\tref_end2: %d\n", result->score1, result->score2, result->ref_end1, result->read_end1, result->ref_end2);
 			if (path == 1) {
 				fprintf(stdout, "ref_begin1: %d\tread_begin1: %d\n", result->ref_begin1, result->read_begin1);

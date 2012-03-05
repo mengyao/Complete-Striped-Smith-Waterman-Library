@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 03/03/12.
+ *	Last revision by Mengyao Zhao on 03/05/12.
  *	New features: This is the api file.
  *
  */
@@ -15,11 +15,14 @@
 #include <emmintrin.h>
 
 typedef struct {
-	const char* read;
+	int8_t* read;
+	int8_t* rc_read;	// 0: reverse complement alignment will not be done; vise versa
 	int8_t* mat;
 	int8_t score_size;	// 0: best alignment score will be < 225; 1: > 225; 2: can be either
-	int8_t type;	// 0: genome sequence; 1: protein sequence
-	int8_t reverse;	// 1: reverse complement alignment will also be done; 0: otherwise
+//	int8_t type;	// 0: genome sequence; 1: protein sequence
+//	int8_t reverse;	// 1: reverse complement alignment will also be done; 0: otherwise
+	int32_t readLen;
+	int32_t n;
 } init_param;
 
 struct _profile;
@@ -27,7 +30,8 @@ typedef struct _profile profile;
 
 typedef struct {
 	profile* prof;
-	const char* ref;
+//	const char* ref;
+	int8_t* ref;
 	int32_t refLen;
 	uint8_t weight_insertB; /* will be used as - */
 	uint8_t weight_insertE; /* will be used as - */
@@ -39,7 +43,7 @@ typedef struct {
 
 // Positions are all 1-based.
 typedef struct {
-	const char* read;	// if strand == 0: original read seq; else reverse complement read seq
+//	const char* read;	// if strand == 0: original read seq; else reverse complement read seq
 	int8_t strand;	// 0: forward aligned; 1: reverse complement aligned 
 	int16_t score1;	// best alignment score, 225: 
 	int16_t score2;	// sub-optimal alignment score

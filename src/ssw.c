@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 03/02/12.
+ *	Last revision by Mengyao Zhao on 03/04/12.
  *	New features: Combine files for api wrapping. 
  *
  */
@@ -37,30 +37,6 @@
  */
 #define kroundup32(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, ++(x))
 
-/* This table is used to transform amino acid letters into numbers. */
-int8_t aa_table[128] = {
-	23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 
-	23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 
-	23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
-	23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 
-	23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23, 
-	14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23, 
-	23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23, 
-	14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23 
-};
-
-/* This table is used to transform nucleotide letters into numbers. */
-int8_t nt_table[128] = {
-	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-	4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
-	4, 4, 4, 4,  3, 0, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-	4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
-	4, 4, 4, 4,  3, 0, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4 
-};
-
 typedef struct {
 	uint16_t score;
 	int32_t ref;	 //0-based position 
@@ -72,21 +48,25 @@ struct _profile{
 	__m128i* profile_word;	// 0: none
 	__m128i* reverse_byte;	// 0: none
 	__m128i* reverse_word;	// 0: none
-	const char* read;
-	char* rc_read;	// reverse complement sequence of the read, 0: none
-	int8_t type;	// 0: genome sequence; 1: protein sequence
+//	const char* read;
+	int8_t* read;
+	int8_t* rc_read;	// reverse complement sequence of the read, 0: none
+//	int8_t type;	// 0: genome sequence; 1: protein sequence
 	int8_t* mat;
-	int8_t* table;
+	int32_t n;
+//	int8_t* table;
 };
 
 /* Generate query profile rearrange query sequence & calculate the weight of match/mismatch. */
-__m128i* qP_byte (const char* read,
-								   int8_t* nt_table,
+__m128i* qP_byte (//const char* read,
+				//				   int8_t* nt_table,
+					int8_t* read_num,
 								   int8_t* mat,
+					int32_t readLen,
 								   int32_t n,	/* the edge length of the squre matrix mat */
 								   uint8_t bias) { 
 					
-	int32_t readLen = strlen(read);
+//	int32_t readLen = strlen(read);
 	int32_t
 	segLen = (readLen + 15) / 16; /* Split the 128 bit register into 16 pieces. 
 								     Each piece is 8 bit. Split the read into 16 segments. 
@@ -102,7 +82,7 @@ __m128i* qP_byte (const char* read,
 		for (i = 0; i < segLen; i ++) {
 			j = i; 
 			for (segNum = 0; LIKELY(segNum < 16) ; segNum ++) {
-				*t++ = j>= readLen ? 0 : mat[nt * n + nt_table[(int)read[j]]] + bias;
+				*t++ = j>= readLen ? 0 : mat[nt * n + read_num[j]] + bias;
 				j += segLen;
 			}
 		}
@@ -118,9 +98,10 @@ __m128i* qP_byte (const char* read,
    wight_match > 0, all other weights < 0.
    The returned positions are 0-based.
  */ 
-alignment_end* sw_sse2_byte (const char* ref,
+alignment_end* sw_sse2_byte (//const char* ref,
+								int8_t* ref,
 									int8_t ref_dir,	// 0: forward ref; 1: reverse ref
-									int8_t* nt_table,
+							//		int8_t* nt_table,
 									int32_t refLen,
 								    int32_t readLen, 
 								    uint8_t weight_insertB, /* will be used as - */
@@ -193,7 +174,7 @@ alignment_end* sw_sse2_byte (const char* ref,
 	}
 	for (i = begin; LIKELY(i != end); i += step) {
 		int32_t cmp;
-		__m128i vF = vZero; /* Initialize F value to 0. 
+		__m128i e, vF = vZero; /* Initialize F value to 0. 
 							   Any errors to vH values will be corrected in the Lazy_F loop. 
 							 */
 		__m128i vH = pvHStore[segLen - 1];
@@ -204,52 +185,56 @@ alignment_end* sw_sse2_byte (const char* ref,
 		
 		__m128i vMaxColumn = vZero; /* vMaxColumn is used to record the max values of column i. */
 		
-		__m128i* vP = vProfile + nt_table[(int)ref[i]] * segLen; /* Right part of the vProfile */
+		__m128i* vP = vProfile + ref[i] * segLen; /* Right part of the vProfile */
 		pvHLoad = pvHStore;
 		pvHStore = pv;
 		
 		/* inner loop to process the query sequence */
-		for (j = 0; LIKELY(j < segLen); j ++) {
+		for (j = 0; LIKELY(j < segLen); ++j) {
 
-			vH = _mm_adds_epu8(vH, vP[j]);
+			vH = _mm_adds_epu8(vH, _mm_load_si128(vP + j));
 			vH = _mm_subs_epu8(vH, vBias); /* vH will be always > 0 */
 
 			/* Get max from vH, vE and vF. */
-			vH = _mm_max_epu8(vH, pvE[j]);
+			e = _mm_load_si128(pvE + j);
+			vH = _mm_max_epu8(vH, e);
 			vH = _mm_max_epu8(vH, vF);
 			
 			/* Update highest score encountered this far. */
-			vMaxScore = _mm_max_epu8(vMaxScore, vH);
 			vMaxColumn = _mm_max_epu8(vMaxColumn, vH);
 			
 			/* Save vH values. */
-			pvHStore[j] = vH;
+			_mm_store_si128(pvHStore + j, vH);
 
 			/* Update vE value. */
 			vH = _mm_subs_epu8(vH, vInserB); /* saturation arithmetic, result >= 0 */
-			pvE[j] = _mm_subs_epu8(pvE[j], vInserE);
-			pvE[j] = _mm_max_epu8(pvE[j], vH);
+			e = _mm_subs_epu8(e, vInserE);
+			e = _mm_max_epu8(e, vH);
+			_mm_store_si128(pvE + j, e);
 			
 			/* Update vF value. */
 			vF = _mm_subs_epu8(vF, vDeletE);
 			vF = _mm_max_epu8(vF, vH);
 			
 			/* Load the next vH. */
-			vH = pvHLoad[j];
+			vH = _mm_load_si128(pvHLoad + j);
 		}
 
 		/* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3 */
 		for (k = 0; LIKELY(k < 16); ++k) {
 			vF = _mm_slli_si128 (vF, 1);
 			for (j = 0; LIKELY(j < segLen); ++j) {
-				pvHStore[j] = _mm_max_epu8(pvHStore[j], vF);
-				vH = _mm_subs_epu8(pvHStore[j], vDeletB);
+				vH = _mm_load_si128(pvHStore + j);
+				vH = _mm_max_epu8(vH, vF);
+				_mm_store_si128(pvHStore + j, vH);
+				vH = _mm_subs_epu8(vH, vDeletB);
 				vF = _mm_subs_epu8(vF, vDeletE);
 				if (UNLIKELY(! _mm_movemask_epi8(_mm_cmpgt_epi8(vF, vH)))) goto end;
 			}
 		}
 
 end:		
+		vMaxScore = _mm_max_epu8(vMaxScore, vMaxColumn);
 		vTemp = _mm_cmpeq_epi8(vMaxMark, vMaxScore);
 		cmp = _mm_movemask_epi8(vTemp);
 		if (cmp != 0xffff) {
@@ -260,9 +245,7 @@ end:
 			
 			if (LIKELY(temp > max)) {
 				max = temp;
-				if (max + bias >= 255) {
-					break;	//overflow
-				}
+				if (max + bias >= 255) break;	//overflow
 				end_ref = i;
 			
 				/* Store the column with the highest alignment score in order to trace the alignment ending position on read. */
@@ -273,7 +256,7 @@ end:
 		
 		/* Record the max score of current column. */	
 		max16(maxColumn[i], vMaxColumn);
-		if (terminate > 0 && maxColumn[i] == terminate) break;
+		if (maxColumn[i] == terminate) break;
 	} 	
 
 	/* Trace the alignment ending position on read. */
@@ -313,12 +296,14 @@ end:
 	return bests;
 }
 
-__m128i* qP_word (const char* read,
-								   int8_t* nt_table,
+__m128i* qP_word (//const char* read,
+					//			   int8_t* nt_table,
+					int8_t* read_num,
 								   int8_t* mat,
+					int32_t readLen,
 								   int32_t n) { 
 					
-	int32_t readLen = strlen(read);
+	//int32_t readLen = strlen(read);
 	int32_t
 	segLen = (readLen + 7) / 8; 
 	__m128i* vProfile = (__m128i*)calloc(n * segLen, sizeof(__m128i));
@@ -331,7 +316,7 @@ __m128i* qP_word (const char* read,
 		for (i = 0; i < segLen; i ++) {
 			j = i; 
 			for (segNum = 0; LIKELY(segNum < 8) ; segNum ++) {
-				*t++ = j>= readLen ? 0 : mat[nt * n + nt_table[(int)read[j]]];
+				*t++ = j>= readLen ? 0 : mat[nt * n + read_num[j]];
 				j += segLen;
 			}
 		}
@@ -340,9 +325,10 @@ __m128i* qP_word (const char* read,
 	return vProfile;
 }
 
-alignment_end* sw_sse2_word (const char* ref,
+alignment_end* sw_sse2_word (//const char* ref,
+								int8_t* ref, 
 								int8_t ref_dir,	// 0: forward ref; 1: reverse ref
-									int8_t* nt_table,
+								//	int8_t* nt_table,
 									int32_t refLen,
 								    int32_t readLen, 
 								    uint8_t weight_insertB, /* will be used as - */
@@ -409,7 +395,7 @@ alignment_end* sw_sse2_word (const char* ref,
 	}
 	for (i = begin; LIKELY(i != end); i += step) {
 		int32_t cmp;
-		__m128i vF = vZero; /* Initialize F value to 0. 
+		__m128i e, vF = vZero; /* Initialize F value to 0. 
 							   Any errors to vH values will be corrected in the Lazy_F loop. 
 							 */
 		__m128i vH = pvHStore[segLen - 1];
@@ -420,51 +406,52 @@ alignment_end* sw_sse2_word (const char* ref,
 		
 		__m128i vMaxColumn = vZero; /* vMaxColumn is used to record the max values of column i. */
 		
-		__m128i* vP = vProfile + nt_table[(int)ref[i]] * segLen; /* Right part of the vProfile */
+		__m128i* vP = vProfile + ref[i] * segLen; /* Right part of the vProfile */
 		pvHLoad = pvHStore;
 		pvHStore = pv;
 		
 		/* inner loop to process the query sequence */
 		for (j = 0; LIKELY(j < segLen); j ++) {
-			vH = _mm_adds_epi16(vH, vP[j]);
+			vH = _mm_adds_epi16(vH, _mm_load_si128(vP + j));
 
 			/* Get max from vH, vE and vF. */
-			vH = _mm_max_epi16(vH, pvE[j]);
+			e = _mm_load_si128(pvE + j);
+			vH = _mm_max_epu8(vH, e);
 			vH = _mm_max_epi16(vH, vF);
-			
-			/* Update highest score encountered this far. */
-			vMaxScore = _mm_max_epi16(vMaxScore, vH);
 			vMaxColumn = _mm_max_epi16(vMaxColumn, vH);
 			
 			/* Save vH values. */
-			pvHStore[j] = vH;
+			_mm_store_si128(pvHStore + j, vH);
 
 			/* Update vE value. */
 			vH = _mm_subs_epu16(vH, vInserB); /* saturation arithmetic, result >= 0 */
-
-			pvE[j] = _mm_subs_epu16(pvE[j], vInserE);
-			pvE[j] = _mm_max_epi16(pvE[j], vH);
+			e = _mm_subs_epu16(e, vInserE);
+			e = _mm_max_epi16(e, vH);
+			_mm_store_si128(pvE + j, e);
 
 			/* Update vF value. */
 			vF = _mm_subs_epu16(vF, vDeletE);
 			vF = _mm_max_epi16(vF, vH);
 			
 			/* Load the next vH. */
-			vH = pvHLoad[j];
+			vH = _mm_load_si128(pvHLoad + j);
 		}
 
 		/* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3 */
 		for (k = 0; LIKELY(k < 8); ++k) {
 			vF = _mm_slli_si128 (vF, 2);
 			for (j = 0; LIKELY(j < segLen); ++j) {
-				pvHStore[j] = _mm_max_epi16(pvHStore[j], vF);
-				vH = _mm_subs_epu16(pvHStore[j], vDeletB);
+				vH = _mm_load_si128(pvHStore + j);
+				vH = _mm_max_epi16(vH, vF);
+				_mm_store_si128(pvHStore + j, vH);
+				vH = _mm_subs_epu16(vH, vDeletB);
 				vF = _mm_subs_epu16(vF, vDeletE);
 				if (UNLIKELY(! _mm_movemask_epi8(_mm_cmpgt_epi16(vF, vH)))) goto end;
 			}
 		}
 
-end:		
+end:	
+		vMaxScore = _mm_max_epi16(vMaxScore, vMaxColumn);	
 		vTemp = _mm_cmpeq_epi16(vMaxMark, vMaxScore);
 		cmp = _mm_movemask_epi8(vTemp);
 		if (cmp != 0xffff) {
@@ -483,7 +470,7 @@ end:
 		
 		/* Record the max score of current column. */	
 		max8(maxColumn[i], vMaxColumn);
-		if (terminate > 0 && maxColumn[i] == terminate) break;
+		if (maxColumn[i] == terminate) break;
 	} 	
 
 	/* Trace the alignment ending position on read. */
@@ -541,8 +528,10 @@ char* itoa(int32_t i) {
     return p0;
 }
 
-char* banded_sw (const char* ref, 
-				 	const char* read, 
+char* banded_sw (//const char* ref, 
+				 //	const char* read,
+					int8_t* ref,
+					int8_t* read, 
 				 	int32_t refLen, 
 				 	int32_t readLen,
 					int32_t score,
@@ -551,7 +540,7 @@ char* banded_sw (const char* ref,
 				 	uint32_t weight_deletB,   /* will be used as - */
 				 	uint32_t weight_deletE,   /* will be used as - */
 				 	int32_t band_width,
-					int8_t* table,
+			//		int8_t* table,
 				 	int8_t* mat,	/* pointer to the weight matrix */
 				 	int32_t n) {	
 
@@ -599,7 +588,7 @@ char* banded_sw (const char* ref,
 				e1 = e_b[u] > 0 ? e_b[u] : 0;
 				f1 = f > 0 ? f : 0;
 				temp1 = e1 > f1 ? e1 : f1;
-				temp2 = h_b[d] + mat[table[(int)ref[j]] * n + table[(int)read[i]]];
+				temp2 = h_b[d] + mat[ref[j] * n + read[i]];
 				h_c[u] = temp1 > temp2 ? temp1 : temp2;
 		
 				if (h_c[u] > max) max = h_c[u];
@@ -746,11 +735,11 @@ char* banded_sw (const char* ref,
 	return cigar1;
 }
 
-char* seq_reverse(const char* seq, int32_t end)	/* end is 0-based alignment ending position */	
+int8_t* seq_reverse(const int8_t* seq, int32_t end)	/* end is 0-based alignment ending position */	
 {									
-	char* reverse = (char*)calloc(end + 2, sizeof(char));	
+	int8_t* reverse = (int8_t*)calloc(end + 1, sizeof(int8_t));	
 	int32_t start = 0;
-	reverse[end + 1] = '\0';				
+//	reverse[end + 1] = '\0';				
 	while (LIKELY(start <= end)) {			
 		reverse[start] = seq[end];		
 		reverse[end] = seq[start];		
@@ -760,64 +749,32 @@ char* seq_reverse(const char* seq, int32_t end)	/* end is 0-based alignment endi
 	return reverse;					
 }
 		
-char* reverse_comple(const char* seq) {
-	int32_t end = strlen(seq), start = 0;
-	char* rc = (char*)calloc(end + 1, sizeof(char));
-	int8_t rc_table[128] = {
-		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 54, 4, 47, 4,  4,  4, 43, 4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4,  4, 4,  41, 41, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 54, 4, 47, 4,  4,  4, 43, 4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4,  4, 4,  41, 41, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4 
-	};
-	rc[end] = '\0';
-	-- end;				
-	while (LIKELY(start < end)) {			
-		rc[start] = (char)rc_table[(int8_t)seq[end]];		
-		rc[end] = (char)rc_table[(int8_t)seq[start]];		
-		++ start;					
-		-- end;						
-	}					
-	if (start == end) rc[start] = (char)rc_table[(int8_t)seq[start]];			
-	return rc;					
-}							
-
 profile* ssw_init (init_param* init) {
-	int8_t* table;
-	int32_t n = 5;	
+//	int8_t* table;
+	int32_t n = init->n;	
 	profile* p = (profile*)calloc(1, sizeof(struct _profile));
 	p->profile_byte = 0;
 	p->profile_word = 0;
 	p->reverse_byte = 0;
 	p->reverse_word = 0;
-	p->rc_read = 0;
-
-		
-	if (init->type == 0) {
-		table = nt_table;
-		n = 5;
-	}else{
-		table = aa_table;
-		n = 24;
-	}
+//	p->rc_read = 0;
 	
-	if (init->score_size ==	0 || init->score_size == 2) p->profile_byte = qP_byte (init->read, table, init->mat, n, 4);
-	if (init->score_size ==	1 || init->score_size == 2) p->profile_word = qP_word (init->read, table, init->mat, n);
-	if (init->reverse == 1 && init->type == 0) {
-		p->rc_read = reverse_comple(init->read);	
-		if (init->score_size ==	0 || init->score_size == 2) p->reverse_byte = qP_byte (p->rc_read, table, init->mat, n, 4);
-		if (init->score_size ==	1 || init->score_size == 2) p->reverse_word = qP_word (p->rc_read, table, init->mat, n);
-	} else if (init->reverse == 1 && init->type == 1) {
+	if (init->score_size ==	0 || init->score_size == 2) p->profile_byte = qP_byte (init->read, init->mat, init->readLen, n, 4);
+	if (init->score_size ==	1 || init->score_size == 2) p->profile_word = qP_word (init->read, init->mat, init->readLen, n);
+	if (init->rc_read) {
+	//	p->rc_read = reverse_comple(init->read);	
+		if (init->score_size ==	0 || init->score_size == 2) p->reverse_byte = qP_byte (init->rc_read, init->mat, init->readLen, n, 4);
+		if (init->score_size ==	1 || init->score_size == 2) p->reverse_word = qP_word (init->rc_read, init->mat, init->readLen, n);
+	} /*else if (init->rc_read && init->type == 1) {
 		fprintf (stderr, "Reverse complement alignment is not available for protein sequences. \n");
 		return 0;
-	}
+	}*/
 	p->read = init->read;
+	p->rc_read = init->rc_read;
 	p->mat = init->mat;
-	p->table = table;
-	p->type = init->type;
+	p->n = init->n;
+//	p->table = table;
+//	p->type = init->type;
 	return p;
 }
 
@@ -826,6 +783,7 @@ void init_destroy (profile* p) {
 	free(p->profile_word);
 	free(p->reverse_byte);
 	free(p->reverse_word);
+	free(p->read);
 	free(p->rc_read);
 	free(p);
 }
@@ -835,11 +793,11 @@ align* ssw_align (align_param* a) {
 	alignment_end* bests_reverse = 0, *bests = 0;
 	__m128i* vP = 0;
 
-	int32_t readLen = strlen(a->prof->read), word = 0, rc_word = 0, refLen = 0;
-	int32_t n = 5, band_width = 0;
+	int32_t readLen = strlen(a->prof->read), word = 0, refLen = 0, rc_word;
+	int32_t n = a->prof->n, band_width = 0;
 	char* read_reverse = 0;
 	align* r = (align*)calloc(1, sizeof(align));
-	r->read = 0;
+//	r->read = 0;
 	r->strand = 0;
 	r->score1 = 0;
 	r->score2 = 0;
@@ -849,19 +807,19 @@ align* ssw_align (align_param* a) {
 	r->read_end1 = 0;
 	r->ref_end2 = 0;
 	r->cigar = 0;
-
+/*
 	if (a->prof->type == 0) table = nt_table;
 	else table = aa_table;
-
+*/
 	// Find the alignment scores and ending positions
 	if (a->prof->profile_byte) {
-		bests = sw_sse2_byte(a->ref, 0, table, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->profile_byte, 0, 4);
+		bests = sw_sse2_byte(a->ref, 0, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->profile_byte, -1, 4);
 		if (a->prof->profile_word && bests[0].score == 225) {
-			bests = sw_sse2_word(a->ref, 0, table, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->profile_word, 0);
+			bests = sw_sse2_word(a->ref, 0, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->profile_word, -1);
 			word = 1;
 		}
 	}else if (a->prof->profile_word) {
-		bests = sw_sse2_word(a->ref, 0, table, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->profile_word, 0);
+		bests = sw_sse2_word(a->ref, 0, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->profile_word, -1);
 		word = 1;
 	}else {
 		fprintf(stderr, "The score_size variable of the init_param structure is not correctly assigned.\n");
@@ -873,13 +831,13 @@ align* ssw_align (align_param* a) {
 	r->read_end1 = bests[0].read + 1;
 	r->ref_end2 = bests[1].ref + 1;
 	if (a->prof->reverse_byte) {
-		bests = sw_sse2_byte(a->ref, 0, table, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->reverse_byte, 0, 4);
+		bests = sw_sse2_byte(a->ref, 0, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->reverse_byte, -1, 4);
 		if (a->prof->reverse_word && bests[0].score == 225) {
-			bests = sw_sse2_word(a->ref, 0, table, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->reverse_word, 0);
+			bests = sw_sse2_word(a->ref, 0, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->reverse_word, -1);
 			rc_word = 1;
 		}
 	}else if (a->prof->reverse_word) {
-		bests = sw_sse2_word(a->ref, 0, table, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->reverse_word, 0);
+		bests = sw_sse2_word(a->ref, 0, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->reverse_word, -1);
 		rc_word = 1;
 	}
 	if (bests[0].score > r->score1) {
@@ -888,23 +846,24 @@ align* ssw_align (align_param* a) {
 		r->ref_end1 = bests[0].ref + 1;
 		r->read_end1 = bests[0].read + 1;
 		r->ref_end2 = bests[1].ref + 1;
-		r->read = a->prof->rc_read;
+	//	r->read = a->prof->rc_read;
 		r->strand = 1;
 		word = rc_word;
-	} else r->read = a->prof->read;
+	} //else r->read = a->prof->read;
 	free(bests);
 	if ((a->begin == 0 && a->align == 0) || r->score1 == 225) goto end;
 
 	// Find the beginning position of the best alignment.
-	read_reverse = seq_reverse(r->read, r->read_end1 - 1);
-	if (a->prof->type == 1) n = 24;	
+	if (r->strand == 0) read_reverse = seq_reverse(a->prof->read, r->read_end1 - 1);
+	else read_reverse = seq_reverse(a->prof->rc_read, r->read_end1 - 1);
+//	if (a->prof->type == 1) n = 24;	
 	if (word == 0) {
-		vP = qP_byte(read_reverse, a->prof->table, a->prof->mat, n, 4);
+		vP = qP_byte(read_reverse, a->prof->mat, r->read_end1, n, 4);
 	fprintf(stderr, "r->score1: %d\n", r->score1);
-		bests_reverse = sw_sse2_byte(a->ref, 1, table, r->ref_end1, r->read_end1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, vP, r->score1, 4);
+		bests_reverse = sw_sse2_byte(a->ref, 1, r->ref_end1, r->read_end1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, vP, r->score1, 4);
 	} else {
-		vP = qP_word(read_reverse, a->prof->table, a->prof->mat, n);
-		bests_reverse = sw_sse2_word(a->ref, 1, table, r->ref_end1, r->read_end1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, vP, r->score1);
+		vP = qP_word(read_reverse, a->prof->mat, r->read_end1, n);
+		bests_reverse = sw_sse2_word(a->ref, 1, r->ref_end1, r->read_end1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, vP, r->score1);
 	}
 	free(vP);
 	free(read_reverse);
@@ -918,8 +877,10 @@ align* ssw_align (align_param* a) {
 	readLen = r->read_end1 - r->read_begin1 + 1;
 	band_width = abs(refLen - readLen) + 1;
 	fprintf(stderr, "refLen: %d\treadLen: %d\tband_width: %d\n", refLen, readLen, band_width);
-	r->cigar = banded_sw(a->ref + r->ref_begin1 - 1, r->read + r->read_begin1 - 1, refLen, readLen, r->score1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, band_width, table, a->prof->mat, n);
-	
+	if (r->strand == 0) r->cigar = banded_sw(a->ref + r->ref_begin1 - 1, a->prof->read + r->read_begin1 - 1, refLen, readLen, r->score1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, band_width, a->prof->mat, n);
+	else r->cigar = banded_sw(a->ref + r->ref_begin1 - 1, a->prof->rc_read + r->read_begin1 - 1, refLen, readLen, r->score1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, band_width, a->prof->mat, n);
+
+
 end: 
 	return r;
 }
