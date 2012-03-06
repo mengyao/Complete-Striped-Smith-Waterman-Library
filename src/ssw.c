@@ -761,16 +761,17 @@ void init_destroy (profile* p) {
 //	free(p->reverse_byte);
 //	free(p->reverse_word);
 	free(p->read);
+//	free(p->mat);
 //	free(p->rc_read);
 	free(p);
 }
 
 align* ssw_align (align_param* a) {
-	alignment_end* bests = 0;
+	alignment_end* bests = 0, *bests_reverse = 0;
 	__m128i* vP = 0;
 	int32_t readLen = a->prof->readLen, word = 0, refLen = 0;
 	int32_t n = a->prof->n, band_width = 0;
-	char* read_reverse = 0;
+	int8_t* read_reverse = 0;
 	align* r = (align*)calloc(1, sizeof(align));
 //	r->strand = 0;
 	r->score1 = 0;
@@ -848,7 +849,7 @@ align* ssw_align (align_param* a) {
 //	fprintf(stderr, "refLen: %d\treadLen: %d\tband_width: %d\n", refLen, readLen, band_width);
 	r->cigar = banded_sw(a->ref + r->ref_begin1 - 1, a->prof->read + r->read_begin1 - 1, refLen, readLen, r->score1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, band_width, a->prof->mat, n);
 //	else r->cigar = banded_sw(a->ref + r->ref_begin1 - 1, a->prof->rc_read + r->read_begin1 - 1, refLen, readLen, r->score1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, band_width, a->prof->mat, n);
-
+	
 end: 
 	return r;
 }

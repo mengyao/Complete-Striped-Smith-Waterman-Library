@@ -187,7 +187,7 @@ int main (int argc, char * const argv[]) {
 		gzFile ref_fp;
 		kseq_t *ref_seq;
 		init_param* init = (init_param*)calloc(1, sizeof(init_param));
-		profile* p, p_rc = 0;
+		profile* p, *p_rc = 0;
 		int32_t readLen = read_seq->seq.l; 
 		char* read_rc = 0;
 		
@@ -201,6 +201,7 @@ int main (int argc, char * const argv[]) {
 		p = ssw_init(init);
 		if (reverse == 1 && n == 5) {
 			read_rc = reverse_comple(read_seq->seq.s);
+			//free(init->read);
 			//init->rc_read = char2num(read_rc, table, readLen);
 			init->read = char2num(read_rc, table, readLen);
 			p_rc = ssw_init(init);
@@ -214,7 +215,7 @@ int main (int argc, char * const argv[]) {
 		ref_seq = kseq_init(ref_fp);
 		while ((l = kseq_read(ref_seq)) >= 0) {
 			align_param* a = (align_param*)calloc(1, sizeof(align_param));
-			align* result, result_rc = 0;
+			align* result, *result_rc = 0;
 			int32_t refLen = ref_seq->seq.l;
 			int8_t strand = 0;
 
@@ -239,14 +240,14 @@ int main (int argc, char * const argv[]) {
 				result_rc = ssw_align(a);
 			}
 			
-			if (result->score1 >= result_rc->score1) {
-				fprintf(stdout, "%d\t%s\n", strand, read_seq->seq.s);
-				fprintf(stdout, "score1: %d\tscore2: %d\tref_begin1: %d\tref_end1: %d\tread_begin1: %d\tread_end1: %d\tref_end2: %d\n", result->score1, result->score2, result->ref_begin1, result->ref_end1, result->read_begin1, result->read_end1, result->ref_end2);
-				if (path == 1) fprintf(stdout, "cigar: %s\n\n", result->cigar);
-			} else {
+			if (result_rc && result_rc->score1 > result->score1) {
 				fprintf(stdout, "%d\t%s\n", strand, read_rc);
 				fprintf(stdout, "score1: %d\tscore2: %d\tref_begin1: %d\tref_end1: %d\tread_begin1: %d\tread_end1: %d\tref_end2: %d\n", result_rc->score1, result_rc->score2, result_rc->ref_begin1, result_rc->ref_end1, result_rc->read_begin1, result_rc->read_end1, result_rc->ref_end2);
 				if (path == 1) fprintf(stdout, "cigar: %s\n\n", result_rc->cigar);
+			} else {
+				fprintf(stdout, "%d\t%s\n", strand, read_seq->seq.s);
+				fprintf(stdout, "score1: %d\tscore2: %d\tref_begin1: %d\tref_end1: %d\tread_begin1: %d\tread_end1: %d\tref_end2: %d\n", result->score1, result->score2, result->ref_begin1, result->ref_end1, result->read_begin1, result->read_end1, result->ref_end2);
+				if (path == 1) fprintf(stdout, "cigar: %s\n\n", result->cigar);
 			}
 			if (result_rc) align_destroy(result_rc);
 			align_destroy(result);
@@ -254,9 +255,10 @@ int main (int argc, char * const argv[]) {
 			free(a);
 		}
 		
+		if(p_rc) init_destroy(p_rc);
 		init_destroy(p);
-		free(init->read);
-		free(init->mat);
+//		free(init->read);
+//		free(init->mat);
 		free(init);		
 		kseq_destroy(ref_seq);
 		gzclose(ref_fp);
