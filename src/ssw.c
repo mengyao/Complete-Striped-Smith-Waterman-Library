@@ -53,6 +53,7 @@ struct _profile{
 	int8_t* rc_read;	// reverse complement sequence of the read, 0: none
 //	int8_t type;	// 0: genome sequence; 1: protein sequence
 	int8_t* mat;
+	int32_t readLen;
 	int32_t n;
 //	int8_t* table;
 };
@@ -735,7 +736,7 @@ char* banded_sw (//const char* ref,
 	return cigar1;
 }
 
-int8_t* seq_reverse(const int8_t* seq, int32_t end)	/* end is 0-based alignment ending position */	
+int8_t* seq_reverse(int8_t* seq, int32_t end)	/* end is 0-based alignment ending position */	
 {									
 	int8_t* reverse = (int8_t*)calloc(end + 1, sizeof(int8_t));	
 	int32_t start = 0;
@@ -772,6 +773,7 @@ profile* ssw_init (init_param* init) {
 	p->read = init->read;
 	p->rc_read = init->rc_read;
 	p->mat = init->mat;
+	p->readLen = init->readLen;
 	p->n = init->n;
 //	p->table = table;
 //	p->type = init->type;
@@ -789,11 +791,11 @@ void init_destroy (profile* p) {
 }
 
 align* ssw_align (align_param* a) {
-	int8_t* table;
+//	int8_t* table;
 	alignment_end* bests_reverse = 0, *bests = 0;
 	__m128i* vP = 0;
 
-	int32_t readLen = strlen(a->prof->read), word = 0, refLen = 0, rc_word;
+	int32_t readLen = a->prof->readLen, word = 0, refLen = 0, rc_word;
 	int32_t n = a->prof->n, band_width = 0;
 	char* read_reverse = 0;
 	align* r = (align*)calloc(1, sizeof(align));
@@ -854,7 +856,7 @@ align* ssw_align (align_param* a) {
 	if ((a->begin == 0 && a->align == 0) || r->score1 == 225) goto end;
 
 	// Find the beginning position of the best alignment.
-	if (r->strand == 0) read_reverse = seq_reverse(a->prof->read, r->read_end1 - 1);
+	if (r->strand == 0) read_reverse = seq_reverse((int8_t*)a->prof->read, (int32_t)r->read_end1 - 1);
 	else read_reverse = seq_reverse(a->prof->rc_read, r->read_end1 - 1);
 //	if (a->prof->type == 1) n = 24;	
 	if (word == 0) {

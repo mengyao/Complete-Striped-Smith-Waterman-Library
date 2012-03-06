@@ -25,11 +25,14 @@
 
 KSEQ_INIT(gzFile, gzread)
 
-int8_t* char2num (char* seq, int8_t* table, int32_t* l) {	// input l: 0; output l: length of the sequence
-	*l = strlen(seq);
+int8_t* char2num (char* seq, int8_t* table, int32_t l) {	// input l: 0; output l: length of the sequence
+	
+//fprintf(stderr, "seq: %s\n", seq);
+//	*l = strlen(seq);
+//fprintf(stderr, "l: %d\n", *l);
 	int32_t i;
-	int8_t* num = (int8_t*)calloc(*l, sizeof(int8_t));
-	for (i = 0; i < *l; ++i) num[i] = table[(int)seq[i]];
+	int8_t* num = (int8_t*)calloc(l, sizeof(int8_t));
+	for (i = 0; i < l; ++i) num[i] = table[(int)seq[i]];
 	return num;
 }
 
@@ -197,12 +200,24 @@ int main (int argc, char * const argv[]) {
 		kseq_t *ref_seq;
 		init_param* init = (init_param*)calloc(1, sizeof(init_param));
 		profile* p = 0;
-		int32_t readLen = 0; 
+		int32_t readLen; 
 		char* read_rc = 0;
 
+		if (*(read_seq->seq.s + read_seq->seq.l - 1) == 10) readLen = read_seq->seq.l - 1;
+		else readLen = read_seq->seq.l;
+
 		printf("read_name: %s\n", read_seq->name.s);
-		printf("read_seq: %s\n\n", read_seq->seq.s);
-		init->read = char2num(read_seq->seq.s, table, &readLen);
+//		printf("read_seq: %s %ld\n\n", read_seq->seq.s, read_seq->seq.l);
+	//	readLen = strlen(read_seq->seq.s);
+//		fprintf(stderr, "readLen1: %d\n", readLen);
+		init->read = char2num(read_seq->seq.s, table, readLen);
+/*
+		fprintf(stderr, "readLen: %d\tread_num:\n", readLen);
+		for(k = 0; k < readLen; ++k) fprintf(stderr, "%d, ", *(read_seq->seq.s + k));
+		fprintf(stderr, "\n");
+		for(k = 0; k < readLen; ++k) fprintf(stderr, "%d", *(init->read + k));
+		fprintf(stderr, "\n");
+*/
 		init->rc_read = 0;
 		init->readLen = readLen;
 		init->mat = mat;
@@ -210,7 +225,7 @@ int main (int argc, char * const argv[]) {
 		init->n = n;
 		if (reverse == 1 && n == 5) {
 			read_rc = reverse_comple(read_seq->seq.s);
-			init->rc_read = char2num(read_rc, table, &readLen);
+			init->rc_read = char2num(read_rc, table, readLen);
 		//	p_rc = ssw_init(init);
 		}else if (reverse == 1 && n == 24) {
 			fprintf (stderr, "Reverse complement alignment is not available for protein sequences. \n");
@@ -228,10 +243,12 @@ int main (int argc, char * const argv[]) {
 			align_param* a = (align_param*)calloc(1, sizeof(align_param));
 			align* result;
 	//		int8_t dir = 0;	// dir == 0: forward mapped; dir == 1: reverse complement mapped
-			int32_t refLen = 0;
+			int32_t refLen;
 
+			if (*(ref_seq->seq.s + ref_seq->seq.l - 1) == 10) refLen = ref_seq->seq.l - 1;
+			else refLen = ref_seq->seq.l;
 			a->prof = p;
-			a->ref = char2num(ref_seq->seq.s, table, &refLen);
+			a->ref = char2num(ref_seq->seq.s, table, refLen);
 			a->refLen = refLen;
 			a->weight_insertB = insert_open;
 			a->weight_insertE = insert_extension;
