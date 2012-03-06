@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 03/04/12.
+ *	Last revision by Mengyao Zhao on 03/05/12.
  *	New features: Combine files for api wrapping. 
  *
  */
@@ -48,26 +48,20 @@ struct _profile{
 	__m128i* profile_word;	// 0: none
 	__m128i* reverse_byte;	// 0: none
 	__m128i* reverse_word;	// 0: none
-//	const char* read;
 	int8_t* read;
 	int8_t* rc_read;	// reverse complement sequence of the read, 0: none
-//	int8_t type;	// 0: genome sequence; 1: protein sequence
 	int8_t* mat;
 	int32_t readLen;
 	int32_t n;
-//	int8_t* table;
 };
 
 /* Generate query profile rearrange query sequence & calculate the weight of match/mismatch. */
-__m128i* qP_byte (//const char* read,
-				//				   int8_t* nt_table,
-					int8_t* read_num,
-								   int8_t* mat,
-					int32_t readLen,
-								   int32_t n,	/* the edge length of the squre matrix mat */
-								   uint8_t bias) { 
+__m128i* qP_byte (int8_t* read_num,
+				  int8_t* mat,
+				  int32_t readLen,
+				  int32_t n,	/* the edge length of the squre matrix mat */
+				  uint8_t bias) { 
 					
-//	int32_t readLen = strlen(read);
 	int32_t
 	segLen = (readLen + 15) / 16; /* Split the 128 bit register into 16 pieces. 
 								     Each piece is 8 bit. Split the read into 16 segments. 
@@ -99,22 +93,20 @@ __m128i* qP_byte (//const char* read,
    wight_match > 0, all other weights < 0.
    The returned positions are 0-based.
  */ 
-alignment_end* sw_sse2_byte (//const char* ref,
-								int8_t* ref,
-									int8_t ref_dir,	// 0: forward ref; 1: reverse ref
-							//		int8_t* nt_table,
-									int32_t refLen,
-								    int32_t readLen, 
-								    uint8_t weight_insertB, /* will be used as - */
-								    uint8_t weight_insertE, /* will be used as - */
-								    uint8_t weight_deletB,  /* will be used as - */
-								    uint8_t weight_deletE,  /* will be used as - */
-								    __m128i* vProfile,
-									uint8_t terminate,	/* the best alignment score: used to terminate 
-														   the matrix calculation when locating the 
-														   alignment beginning point. If this score 
-														   is set to 0, it will not be used */
-	 							    uint8_t bias) {         /* Shift 0 point to a positive value. */
+alignment_end* sw_sse2_byte (int8_t* ref,
+							 int8_t ref_dir,	// 0: forward ref; 1: reverse ref
+							 int32_t refLen,
+							 int32_t readLen, 
+							 uint8_t weight_insertB, /* will be used as - */
+							 uint8_t weight_insertE, /* will be used as - */
+						     uint8_t weight_deletB,  /* will be used as - */
+							 uint8_t weight_deletE,  /* will be used as - */
+							 __m128i* vProfile,
+							 uint8_t terminate,	/* the best alignment score: used to terminate 
+												   the matrix calculation when locating the 
+												   alignment beginning point. If this score 
+												   is set to 0, it will not be used */
+	 						 uint8_t bias) {         /* Shift 0 point to a positive value. */
 
 #define max16(m, vm) (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 8)); \
 					  (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 4)); \
@@ -297,14 +289,11 @@ end:
 	return bests;
 }
 
-__m128i* qP_word (//const char* read,
-					//			   int8_t* nt_table,
-					int8_t* read_num,
-								   int8_t* mat,
-					int32_t readLen,
-								   int32_t n) { 
+__m128i* qP_word (int8_t* read_num,
+				  int8_t* mat,
+				  int32_t readLen,
+				  int32_t n) { 
 					
-	//int32_t readLen = strlen(read);
 	int32_t
 	segLen = (readLen + 7) / 8; 
 	__m128i* vProfile = (__m128i*)calloc(n * segLen, sizeof(__m128i));
@@ -326,18 +315,16 @@ __m128i* qP_word (//const char* read,
 	return vProfile;
 }
 
-alignment_end* sw_sse2_word (//const char* ref,
-								int8_t* ref, 
-								int8_t ref_dir,	// 0: forward ref; 1: reverse ref
-								//	int8_t* nt_table,
-									int32_t refLen,
-								    int32_t readLen, 
-								    uint8_t weight_insertB, /* will be used as - */
-								    uint8_t weight_insertE, /* will be used as - */
-								    uint8_t weight_deletB,  /* will be used as - */
-								    uint8_t weight_deletE,  /* will be used as - */
-								    __m128i* vProfile,
-									uint16_t terminate) { 
+alignment_end* sw_sse2_word (int8_t* ref, 
+							 int8_t ref_dir,	// 0: forward ref; 1: reverse ref
+							 int32_t refLen,
+							 int32_t readLen, 
+							 uint8_t weight_insertB, /* will be used as - */
+							 uint8_t weight_insertE, /* will be used as - */
+							 uint8_t weight_deletB,  /* will be used as - */
+							 uint8_t weight_deletE,  /* will be used as - */
+						     __m128i* vProfile,
+							 uint16_t terminate) { 
 
 #define max8(m, vm) (vm) = _mm_max_epi16((vm), _mm_srli_si128((vm), 8)); \
 					(vm) = _mm_max_epi16((vm), _mm_srli_si128((vm), 4)); \
@@ -529,21 +516,18 @@ char* itoa(int32_t i) {
     return p0;
 }
 
-char* banded_sw (//const char* ref, 
-				 //	const char* read,
-					int8_t* ref,
-					int8_t* read, 
-				 	int32_t refLen, 
-				 	int32_t readLen,
-					int32_t score,
-				 	uint32_t weight_insertB,  /* will be used as - */
-				 	uint32_t weight_insertE,  /* will be used as - */
-				 	uint32_t weight_deletB,   /* will be used as - */
-				 	uint32_t weight_deletE,   /* will be used as - */
-				 	int32_t band_width,
-			//		int8_t* table,
-				 	int8_t* mat,	/* pointer to the weight matrix */
-				 	int32_t n) {	
+char* banded_sw (int8_t* ref,
+				 int8_t* read, 
+				 int32_t refLen, 
+				 int32_t readLen,
+				 int32_t score,
+				 uint32_t weight_insertB,  /* will be used as - */
+				 uint32_t weight_insertE,  /* will be used as - */
+				 uint32_t weight_deletB,   /* will be used as - */
+				 uint32_t weight_deletE,   /* will be used as - */
+				 int32_t band_width,
+				 int8_t* mat,	/* pointer to the weight matrix */
+				 int32_t n) {	
 
 	char* cigar = (char*)calloc(16, sizeof(char)), *p = cigar, ci = 'M';
 	char* cigar1, *p1;	// reverse cigar
@@ -740,7 +724,6 @@ int8_t* seq_reverse(int8_t* seq, int32_t end)	/* end is 0-based alignment ending
 {									
 	int8_t* reverse = (int8_t*)calloc(end + 1, sizeof(int8_t));	
 	int32_t start = 0;
-//	reverse[end + 1] = '\0';				
 	while (LIKELY(start <= end)) {			
 		reverse[start] = seq[end];		
 		reverse[end] = seq[start];		
@@ -751,32 +734,24 @@ int8_t* seq_reverse(int8_t* seq, int32_t end)	/* end is 0-based alignment ending
 }
 		
 profile* ssw_init (init_param* init) {
-//	int8_t* table;
 	int32_t n = init->n;	
 	profile* p = (profile*)calloc(1, sizeof(struct _profile));
 	p->profile_byte = 0;
 	p->profile_word = 0;
 	p->reverse_byte = 0;
 	p->reverse_word = 0;
-//	p->rc_read = 0;
 	
 	if (init->score_size ==	0 || init->score_size == 2) p->profile_byte = qP_byte (init->read, init->mat, init->readLen, n, 4);
 	if (init->score_size ==	1 || init->score_size == 2) p->profile_word = qP_word (init->read, init->mat, init->readLen, n);
 	if (init->rc_read) {
-	//	p->rc_read = reverse_comple(init->read);	
 		if (init->score_size ==	0 || init->score_size == 2) p->reverse_byte = qP_byte (init->rc_read, init->mat, init->readLen, n, 4);
 		if (init->score_size ==	1 || init->score_size == 2) p->reverse_word = qP_word (init->rc_read, init->mat, init->readLen, n);
-	} /*else if (init->rc_read && init->type == 1) {
-		fprintf (stderr, "Reverse complement alignment is not available for protein sequences. \n");
-		return 0;
-	}*/
+	} 	
 	p->read = init->read;
 	p->rc_read = init->rc_read;
 	p->mat = init->mat;
 	p->readLen = init->readLen;
 	p->n = init->n;
-//	p->table = table;
-//	p->type = init->type;
 	return p;
 }
 
@@ -791,7 +766,6 @@ void init_destroy (profile* p) {
 }
 
 align* ssw_align (align_param* a) {
-//	int8_t* table;
 	alignment_end* bests_reverse = 0, *bests = 0;
 	__m128i* vP = 0;
 
@@ -799,7 +773,6 @@ align* ssw_align (align_param* a) {
 	int32_t n = a->prof->n, band_width = 0;
 	char* read_reverse = 0;
 	align* r = (align*)calloc(1, sizeof(align));
-//	r->read = 0;
 	r->strand = 0;
 	r->score1 = 0;
 	r->score2 = 0;
@@ -809,10 +782,7 @@ align* ssw_align (align_param* a) {
 	r->read_end1 = 0;
 	r->ref_end2 = 0;
 	r->cigar = 0;
-/*
-	if (a->prof->type == 0) table = nt_table;
-	else table = aa_table;
-*/
+
 	// Find the alignment scores and ending positions
 	if (a->prof->profile_byte) {
 		bests = sw_sse2_byte(a->ref, 0, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->profile_byte, -1, 4);
@@ -848,17 +818,15 @@ align* ssw_align (align_param* a) {
 		r->ref_end1 = bests[0].ref + 1;
 		r->read_end1 = bests[0].read + 1;
 		r->ref_end2 = bests[1].ref + 1;
-	//	r->read = a->prof->rc_read;
 		r->strand = 1;
 		word = rc_word;
-	} //else r->read = a->prof->read;
+	} 
 	free(bests);
 	if ((a->begin == 0 && a->align == 0) || r->score1 == 225) goto end;
 
 	// Find the beginning position of the best alignment.
-	if (r->strand == 0) read_reverse = seq_reverse((int8_t*)a->prof->read, (int32_t)r->read_end1 - 1);
+	if (r->strand == 0) read_reverse = seq_reverse(a->prof->read, r->read_end1 - 1);
 	else read_reverse = seq_reverse(a->prof->rc_read, r->read_end1 - 1);
-//	if (a->prof->type == 1) n = 24;	
 	if (word == 0) {
 		vP = qP_byte(read_reverse, a->prof->mat, r->read_end1, n, 4);
 	fprintf(stderr, "r->score1: %d\n", r->score1);
@@ -881,7 +849,6 @@ align* ssw_align (align_param* a) {
 	fprintf(stderr, "refLen: %d\treadLen: %d\tband_width: %d\n", refLen, readLen, band_width);
 	if (r->strand == 0) r->cigar = banded_sw(a->ref + r->ref_begin1 - 1, a->prof->read + r->read_begin1 - 1, refLen, readLen, r->score1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, band_width, a->prof->mat, n);
 	else r->cigar = banded_sw(a->ref + r->ref_begin1 - 1, a->prof->rc_read + r->read_begin1 - 1, refLen, readLen, r->score1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, band_width, a->prof->mat, n);
-
 
 end: 
 	return r;

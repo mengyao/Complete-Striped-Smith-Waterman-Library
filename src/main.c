@@ -26,10 +26,6 @@
 KSEQ_INIT(gzFile, gzread)
 
 int8_t* char2num (char* seq, int8_t* table, int32_t l) {	// input l: 0; output l: length of the sequence
-	
-//fprintf(stderr, "seq: %s\n", seq);
-//	*l = strlen(seq);
-//fprintf(stderr, "l: %d\n", *l);
 	int32_t i;
 	int8_t* num = (int8_t*)calloc(l, sizeof(int8_t));
 	for (i = 0; i < l; ++i) num[i] = table[(int)seq[i]];
@@ -181,15 +177,7 @@ int main (int argc, char * const argv[]) {
 		n = 24;
 		table = aa_table;
 	}
-/*
-	if (init->type == 0) {
-		table = nt_table;
-		n = 5;
-	}else{
-		table = aa_table;
-		n = 24;
-	}
-*/
+
 	read_fp = gzopen(argv[optind + 1], "r");
 	read_seq = kseq_init(read_fp);
 	start = clock();
@@ -207,17 +195,7 @@ int main (int argc, char * const argv[]) {
 		else readLen = read_seq->seq.l;
 
 		printf("read_name: %s\n", read_seq->name.s);
-//		printf("read_seq: %s %ld\n\n", read_seq->seq.s, read_seq->seq.l);
-	//	readLen = strlen(read_seq->seq.s);
-//		fprintf(stderr, "readLen1: %d\n", readLen);
 		init->read = char2num(read_seq->seq.s, table, readLen);
-/*
-		fprintf(stderr, "readLen: %d\tread_num:\n", readLen);
-		for(k = 0; k < readLen; ++k) fprintf(stderr, "%d, ", *(read_seq->seq.s + k));
-		fprintf(stderr, "\n");
-		for(k = 0; k < readLen; ++k) fprintf(stderr, "%d", *(init->read + k));
-		fprintf(stderr, "\n");
-*/
 		init->rc_read = 0;
 		init->readLen = readLen;
 		init->mat = mat;
@@ -226,15 +204,11 @@ int main (int argc, char * const argv[]) {
 		if (reverse == 1 && n == 5) {
 			read_rc = reverse_comple(read_seq->seq.s);
 			init->rc_read = char2num(read_rc, table, readLen);
-		//	p_rc = ssw_init(init);
 		}else if (reverse == 1 && n == 24) {
 			fprintf (stderr, "Reverse complement alignment is not available for protein sequences. \n");
 			return 1;
 		}
 		p = ssw_init(init);
-	//	init->type = type;
-	//	p = ssw_init(init);
-		//if (p == 0) return 1;
 		free(init);		
 
 		ref_fp = gzopen(argv[optind], "r");
@@ -242,7 +216,6 @@ int main (int argc, char * const argv[]) {
 		while ((l = kseq_read(ref_seq)) >= 0) {
 			align_param* a = (align_param*)calloc(1, sizeof(align_param));
 			align* result;
-	//		int8_t dir = 0;	// dir == 0: forward mapped; dir == 1: reverse complement mapped
 			int32_t refLen;
 
 			if (*(ref_seq->seq.s + ref_seq->seq.l - 1) == 10) refLen = ref_seq->seq.l - 1;
@@ -257,17 +230,12 @@ int main (int argc, char * const argv[]) {
 			if (path == 1) {
 				a->begin = 1;
 				a->align = 1;
-		//		a->align = 0;
 			} else {
 				a->begin = 0;
 				a->align = 0;
 			}
 			printf("ref_name: %s\n", ref_seq->name.s);
 			result = ssw_align (a);
-	/*		if (reverse == 1) {
-				a->prof = p_rc;
-				rc = ssw_align(a);
-			}*/
 			free(a);
 
 			if (result->strand == 0) fprintf(stdout, "%d\t%s\n", result->strand, read_seq->seq.s);
