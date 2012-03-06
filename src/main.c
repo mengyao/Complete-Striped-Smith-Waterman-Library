@@ -193,7 +193,6 @@ int main (int argc, char * const argv[]) {
 		
 		printf("read_name: %s\n", read_seq->name.s);
 		init->read = char2num(read_seq->seq.s, table, readLen);
-		//init->rc_read = 0;
 		init->readLen = readLen;
 		init->mat = mat;
 		init->score_size = 2;
@@ -201,15 +200,12 @@ int main (int argc, char * const argv[]) {
 		p = ssw_init(init);
 		if (reverse == 1 && n == 5) {
 			read_rc = reverse_comple(read_seq->seq.s);
-			//free(init->read);
-			//init->rc_read = char2num(read_rc, table, readLen);
 			init->read = char2num(read_rc, table, readLen);
 			p_rc = ssw_init(init);
 		}else if (reverse == 1 && n == 24) {
 			fprintf (stderr, "Reverse complement alignment is not available for protein sequences. \n");
 			return 1;
 		}
-		//p = ssw_init(init);
 
 		ref_fp = gzopen(argv[optind], "r");
 		ref_seq = kseq_init(ref_fp);
@@ -257,8 +253,6 @@ int main (int argc, char * const argv[]) {
 		
 		if(p_rc) init_destroy(p_rc);
 		init_destroy(p);
-//		free(init->read);
-//		free(init->mat);
 		free(init);		
 		kseq_destroy(ref_seq);
 		gzclose(ref_fp);

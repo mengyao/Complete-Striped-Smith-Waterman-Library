@@ -16,7 +16,6 @@
 
 typedef struct {
 	int8_t* read;
-//	int8_t* rc_read;	// 0: reverse complement alignment will not be done; vise versa
 	int8_t* mat;
 	int8_t score_size;	// 0: best alignment score will be < 225; 1: > 225; 2: can be either
 	int32_t readLen;
@@ -40,7 +39,6 @@ typedef struct {
 
 // Positions are all 1-based.
 typedef struct {
-//	int8_t strand;	// 0: forward aligned; 1: reverse complement aligned 
 	int16_t score1;	// best alignment score, 225: 
 	int16_t score2;	// sub-optimal alignment score
 	int32_t ref_begin1;	// 0: none
