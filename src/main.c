@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 03/05/12.
+ *  Last revision by Mengyao Zhao on 03/06/12.
  *	New features: make weight as options 
  */
 
@@ -187,41 +187,37 @@ int main (int argc, char * const argv[]) {
 		gzFile ref_fp;
 		kseq_t *ref_seq;
 		init_param* init = (init_param*)calloc(1, sizeof(init_param));
-		profile* p = 0;
+		profile* p, p_rc = 0;
 		int32_t readLen = read_seq->seq.l; 
 		char* read_rc = 0;
-/*
-		if (*(read_seq->seq.s + read_seq->seq.l - 1) == 10) readLen = read_seq->seq.l - 1;
-		else readLen = read_seq->seq.l;
-*/
 		
 		printf("read_name: %s\n", read_seq->name.s);
 		init->read = char2num(read_seq->seq.s, table, readLen);
-		init->rc_read = 0;
+		//init->rc_read = 0;
 		init->readLen = readLen;
 		init->mat = mat;
 		init->score_size = 2;
 		init->n = n;
+		p = ssw_init(init);
 		if (reverse == 1 && n == 5) {
 			read_rc = reverse_comple(read_seq->seq.s);
-			init->rc_read = char2num(read_rc, table, readLen);
+			//init->rc_read = char2num(read_rc, table, readLen);
+			init->read = char2num(read_rc, table, readLen);
+			p_rc = ssw_init(init);
 		}else if (reverse == 1 && n == 24) {
 			fprintf (stderr, "Reverse complement alignment is not available for protein sequences. \n");
 			return 1;
 		}
-		p = ssw_init(init);
-		free(init);		
+		//p = ssw_init(init);
 
 		ref_fp = gzopen(argv[optind], "r");
 		ref_seq = kseq_init(ref_fp);
 		while ((l = kseq_read(ref_seq)) >= 0) {
 			align_param* a = (align_param*)calloc(1, sizeof(align_param));
-			align* result;
+			align* result, result_rc = 0;
 			int32_t refLen = ref_seq->seq.l;
-/*
-			if (*(ref_seq->seq.s + ref_seq->seq.l - 1) == 10) refLen = ref_seq->seq.l - 1;
-			else refLen = ref_seq->seq.l;
-*/
+			int8_t strand = 0;
+
 			a->prof = p;
 			a->ref = char2num(ref_seq->seq.s, table, refLen);
 			a->refLen = refLen;
@@ -233,24 +229,35 @@ int main (int argc, char * const argv[]) {
 				a->begin = 1;
 				a->align = 1;
 			} else {
-				a->begin = 0;
+				a->begin = 1;
 				a->align = 0;
 			}
 			printf("ref_name: %s\n", ref_seq->name.s);
 			result = ssw_align (a);
-			free(a);
-
-			if (result->strand == 0) fprintf(stdout, "%d\t%s\n", result->strand, read_seq->seq.s);
-			else fprintf(stdout, "%d\t%s\n", result->strand, read_rc);
-			fprintf(stdout, "score1: %d\tscore2: %d\tref_end1: %d\tread_end1: %d\tref_end2: %d\n", result->score1, result->score2, result->ref_end1, result->read_end1, result->ref_end2);
-			if (path == 1) {
-				fprintf(stdout, "ref_begin1: %d\tread_begin1: %d\n", result->ref_begin1, result->read_begin1);
-			fprintf(stdout, "cigar: %s\n\n", result->cigar);
+			if (reverse == 1) {
+				a->prof = p_rc;
+				result_rc = ssw_align(a);
 			}
+			
+			if (result->score1 >= result_rc->score1) {
+				fprintf(stdout, "%d\t%s\n", strand, read_seq->seq.s);
+				fprintf(stdout, "score1: %d\tscore2: %d\tref_begin1: %d\tref_end1: %d\tread_begin1: %d\tread_end1: %d\tref_end2: %d\n", result->score1, result->score2, result->ref_begin1, result->ref_end1, result->read_begin1, result->read_end1, result->ref_end2);
+				if (path == 1) fprintf(stdout, "cigar: %s\n\n", result->cigar);
+			} else {
+				fprintf(stdout, "%d\t%s\n", strand, read_rc);
+				fprintf(stdout, "score1: %d\tscore2: %d\tref_begin1: %d\tref_end1: %d\tread_begin1: %d\tread_end1: %d\tref_end2: %d\n", result_rc->score1, result_rc->score2, result_rc->ref_begin1, result_rc->ref_end1, result_rc->read_begin1, result_rc->read_end1, result_rc->ref_end2);
+				if (path == 1) fprintf(stdout, "cigar: %s\n\n", result_rc->cigar);
+			}
+			if (result_rc) align_destroy(result_rc);
 			align_destroy(result);
+			free(a->ref);
+			free(a);
 		}
 		
 		init_destroy(p);
+		free(init->read);
+		free(init->mat);
+		free(init);		
 		kseq_destroy(ref_seq);
 		gzclose(ref_fp);
 	}

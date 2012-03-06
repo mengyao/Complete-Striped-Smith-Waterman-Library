@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 03/05/12.
+ *	Last revision by Mengyao Zhao on 03/06/12.
  *	New features: Combine files for api wrapping. 
  *
  */
@@ -46,10 +46,10 @@ typedef struct {
 struct _profile{
 	__m128i* profile_byte;	// 0: none
 	__m128i* profile_word;	// 0: none
-	__m128i* reverse_byte;	// 0: none
-	__m128i* reverse_word;	// 0: none
+//	__m128i* reverse_byte;	// 0: none
+//	__m128i* reverse_word;	// 0: none
 	int8_t* read;
-	int8_t* rc_read;	// reverse complement sequence of the read, 0: none
+//	int8_t* rc_read;	// reverse complement sequence of the read, 0: none
 	int8_t* mat;
 	int32_t readLen;
 	int32_t n;
@@ -738,17 +738,17 @@ profile* ssw_init (init_param* init) {
 	profile* p = (profile*)calloc(1, sizeof(struct _profile));
 	p->profile_byte = 0;
 	p->profile_word = 0;
-	p->reverse_byte = 0;
-	p->reverse_word = 0;
+//	p->reverse_byte = 0;
+//	p->reverse_word = 0;
 	
 	if (init->score_size ==	0 || init->score_size == 2) p->profile_byte = qP_byte (init->read, init->mat, init->readLen, n, 4);
 	if (init->score_size ==	1 || init->score_size == 2) p->profile_word = qP_word (init->read, init->mat, init->readLen, n);
-	if (init->rc_read) {
+/*	if (init->rc_read) {
 		if (init->score_size ==	0 || init->score_size == 2) p->reverse_byte = qP_byte (init->rc_read, init->mat, init->readLen, n, 4);
 		if (init->score_size ==	1 || init->score_size == 2) p->reverse_word = qP_word (init->rc_read, init->mat, init->readLen, n);
-	} 	
+	} */	
 	p->read = init->read;
-	p->rc_read = init->rc_read;
+//	p->rc_read = init->rc_read;
 	p->mat = init->mat;
 	p->readLen = init->readLen;
 	p->n = init->n;
@@ -758,22 +758,21 @@ profile* ssw_init (init_param* init) {
 void init_destroy (profile* p) {
 	free(p->profile_byte);
 	free(p->profile_word);
-	free(p->reverse_byte);
-	free(p->reverse_word);
+//	free(p->reverse_byte);
+//	free(p->reverse_word);
 	free(p->read);
-	free(p->rc_read);
+//	free(p->rc_read);
 	free(p);
 }
 
 align* ssw_align (align_param* a) {
-	alignment_end* bests_reverse = 0, *bests = 0;
+	alignment_end* bests = 0;
 	__m128i* vP = 0;
-
-	int32_t readLen = a->prof->readLen, word = 0, refLen = 0, rc_word;
+	int32_t readLen = a->prof->readLen, word = 0, refLen = 0;
 	int32_t n = a->prof->n, band_width = 0;
 	char* read_reverse = 0;
 	align* r = (align*)calloc(1, sizeof(align));
-	r->strand = 0;
+//	r->strand = 0;
 	r->score1 = 0;
 	r->score2 = 0;
 	r->ref_begin1 = 0;
@@ -802,7 +801,7 @@ align* ssw_align (align_param* a) {
 	r->ref_end1 = bests[0].ref + 1;
 	r->read_end1 = bests[0].read + 1;
 	r->ref_end2 = bests[1].ref + 1;
-	if (a->prof->reverse_byte) {
+/*	if (a->prof->reverse_byte) {
 		bests = sw_sse2_byte(a->ref, 0, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->reverse_byte, -1, 4);
 		if (a->prof->reverse_word && bests[0].score == 225) {
 			bests = sw_sse2_word(a->ref, 0, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->reverse_word, -1);
@@ -820,16 +819,16 @@ align* ssw_align (align_param* a) {
 		r->ref_end2 = bests[1].ref + 1;
 		r->strand = 1;
 		word = rc_word;
-	} 
+	}*/ 
 	free(bests);
 	if ((a->begin == 0 && a->align == 0) || r->score1 == 225) goto end;
 
 	// Find the beginning position of the best alignment.
-	if (r->strand == 0) read_reverse = seq_reverse(a->prof->read, r->read_end1 - 1);
-	else read_reverse = seq_reverse(a->prof->rc_read, r->read_end1 - 1);
+	read_reverse = seq_reverse(a->prof->read, r->read_end1 - 1);
+//	else read_reverse = seq_reverse(a->prof->rc_read, r->read_end1 - 1);
 	if (word == 0) {
 		vP = qP_byte(read_reverse, a->prof->mat, r->read_end1, n, 4);
-	fprintf(stderr, "r->score1: %d\n", r->score1);
+//	fprintf(stderr, "r->score1: %d\n", r->score1);
 		bests_reverse = sw_sse2_byte(a->ref, 1, r->ref_end1, r->read_end1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, vP, r->score1, 4);
 	} else {
 		vP = qP_word(read_reverse, a->prof->mat, r->read_end1, n);
@@ -846,9 +845,9 @@ align* ssw_align (align_param* a) {
 	refLen = r->ref_end1 - r->ref_begin1 + 1;
 	readLen = r->read_end1 - r->read_begin1 + 1;
 	band_width = abs(refLen - readLen) + 1;
-	fprintf(stderr, "refLen: %d\treadLen: %d\tband_width: %d\n", refLen, readLen, band_width);
-	if (r->strand == 0) r->cigar = banded_sw(a->ref + r->ref_begin1 - 1, a->prof->read + r->read_begin1 - 1, refLen, readLen, r->score1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, band_width, a->prof->mat, n);
-	else r->cigar = banded_sw(a->ref + r->ref_begin1 - 1, a->prof->rc_read + r->read_begin1 - 1, refLen, readLen, r->score1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, band_width, a->prof->mat, n);
+//	fprintf(stderr, "refLen: %d\treadLen: %d\tband_width: %d\n", refLen, readLen, band_width);
+	r->cigar = banded_sw(a->ref + r->ref_begin1 - 1, a->prof->read + r->read_begin1 - 1, refLen, readLen, r->score1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, band_width, a->prof->mat, n);
+//	else r->cigar = banded_sw(a->ref + r->ref_begin1 - 1, a->prof->rc_read + r->read_begin1 - 1, refLen, readLen, r->score1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, band_width, a->prof->mat, n);
 
 end: 
 	return r;
