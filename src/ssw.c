@@ -747,7 +747,7 @@ profile* ssw_init (init_param* init) {
 void init_destroy (profile* p) {
 	free(p->profile_byte);
 	free(p->profile_word);
-	free(p->read);
+//	free(p->read);
 	free(p);
 }
 
