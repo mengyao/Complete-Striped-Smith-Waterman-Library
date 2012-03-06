@@ -188,12 +188,13 @@ int main (int argc, char * const argv[]) {
 		kseq_t *ref_seq;
 		init_param* init = (init_param*)calloc(1, sizeof(init_param));
 		profile* p = 0;
-		int32_t readLen; 
+		int32_t readLen = read_seq->seq.l; 
 		char* read_rc = 0;
-
+/*
 		if (*(read_seq->seq.s + read_seq->seq.l - 1) == 10) readLen = read_seq->seq.l - 1;
 		else readLen = read_seq->seq.l;
-
+*/
+		
 		printf("read_name: %s\n", read_seq->name.s);
 		init->read = char2num(read_seq->seq.s, table, readLen);
 		init->rc_read = 0;
@@ -216,10 +217,11 @@ int main (int argc, char * const argv[]) {
 		while ((l = kseq_read(ref_seq)) >= 0) {
 			align_param* a = (align_param*)calloc(1, sizeof(align_param));
 			align* result;
-			int32_t refLen;
-
+			int32_t refLen = ref_seq->seq.l;
+/*
 			if (*(ref_seq->seq.s + ref_seq->seq.l - 1) == 10) refLen = ref_seq->seq.l - 1;
 			else refLen = ref_seq->seq.l;
+*/
 			a->prof = p;
 			a->ref = char2num(ref_seq->seq.s, table, refLen);
 			a->refLen = refLen;
