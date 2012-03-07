@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 03/06/12.
+ *	Last revision by Mengyao Zhao on 03/07/12.
  *	New features: Combine files for api wrapping. 
  *
  */
@@ -94,10 +94,10 @@ alignment_end* sw_sse2_byte (int8_t* ref,
 							 int8_t ref_dir,	// 0: forward ref; 1: reverse ref
 							 int32_t refLen,
 							 int32_t readLen, 
-							 uint8_t weight_insertB, /* will be used as - */
-							 uint8_t weight_insertE, /* will be used as - */
-						     uint8_t weight_deletB,  /* will be used as - */
-							 uint8_t weight_deletE,  /* will be used as - */
+							 uint8_t weight_gapO, /* will be used as - */
+							 uint8_t weight_gapE, /* will be used as - */
+						   //  uint8_t weight_deletB,  /* will be used as - */
+							// uint8_t weight_deletE,  /* will be used as - */
 							 __m128i* vProfile,
 							 uint8_t terminate,	/* the best alignment score: used to terminate 
 												   the matrix calculation when locating the 
@@ -137,16 +137,16 @@ alignment_end* sw_sse2_byte (int8_t* ref,
 	}
 	
 	/* 16 byte insertion begin vector */
-	__m128i vInserB = _mm_set1_epi8(weight_insertB);
+	__m128i vGapO = _mm_set1_epi8(weight_gapO);
 	
 	/* 16 byte insertion extension vector */
-	__m128i vInserE = _mm_set1_epi8(weight_insertE);	
+	__m128i vGapE = _mm_set1_epi8(weight_gapE);	
 	
 	/* 16 byte deletion begin vector */
-	__m128i vDeletB = _mm_set1_epi8(weight_deletB);	
+//	__m128i vDeletB = _mm_set1_epi8(weight_deletB);	
 
 	/* 16 byte deletion extension vector */
-	__m128i vDeletE = _mm_set1_epi8(weight_deletE);	
+//	__m128i vDeletE = _mm_set1_epi8(weight_deletE);	
 
 	/* 16 byte bias vector */
 	__m128i vBias = _mm_set1_epi8(bias);	
@@ -197,13 +197,13 @@ alignment_end* sw_sse2_byte (int8_t* ref,
 			_mm_store_si128(pvHStore + j, vH);
 
 			/* Update vE value. */
-			vH = _mm_subs_epu8(vH, vInserB); /* saturation arithmetic, result >= 0 */
-			e = _mm_subs_epu8(e, vInserE);
+			vH = _mm_subs_epu8(vH, vGapO); /* saturation arithmetic, result >= 0 */
+			e = _mm_subs_epu8(e, vGapE);
 			e = _mm_max_epu8(e, vH);
 			_mm_store_si128(pvE + j, e);
 			
 			/* Update vF value. */
-			vF = _mm_subs_epu8(vF, vDeletE);
+			vF = _mm_subs_epu8(vF, vGapE);
 			vF = _mm_max_epu8(vF, vH);
 			
 			/* Load the next vH. */
@@ -217,8 +217,8 @@ alignment_end* sw_sse2_byte (int8_t* ref,
 				vH = _mm_load_si128(pvHStore + j);
 				vH = _mm_max_epu8(vH, vF);
 				_mm_store_si128(pvHStore + j, vH);
-				vH = _mm_subs_epu8(vH, vDeletB);
-				vF = _mm_subs_epu8(vF, vDeletE);
+				vH = _mm_subs_epu8(vH, vGapO);
+				vF = _mm_subs_epu8(vF, vGapE);
 				if (UNLIKELY(! _mm_movemask_epi8(_mm_cmpgt_epi8(vF, vH)))) goto end;
 			}
 		}
@@ -316,10 +316,10 @@ alignment_end* sw_sse2_word (int8_t* ref,
 							 int8_t ref_dir,	// 0: forward ref; 1: reverse ref
 							 int32_t refLen,
 							 int32_t readLen, 
-							 uint8_t weight_insertB, /* will be used as - */
-							 uint8_t weight_insertE, /* will be used as - */
-							 uint8_t weight_deletB,  /* will be used as - */
-							 uint8_t weight_deletE,  /* will be used as - */
+							 uint8_t weight_gapO, /* will be used as - */
+							 uint8_t weight_gapE, /* will be used as - */
+					//		 uint8_t weight_deletB,  /* will be used as - */
+					//		 uint8_t weight_deletE,  /* will be used as - */
 						     __m128i* vProfile,
 							 uint16_t terminate) { 
 
@@ -354,16 +354,16 @@ alignment_end* sw_sse2_word (int8_t* ref,
 	}
 	
 	/* 16 byte insertion begin vector */
-	__m128i vInserB = _mm_set1_epi16(weight_insertB);
+	__m128i vGapO = _mm_set1_epi16(weight_gapO);
 	
 	/* 16 byte insertion extension vector */
-	__m128i vInserE = _mm_set1_epi16(weight_insertE);	
+	__m128i vGapE = _mm_set1_epi16(weight_gapE);	
 	
 	/* 16 byte deletion begin vector */
-	__m128i vDeletB = _mm_set1_epi16(weight_deletB);
+//	__m128i vDeletB = _mm_set1_epi16(weight_deletB);
 
 	/* 16 byte deletion extension vector */
-	__m128i vDeletE = _mm_set1_epi16(weight_deletE);	
+//	__m128i vDeletE = _mm_set1_epi16(weight_deletE);	
 
 	/* 16 byte bias vector */
 	__m128i vMaxScore = vZero; /* Trace the highest score of the whole SW matrix. */
@@ -408,13 +408,13 @@ alignment_end* sw_sse2_word (int8_t* ref,
 			_mm_store_si128(pvHStore + j, vH);
 
 			/* Update vE value. */
-			vH = _mm_subs_epu16(vH, vInserB); /* saturation arithmetic, result >= 0 */
-			e = _mm_subs_epu16(e, vInserE);
+			vH = _mm_subs_epu16(vH, vGapO); /* saturation arithmetic, result >= 0 */
+			e = _mm_subs_epu16(e, vGapE);
 			e = _mm_max_epi16(e, vH);
 			_mm_store_si128(pvE + j, e);
 
 			/* Update vF value. */
-			vF = _mm_subs_epu16(vF, vDeletE);
+			vF = _mm_subs_epu16(vF, vGapE);
 			vF = _mm_max_epi16(vF, vH);
 			
 			/* Load the next vH. */
@@ -428,8 +428,8 @@ alignment_end* sw_sse2_word (int8_t* ref,
 				vH = _mm_load_si128(pvHStore + j);
 				vH = _mm_max_epi16(vH, vF);
 				_mm_store_si128(pvHStore + j, vH);
-				vH = _mm_subs_epu16(vH, vDeletB);
-				vF = _mm_subs_epu16(vF, vDeletE);
+				vH = _mm_subs_epu16(vH, vGapO);
+				vF = _mm_subs_epu16(vF, vGapE);
 				if (UNLIKELY(! _mm_movemask_epi8(_mm_cmpgt_epi16(vF, vH)))) goto end;
 			}
 		}
@@ -517,10 +517,10 @@ char* banded_sw (int8_t* ref,
 				 int32_t refLen, 
 				 int32_t readLen,
 				 int32_t score,
-				 uint32_t weight_insertB,  /* will be used as - */
-				 uint32_t weight_insertE,  /* will be used as - */
-				 uint32_t weight_deletB,   /* will be used as - */
-				 uint32_t weight_deletE,   /* will be used as - */
+				 uint32_t weight_gapO,  /* will be used as - */
+				 uint32_t weight_gapE,  /* will be used as - */
+			//	 uint32_t weight_deletB,   /* will be used as - */
+			//	 uint32_t weight_deletE,   /* will be used as - */
 				 int32_t band_width,
 				 int8_t* mat,	/* pointer to the weight matrix */
 				 int32_t n) {	
@@ -556,13 +556,13 @@ char* banded_sw (int8_t* ref,
 				set_d(df, band_width, i, j, 1);
 				set_d(dh, band_width, i, j, 2);
 
-				temp1 = i == 0 ? -weight_insertB : h_b[e] - weight_insertB;
-				temp2 = i == 0 ? -weight_insertE : e_b[e] - weight_insertE;
+				temp1 = i == 0 ? -weight_gapO : h_b[e] - weight_gapO;
+				temp2 = i == 0 ? -weight_gapE : e_b[e] - weight_gapE;
 				e_b[u] = temp1 > temp2 ? temp1 : temp2;
 				direction_line[de] = temp1 > temp2 ? 3 : 2;
 		
-				temp1 = h_c[b] - weight_deletB;
-				temp2 = f - weight_deletE;
+				temp1 = h_c[b] - weight_gapO;
+				temp2 = f - weight_gapE;
 				f = temp1 > temp2 ? temp1 : temp2;
 				direction_line[df] = temp1 > temp2 ? 5 : 4;
 				
@@ -747,7 +747,6 @@ profile* ssw_init (init_param* init) {
 void init_destroy (profile* p) {
 	free(p->profile_byte);
 	free(p->profile_word);
-//	free(p->read);
 	free(p);
 }
 
@@ -769,13 +768,13 @@ align* ssw_align (align_param* a) {
 
 	// Find the alignment scores and ending positions
 	if (a->prof->profile_byte) {
-		bests = sw_sse2_byte(a->ref, 0, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->profile_byte, -1, 4);
+		bests = sw_sse2_byte(a->ref, 0, a->refLen, readLen, a->weight_gapO, a->weight_gapE, a->prof->profile_byte, -1, 4);
 		if (a->prof->profile_word && bests[0].score == 225) {
-			bests = sw_sse2_word(a->ref, 0, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->profile_word, -1);
+			bests = sw_sse2_word(a->ref, 0, a->refLen, readLen, a->weight_gapO, a->weight_gapE, a->prof->profile_word, -1);
 			word = 1;
 		}
 	}else if (a->prof->profile_word) {
-		bests = sw_sse2_word(a->ref, 0, a->refLen, readLen, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, a->prof->profile_word, -1);
+		bests = sw_sse2_word(a->ref, 0, a->refLen, readLen, a->weight_gapO, a->weight_gapE, a->prof->profile_word, -1);
 		word = 1;
 	}else {
 		fprintf(stderr, "The score_size variable of the init_param structure is not correctly assigned.\n");
@@ -793,10 +792,10 @@ align* ssw_align (align_param* a) {
 	read_reverse = seq_reverse(a->prof->read, r->read_end1 - 1);
 	if (word == 0) {
 		vP = qP_byte(read_reverse, a->prof->mat, r->read_end1, n, 4);
-		bests_reverse = sw_sse2_byte(a->ref, 1, r->ref_end1, r->read_end1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, vP, r->score1, 4);
+		bests_reverse = sw_sse2_byte(a->ref, 1, r->ref_end1, r->read_end1, a->weight_gapO, a->weight_gapE, vP, r->score1, 4);
 	} else {
 		vP = qP_word(read_reverse, a->prof->mat, r->read_end1, n);
-		bests_reverse = sw_sse2_word(a->ref, 1, r->ref_end1, r->read_end1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, vP, r->score1);
+		bests_reverse = sw_sse2_word(a->ref, 1, r->ref_end1, r->read_end1, a->weight_gapO, a->weight_gapE, vP, r->score1);
 	}
 	free(vP);
 	free(read_reverse);
@@ -809,7 +808,7 @@ align* ssw_align (align_param* a) {
 	refLen = r->ref_end1 - r->ref_begin1 + 1;
 	readLen = r->read_end1 - r->read_begin1 + 1;
 	band_width = abs(refLen - readLen) + 1;
-	r->cigar = banded_sw(a->ref + r->ref_begin1 - 1, a->prof->read + r->read_begin1 - 1, refLen, readLen, r->score1, a->weight_insertB, a->weight_insertE, a->weight_deletB, a->weight_deletE, band_width, a->prof->mat, n);
+	r->cigar = banded_sw(a->ref + r->ref_begin1 - 1, a->prof->read + r->read_begin1 - 1, refLen, readLen, r->score1, a->weight_gapO, a->weight_gapE, band_width, a->prof->mat, n);
 	
 end: 
 	return r;
@@ -819,4 +818,35 @@ void align_destroy (align* c) {
 	free(c->cigar);
 	free(c);
 }
+/*
+void ssw_write (write* w) {
+	if (w->sam == 0) {	// Blast like output
+		fprintf(stdout, "target_name: %s\nquery_name: %s\noptimal_alignment_score: %d\t", w->ref_name, w->read_name, w->al->score1);
+		if (w->strand == 0) fprintf(stdout, "strand: +\t");
+		else fprintf(stdout, "strand: -\t");
+		if (w->al->ref_begin1) fprintf(stdout, "target_begin: %d\t", w->al->ref_begin1);
+		fprintf(stdout, "target_end: %d\t", w->al->ref_end1);
+		if (w->al->read_begin1) fprintf(stdout, "query_begin: %d\t", w->al->read_begin1);
+		fprintf(stdout, "query_end: %d\n", w->al->read_end1);
+		if (w->al->cigar) {
+			int32_t i, c , q = w->al->ref_begin1 - 1;
+			fprintf(stdout, "Target:\t");
+			for (c = 0; c < strlen(w->al->cigar); c += 2) {
+				switch (w->al->cigar + c + 1) {
+		`			case 'M':
+					case 'D':
+						for (i = 0; i < (w->al->cigar + c), ++i) fprintf(stdout, "%c", w->ref_seq + q + i);
+						break;
+					case 'I':
+						for (i = 0; i < (w->al->cigar + c), ++i) fprintf(stdout, "-");
+						break;
+				}
+			}
+			fprintf(stdout, "\n\t\t");
+		}
+		fprintf(stdout, "\n");
+	}else {	// Sam format output
 
+	}
+}
+*/

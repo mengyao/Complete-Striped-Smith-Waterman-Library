@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 03/06/12.
+ *  Last revision by Mengyao Zhao on 03/07/12.
  *	New features: make weight as options 
  */
 
@@ -62,7 +62,7 @@ int main (int argc, char * const argv[]) {
 	float cpu_time;
 	gzFile read_fp;
 	kseq_t *read_seq;
-	int32_t l, m, k, match = 2, mismatch = 2, insert_open = 3, insert_extension = 1, delet_open = 3, delet_extension = 1, path = 0, reverse = 0, n = 5;
+	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5;
 	int8_t* mat = (int8_t*)calloc(25, sizeof(int8_t));
 	char mat_name[16];
 	mat_name[0] = '\0';
@@ -102,14 +102,14 @@ int main (int argc, char * const argv[]) {
 	for (m = 0; LIKELY(m < 5); ++m) mat[k++] = 0;
 
 	// Parse command line.
-	while ((l = getopt(argc, argv, "m:x:i:e:d:f:a:cr")) >= 0) {
+	while ((l = getopt(argc, argv, "m:x:o:e:a:cr")) >= 0) {
 		switch (l) {
 			case 'm': match = atoi(optarg); break;
 			case 'x': mismatch = atoi(optarg); break;
-			case 'i': insert_open = atoi(optarg); break;
-			case 'e': insert_extension = atoi(optarg); break;
-			case 'd': delet_open = atoi(optarg); break;
-			case 'f': delet_extension = atoi(optarg); break;
+			case 'o': gap_open = atoi(optarg); break;
+			case 'e': gap_extension = atoi(optarg); break;
+	//		case 'd': delet_open = atoi(optarg); break;
+	//		case 'f': delet_extension = atoi(optarg); break;
 			case 'a': strcpy(mat_name, optarg); break;
 			case 'c': path = 1; break;
 			case 'r': reverse = 1; break;
@@ -121,10 +121,10 @@ int main (int argc, char * const argv[]) {
 		fprintf(stderr, "Options:\n");
 		fprintf(stderr, "\t-m N\tN is a positive integer for weight match in genome sequence alignment.\n");
 		fprintf(stderr, "\t-x N\tN is a positive integer. -N will be used as weight mismatch in genome sequence alignment.\n");
-		fprintf(stderr, "\t-i N\tN is a positive integer. -N will be used as the weight for the insertion opening.\n");
-		fprintf(stderr, "\t-e N\tN is a positive integer. -N will be used as the weight for the insertion extension.\n");
-		fprintf(stderr,	"\t-d N\tN is a positive integer. -N will be used as the weight for the deletion opening.\n");
-		fprintf(stderr, "\t-f N\tN is a positive integer. -N will be used as the weight for the deletion extension.\n");
+		fprintf(stderr, "\t-o N\tN is a positive integer. -N will be used as the weight for the gap opening.\n");
+		fprintf(stderr, "\t-e N\tN is a positive integer. -N will be used as the weight for the gap extension.\n");
+//		fprintf(stderr,	"\t-d N\tN is a positive integer. -N will be used as the weight for the deletion opening.\n");
+//		fprintf(stderr, "\t-f N\tN is a positive integer. -N will be used as the weight for the deletion extension.\n");
 		fprintf(stderr, "\t-a FILE\tFor protein sequence alignment. FILE is either the Blosum or Pam weight matrix. Recommend to use the matrix\n\t\tincluding B Z X * columns. Otherwise, corresponding scores will be signed to 0.\n"); 
 		fprintf(stderr, "\t-c\tReturn the alignment in cigar format.\n");
 		fprintf(stderr, "\t-r\tThe best alignment will be picked between the original read alignment and the reverse complement read alignment.\n\n");
@@ -219,10 +219,10 @@ int main (int argc, char * const argv[]) {
 			a->prof = p;
 			a->ref = char2num(ref_seq->seq.s, table, refLen);
 			a->refLen = refLen;
-			a->weight_insertB = insert_open;
-			a->weight_insertE = insert_extension;
-			a->weight_deletB = delet_open;
-			a->weight_deletE = delet_extension;
+			a->weight_gapO = gap_open;
+			a->weight_gapE = gap_extension;
+	//		a->weight_deletB = delet_open;
+	//		a->weight_deletE = delet_extension;
 			if (path == 1) {
 				a->begin = 1;
 				a->align = 1;
