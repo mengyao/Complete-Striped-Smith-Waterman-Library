@@ -181,7 +181,6 @@ int main (int argc, char * const argv[]) {
 	while ((m = kseq_read(read_seq)) >= 0) {
 		gzFile ref_fp;
 		kseq_t *ref_seq;
-//		init_param* init = (init_param*)calloc(1, sizeof(init_param));
 		s_profile* p, *p_rc = 0;
 		int32_t readLen = read_seq->seq.l; 
 		char* read_rc = 0;
@@ -189,10 +188,6 @@ int main (int argc, char * const argv[]) {
 		
 		printf("read_name: %s\n", read_seq->name.s);
 		num = char2num(read_seq->seq.s, table, readLen);
-/*		init->readLen = readLen;
-		init->mat = mat;
-		init->score_size = 2;
-		init->n = n;*/
 		p = ssw_init(num, readLen, mat, n, 2);
 		if (reverse == 1 && n == 5) {
 			read_rc = reverse_comple(read_seq->seq.s);
@@ -206,24 +201,10 @@ int main (int argc, char * const argv[]) {
 		ref_fp = gzopen(argv[optind], "r");
 		ref_seq = kseq_init(ref_fp);
 		while ((l = kseq_read(ref_seq)) >= 0) {
-//			align_param* a = (align_param*)calloc(1, sizeof(align_param));
 			s_align* result, *result_rc = 0;
 			int32_t refLen = ref_seq->seq.l;
 			int8_t strand = 0, align = 0;
 			int8_t* ref_num = char2num(ref_seq->seq.s, table, refLen);
-/*
-			a->prof = p;
-			a->ref = char2num(ref_seq->seq.s, table, refLen);
-			a->refLen = refLen;
-			a->weight_gapO = gap_open;
-			a->weight_gapE = gap_extension;
-			if (path == 1) {
-				a->begin = 1;
-				a->align = 1;
-			} else {
-				a->begin = 1;
-				a->align = 0;
-			}*/
 			printf("ref_name: %s\n", ref_seq->name.s);
 			if (path == 1) align = 1;
 			result = ssw_align (p, ref_num, refLen, gap_open, gap_extension, 1, align);
@@ -241,12 +222,10 @@ int main (int argc, char * const argv[]) {
 			if (result_rc) align_destroy(result_rc);
 			align_destroy(result);
 			free(ref_num);
-		//	free(a);
 		}
 		
 		if(p_rc) init_destroy(p_rc);
 		init_destroy(p);
-	//	free(init);		
 		if (num_rc) free(num_rc);
 		free(num);
 		kseq_destroy(ref_seq);

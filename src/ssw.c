@@ -711,9 +711,7 @@ int8_t* seq_reverse(int8_t* seq, int32_t end)	/* end is 0-based alignment ending
 	return reverse;					
 }
 		
-//profile* ssw_init (init_param* init) {
 s_profile* ssw_init (int8_t* read, int32_t readLen, int8_t* mat, int32_t n, int8_t score_size) {
-//	int32_t n = init->n;	
 	s_profile* p = (s_profile*)calloc(1, sizeof(struct _profile));
 	p->profile_byte = 0;
 	p->profile_word = 0;
@@ -733,7 +731,6 @@ void init_destroy (s_profile* p) {
 	free(p);
 }
 
-//align* ssw_align (align_param* a) {
 s_align* ssw_align (s_profile* prof, 
 				  int8_t* ref, 
 				  int32_t refLen, 
