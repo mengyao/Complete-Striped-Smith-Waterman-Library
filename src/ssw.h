@@ -19,8 +19,8 @@ typedef struct _profile s_profile;
 
 // Positions are all 1-based.
 typedef struct {
-	int16_t score1;	// best alignment score, 225: best alignment score is > 225
-	int16_t score2;	// sub-optimal alignment score
+	uint16_t score1;	// best alignment score, 225: best alignment score is > 225
+	uint16_t score2;	// sub-optimal alignment score
 	int32_t ref_begin1;	// best alignment beginning position on reference, 0: none
 	int32_t ref_end1;	// best alignment ending position on reference
 	int32_t	read_begin1;	// best alignment beginning position on read, 0: none
@@ -46,7 +46,13 @@ s_profile* ssw_init (int8_t* read, int32_t readLen, int8_t* mat, int32_t n, int8
 void init_destroy (s_profile* p);
 
 // @function	ssw alignment.
-s_align* ssw_align (s_profile* prof, int8_t* ref, int32_t refLen, uint8_t weight_gapO, uint8_t weight_gapE, int8_t begin, int8_t align);
+s_align* ssw_align (s_profile* prof, 
+					int8_t* ref, 
+					int32_t refLen, 
+					uint8_t weight_gapO, 
+					uint8_t weight_gapE, 
+					uint8_t flag,	//  (from high to low) bit 6: return the best alignment beginning position; 7: if max score >= filter, return cigar; 8: always return cigar
+					uint16_t filter);
 
 // @function	Release the memory alloced by function ssw_align.
 void align_destroy (s_align* c);

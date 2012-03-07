@@ -203,12 +203,12 @@ int main (int argc, char * const argv[]) {
 		while ((l = kseq_read(ref_seq)) >= 0) {
 			s_align* result, *result_rc = 0;
 			int32_t refLen = ref_seq->seq.l;
-			int8_t strand = 0, align = 0;
+			int8_t strand = 0, flag = 0;
 			int8_t* ref_num = char2num(ref_seq->seq.s, table, refLen);
 			printf("ref_name: %s\n", ref_seq->name.s);
-			if (path == 1) align = 1;
-			result = ssw_align (p, ref_num, refLen, gap_open, gap_extension, 1, align);
-			if (reverse == 1) result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, 1, align);
+			if (path == 1) flag = 1;
+			result = ssw_align (p, ref_num, refLen, gap_open, gap_extension, flag, 0);
+			if (reverse == 1) result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, 0);
 			
 			if (result_rc && result_rc->score1 > result->score1) {
 				fprintf(stdout, "%d\t%s\n", strand, read_rc);

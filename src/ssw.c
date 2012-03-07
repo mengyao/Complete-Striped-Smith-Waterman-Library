@@ -732,12 +732,14 @@ void init_destroy (s_profile* p) {
 }
 
 s_align* ssw_align (s_profile* prof, 
-				  int8_t* ref, 
-				  int32_t refLen, 
-				  uint8_t weight_gapO, 
-				  uint8_t weight_gapE, 
-				  int8_t begin, 
-				  int8_t align) {
+					int8_t* ref, 
+				  	int32_t refLen, 
+				  	uint8_t weight_gapO, 
+				  	uint8_t weight_gapE, 
+					uint8_t flag,	//  (from high to low) bit 6: return the best alignment beginning position; 7: if max score >= filter, return cigar; 8: always return cigar
+					uint16_t filter) {
+			//	  int8_t begin, 
+			//	  int8_t align) {
 
 	alignment_end* bests = 0, *bests_reverse = 0;
 	__m128i* vP = 0;
@@ -774,7 +776,7 @@ s_align* ssw_align (s_profile* prof,
 	r->read_end1 = bests[0].read + 1;
 	r->ref_end2 = bests[1].ref + 1;
 	free(bests);
-	if ((begin == 0 && align == 0) || r->score1 == 225) goto end;
+	if (flag == 0 || r->score1 == 225 || (flag == 2 && r->score1 < filter)) goto end;
 
 	// Find the beginning position of the best alignment.
 	read_reverse = seq_reverse(prof->read, r->read_end1 - 1);
@@ -790,7 +792,7 @@ s_align* ssw_align (s_profile* prof,
 	r->ref_begin1 = bests_reverse[0].ref + 1;
 	r->read_begin1 = r->read_end1 - bests_reverse[0].read;
 	free(bests_reverse);
-	if (align == 0) goto end;
+	if ((3&flag) == 0 || (flag == 6 && r->score1 < filter)) goto end;
 
 	// Generate cigar.
 	refLen = r->ref_end1 - r->ref_begin1 + 1;
