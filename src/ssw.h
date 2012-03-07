@@ -31,8 +31,6 @@ typedef struct {
 	int32_t refLen;	// reference length
 	uint8_t weight_gapO; /* will be used as - */
 	uint8_t weight_gapE; /* will be used as - */
-//	uint8_t weight_deletB;  /* will be used as - */
-//	uint8_t weight_deletE;  /* will be used as - */
 	int8_t begin;	// 1: the best alignment beginning position is needed; 0: otherwise
 	int8_t align;	// 1: the best alignment path (cigar) is needed; 0: otherwise
 } align_param;

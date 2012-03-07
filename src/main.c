@@ -108,8 +108,6 @@ int main (int argc, char * const argv[]) {
 			case 'x': mismatch = atoi(optarg); break;
 			case 'o': gap_open = atoi(optarg); break;
 			case 'e': gap_extension = atoi(optarg); break;
-	//		case 'd': delet_open = atoi(optarg); break;
-	//		case 'f': delet_extension = atoi(optarg); break;
 			case 'a': strcpy(mat_name, optarg); break;
 			case 'c': path = 1; break;
 			case 'r': reverse = 1; break;
@@ -123,8 +121,6 @@ int main (int argc, char * const argv[]) {
 		fprintf(stderr, "\t-x N\tN is a positive integer. -N will be used as weight mismatch in genome sequence alignment.\n");
 		fprintf(stderr, "\t-o N\tN is a positive integer. -N will be used as the weight for the gap opening.\n");
 		fprintf(stderr, "\t-e N\tN is a positive integer. -N will be used as the weight for the gap extension.\n");
-//		fprintf(stderr,	"\t-d N\tN is a positive integer. -N will be used as the weight for the deletion opening.\n");
-//		fprintf(stderr, "\t-f N\tN is a positive integer. -N will be used as the weight for the deletion extension.\n");
 		fprintf(stderr, "\t-a FILE\tFor protein sequence alignment. FILE is either the Blosum or Pam weight matrix. Recommend to use the matrix\n\t\tincluding B Z X * columns. Otherwise, corresponding scores will be signed to 0.\n"); 
 		fprintf(stderr, "\t-c\tReturn the alignment in cigar format.\n");
 		fprintf(stderr, "\t-r\tThe best alignment will be picked between the original read alignment and the reverse complement read alignment.\n\n");
@@ -221,8 +217,6 @@ int main (int argc, char * const argv[]) {
 			a->refLen = refLen;
 			a->weight_gapO = gap_open;
 			a->weight_gapE = gap_extension;
-	//		a->weight_deletB = delet_open;
-	//		a->weight_deletE = delet_extension;
 			if (path == 1) {
 				a->begin = 1;
 				a->align = 1;

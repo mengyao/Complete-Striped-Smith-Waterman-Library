@@ -96,8 +96,6 @@ alignment_end* sw_sse2_byte (int8_t* ref,
 							 int32_t readLen, 
 							 uint8_t weight_gapO, /* will be used as - */
 							 uint8_t weight_gapE, /* will be used as - */
-						   //  uint8_t weight_deletB,  /* will be used as - */
-							// uint8_t weight_deletE,  /* will be used as - */
 							 __m128i* vProfile,
 							 uint8_t terminate,	/* the best alignment score: used to terminate 
 												   the matrix calculation when locating the 
@@ -142,12 +140,6 @@ alignment_end* sw_sse2_byte (int8_t* ref,
 	/* 16 byte insertion extension vector */
 	__m128i vGapE = _mm_set1_epi8(weight_gapE);	
 	
-	/* 16 byte deletion begin vector */
-//	__m128i vDeletB = _mm_set1_epi8(weight_deletB);	
-
-	/* 16 byte deletion extension vector */
-//	__m128i vDeletE = _mm_set1_epi8(weight_deletE);	
-
 	/* 16 byte bias vector */
 	__m128i vBias = _mm_set1_epi8(bias);	
 
@@ -318,8 +310,6 @@ alignment_end* sw_sse2_word (int8_t* ref,
 							 int32_t readLen, 
 							 uint8_t weight_gapO, /* will be used as - */
 							 uint8_t weight_gapE, /* will be used as - */
-					//		 uint8_t weight_deletB,  /* will be used as - */
-					//		 uint8_t weight_deletE,  /* will be used as - */
 						     __m128i* vProfile,
 							 uint16_t terminate) { 
 
@@ -358,12 +348,6 @@ alignment_end* sw_sse2_word (int8_t* ref,
 	
 	/* 16 byte insertion extension vector */
 	__m128i vGapE = _mm_set1_epi16(weight_gapE);	
-	
-	/* 16 byte deletion begin vector */
-//	__m128i vDeletB = _mm_set1_epi16(weight_deletB);
-
-	/* 16 byte deletion extension vector */
-//	__m128i vDeletE = _mm_set1_epi16(weight_deletE);	
 
 	/* 16 byte bias vector */
 	__m128i vMaxScore = vZero; /* Trace the highest score of the whole SW matrix. */
@@ -519,8 +503,6 @@ char* banded_sw (int8_t* ref,
 				 int32_t score,
 				 uint32_t weight_gapO,  /* will be used as - */
 				 uint32_t weight_gapE,  /* will be used as - */
-			//	 uint32_t weight_deletB,   /* will be used as - */
-			//	 uint32_t weight_deletE,   /* will be used as - */
 				 int32_t band_width,
 				 int8_t* mat,	/* pointer to the weight matrix */
 				 int32_t n) {	
