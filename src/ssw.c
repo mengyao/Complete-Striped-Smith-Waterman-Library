@@ -738,8 +738,6 @@ s_align* ssw_align (s_profile* prof,
 				  	uint8_t weight_gapE, 
 					uint8_t flag,	//  (from high to low) bit 6: return the best alignment beginning position; 7: if max score >= filter, return cigar; 8: always return cigar
 					uint16_t filter) {
-			//	  int8_t begin, 
-			//	  int8_t align) {
 
 	alignment_end* bests = 0, *bests_reverse = 0;
 	__m128i* vP = 0;
