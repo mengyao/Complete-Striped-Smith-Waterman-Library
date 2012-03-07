@@ -95,8 +95,7 @@ int main (int argc, char * const argv[]) {
 
 	// initialize scoring matrix for genome sequences
 	for (l = k = 0; LIKELY(l < 4); ++l) {
-		for (m = 0; LIKELY(m < 4); ++m)
-			mat[k++] = l == m ? match : -mismatch;	/* weight_match : -weight_mismatch */
+		for (m = 0; LIKELY(m < 4); ++m) mat[k++] = l == m ? match : -mismatch;	/* weight_match : -weight_mismatch */
 		mat[k++] = 0; // ambiguous base
 	}
 	for (m = 0; LIKELY(m < 5); ++m) mat[k++] = 0;
@@ -182,23 +181,23 @@ int main (int argc, char * const argv[]) {
 	while ((m = kseq_read(read_seq)) >= 0) {
 		gzFile ref_fp;
 		kseq_t *ref_seq;
-		init_param* init = (init_param*)calloc(1, sizeof(init_param));
-		profile* p, *p_rc = 0;
+//		init_param* init = (init_param*)calloc(1, sizeof(init_param));
+		s_profile* p, *p_rc = 0;
 		int32_t readLen = read_seq->seq.l; 
 		char* read_rc = 0;
 		int8_t* num, *num_rc = 0;
 		
 		printf("read_name: %s\n", read_seq->name.s);
-		init->read = num = char2num(read_seq->seq.s, table, readLen);
-		init->readLen = readLen;
+		num = char2num(read_seq->seq.s, table, readLen);
+/*		init->readLen = readLen;
 		init->mat = mat;
 		init->score_size = 2;
-		init->n = n;
-		p = ssw_init(init);
+		init->n = n;*/
+		p = ssw_init(num, readLen, mat, n, 2);
 		if (reverse == 1 && n == 5) {
 			read_rc = reverse_comple(read_seq->seq.s);
-			init->read = num_rc = char2num(read_rc, table, readLen);
-			p_rc = ssw_init(init);
+			num_rc = char2num(read_rc, table, readLen);
+			p_rc = ssw_init(num_rc, readLen, mat, n, 2);
 		}else if (reverse == 1 && n == 24) {
 			fprintf (stderr, "Reverse complement alignment is not available for protein sequences. \n");
 			return 1;
@@ -207,11 +206,12 @@ int main (int argc, char * const argv[]) {
 		ref_fp = gzopen(argv[optind], "r");
 		ref_seq = kseq_init(ref_fp);
 		while ((l = kseq_read(ref_seq)) >= 0) {
-			align_param* a = (align_param*)calloc(1, sizeof(align_param));
-			align* result, *result_rc = 0;
+//			align_param* a = (align_param*)calloc(1, sizeof(align_param));
+			s_align* result, *result_rc = 0;
 			int32_t refLen = ref_seq->seq.l;
-			int8_t strand = 0;
-
+			int8_t strand = 0, align = 0;
+			int8_t* ref_num = char2num(ref_seq->seq.s, table, refLen);
+/*
 			a->prof = p;
 			a->ref = char2num(ref_seq->seq.s, table, refLen);
 			a->refLen = refLen;
@@ -223,13 +223,11 @@ int main (int argc, char * const argv[]) {
 			} else {
 				a->begin = 1;
 				a->align = 0;
-			}
+			}*/
 			printf("ref_name: %s\n", ref_seq->name.s);
-			result = ssw_align (a);
-			if (reverse == 1) {
-				a->prof = p_rc;
-				result_rc = ssw_align(a);
-			}
+			if (path == 1) align = 1;
+			result = ssw_align (p, ref_num, refLen, gap_open, gap_extension, 1, align);
+			if (reverse == 1) result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, 1, align);
 			
 			if (result_rc && result_rc->score1 > result->score1) {
 				fprintf(stdout, "%d\t%s\n", strand, read_rc);
@@ -242,13 +240,13 @@ int main (int argc, char * const argv[]) {
 			}
 			if (result_rc) align_destroy(result_rc);
 			align_destroy(result);
-			free(a->ref);
-			free(a);
+			free(ref_num);
+		//	free(a);
 		}
 		
 		if(p_rc) init_destroy(p_rc);
 		init_destroy(p);
-		free(init);		
+	//	free(init);		
 		if (num_rc) free(num_rc);
 		free(num);
 		kseq_destroy(ref_seq);

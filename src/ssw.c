@@ -711,34 +711,43 @@ int8_t* seq_reverse(int8_t* seq, int32_t end)	/* end is 0-based alignment ending
 	return reverse;					
 }
 		
-profile* ssw_init (init_param* init) {
-	int32_t n = init->n;	
-	profile* p = (profile*)calloc(1, sizeof(struct _profile));
+//profile* ssw_init (init_param* init) {
+s_profile* ssw_init (int8_t* read, int32_t readLen, int8_t* mat, int32_t n, int8_t score_size) {
+//	int32_t n = init->n;	
+	s_profile* p = (s_profile*)calloc(1, sizeof(struct _profile));
 	p->profile_byte = 0;
 	p->profile_word = 0;
 	
-	if (init->score_size ==	0 || init->score_size == 2) p->profile_byte = qP_byte (init->read, init->mat, init->readLen, n, 4);
-	if (init->score_size ==	1 || init->score_size == 2) p->profile_word = qP_word (init->read, init->mat, init->readLen, n);
-	p->read = init->read;
-	p->mat = init->mat;
-	p->readLen = init->readLen;
-	p->n = init->n;
+	if (score_size == 0 || score_size == 2) p->profile_byte = qP_byte (read, mat, readLen, n, 4);
+	if (score_size == 1 || score_size == 2) p->profile_word = qP_word (read, mat, readLen, n);
+	p->read = read;
+	p->mat = mat;
+	p->readLen = readLen;
+	p->n = n;
 	return p;
 }
 
-void init_destroy (profile* p) {
+void init_destroy (s_profile* p) {
 	free(p->profile_byte);
 	free(p->profile_word);
 	free(p);
 }
 
-align* ssw_align (align_param* a) {
+//align* ssw_align (align_param* a) {
+s_align* ssw_align (s_profile* prof, 
+				  int8_t* ref, 
+				  int32_t refLen, 
+				  uint8_t weight_gapO, 
+				  uint8_t weight_gapE, 
+				  int8_t begin, 
+				  int8_t align) {
+
 	alignment_end* bests = 0, *bests_reverse = 0;
 	__m128i* vP = 0;
-	int32_t readLen = a->prof->readLen, word = 0, refLen = 0;
-	int32_t n = a->prof->n, band_width = 0;
+	int32_t readLen = prof->readLen, word = 0;
+	int32_t n = prof->n, band_width = 0;
 	int8_t* read_reverse = 0;
-	align* r = (align*)calloc(1, sizeof(align));
+	s_align* r = (s_align*)calloc(1, sizeof(s_align));
 	r->score1 = 0;
 	r->score2 = 0;
 	r->ref_begin1 = 0;
@@ -749,14 +758,14 @@ align* ssw_align (align_param* a) {
 	r->cigar = 0;
 
 	// Find the alignment scores and ending positions
-	if (a->prof->profile_byte) {
-		bests = sw_sse2_byte(a->ref, 0, a->refLen, readLen, a->weight_gapO, a->weight_gapE, a->prof->profile_byte, -1, 4);
-		if (a->prof->profile_word && bests[0].score == 225) {
-			bests = sw_sse2_word(a->ref, 0, a->refLen, readLen, a->weight_gapO, a->weight_gapE, a->prof->profile_word, -1);
+	if (prof->profile_byte) {
+		bests = sw_sse2_byte(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_byte, -1, 4);
+		if (prof->profile_word && bests[0].score == 225) {
+			bests = sw_sse2_word(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_word, -1);
 			word = 1;
 		}
-	}else if (a->prof->profile_word) {
-		bests = sw_sse2_word(a->ref, 0, a->refLen, readLen, a->weight_gapO, a->weight_gapE, a->prof->profile_word, -1);
+	}else if (prof->profile_word) {
+		bests = sw_sse2_word(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_word, -1);
 		word = 1;
 	}else {
 		fprintf(stderr, "The score_size variable of the init_param structure is not correctly assigned.\n");
@@ -768,35 +777,35 @@ align* ssw_align (align_param* a) {
 	r->read_end1 = bests[0].read + 1;
 	r->ref_end2 = bests[1].ref + 1;
 	free(bests);
-	if ((a->begin == 0 && a->align == 0) || r->score1 == 225) goto end;
+	if ((begin == 0 && align == 0) || r->score1 == 225) goto end;
 
 	// Find the beginning position of the best alignment.
-	read_reverse = seq_reverse(a->prof->read, r->read_end1 - 1);
+	read_reverse = seq_reverse(prof->read, r->read_end1 - 1);
 	if (word == 0) {
-		vP = qP_byte(read_reverse, a->prof->mat, r->read_end1, n, 4);
-		bests_reverse = sw_sse2_byte(a->ref, 1, r->ref_end1, r->read_end1, a->weight_gapO, a->weight_gapE, vP, r->score1, 4);
+		vP = qP_byte(read_reverse, prof->mat, r->read_end1, n, 4);
+		bests_reverse = sw_sse2_byte(ref, 1, r->ref_end1, r->read_end1, weight_gapO, weight_gapE, vP, r->score1, 4);
 	} else {
-		vP = qP_word(read_reverse, a->prof->mat, r->read_end1, n);
-		bests_reverse = sw_sse2_word(a->ref, 1, r->ref_end1, r->read_end1, a->weight_gapO, a->weight_gapE, vP, r->score1);
+		vP = qP_word(read_reverse, prof->mat, r->read_end1, n);
+		bests_reverse = sw_sse2_word(ref, 1, r->ref_end1, r->read_end1, weight_gapO, weight_gapE, vP, r->score1);
 	}
 	free(vP);
 	free(read_reverse);
 	r->ref_begin1 = bests_reverse[0].ref + 1;
 	r->read_begin1 = r->read_end1 - bests_reverse[0].read;
 	free(bests_reverse);
-	if (a->align == 0) goto end;
+	if (align == 0) goto end;
 
 	// Generate cigar.
 	refLen = r->ref_end1 - r->ref_begin1 + 1;
 	readLen = r->read_end1 - r->read_begin1 + 1;
 	band_width = abs(refLen - readLen) + 1;
-	r->cigar = banded_sw(a->ref + r->ref_begin1 - 1, a->prof->read + r->read_begin1 - 1, refLen, readLen, r->score1, a->weight_gapO, a->weight_gapE, band_width, a->prof->mat, n);
+	r->cigar = banded_sw(ref + r->ref_begin1 - 1, prof->read + r->read_begin1 - 1, refLen, readLen, r->score1, weight_gapO, weight_gapE, band_width, prof->mat, n);
 	
 end: 
 	return r;
 }
 
-void align_destroy (align* c) {
+void align_destroy (s_align* c) {
 	free(c->cigar);
 	free(c);
 }
