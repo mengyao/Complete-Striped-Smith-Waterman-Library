@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 03/07/12.
+ *	Last revision by Mengyao Zhao on 03/09/12.
  *	New features: This is the api file.
  *
  */
@@ -26,7 +26,8 @@ typedef struct {
 	int32_t	read_begin1;	// best alignment beginning position on read, 0: none
 	int32_t read_end1;	// best alignment ending position on read
 	int32_t ref_end2;	// sub-optimal alignment ending position on reference
-	char* cigar;	// best alignment cigar, 0: none
+	uint32_t* cigar;	// best alignment cigar, the same as that in Bam format, high 28 bits: length, low 4 bits: M/I/D (0/1/2), 0: none
+	int32_t cigarLen;	// length of the cigar string
 } s_align;
 /*
 typedef struct {
@@ -34,9 +35,9 @@ typedef struct {
 	char* ref_name;
 	char* ref_seq;
 	char* read_name;
-	char* read_seq;	// strand == 0: original read; strand == 1: reverse complement read
-	int8_t strand;	// 0: forward aligned ; 1: reverse complement aligned
-	int8_t sam;	// 0: Blast like output; 1: Sam format output
+	char* read_seq;	
+	int8_t strand;	
+	int8_t sam;	
 } write_param;
 */
 // @function	Create the ssw profile using the read sequence.

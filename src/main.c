@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 03/07/12.
+ *  Last revision by Mengyao Zhao on 03/09/12.
  *	New features: make weight as options 
  */
 
@@ -56,6 +56,81 @@ char* reverse_comple(const char* seq) {
 	if (start == end) rc[start] = (char)rc_table[(int8_t)seq[start]];			
 	return rc;					
 }							
+
+void ssw_write (s_align* a, 
+		//	char* ref_name, 
+		//	char* ref_seq, 
+			kseq_t* ref_seq,
+			char* read_name, 
+			char* read_seq,	// strand == 0: original read; strand == 1: reverse complement read 
+			int8_t strand,	// 0: forward aligned ; 1: reverse complement aligned 
+			int8_t sam) {	// 0: Blast like output; 1: Sam format output
+
+	if (sam == 0) {	// Blast like output
+		fprintf(stdout, "target_name: %s\nquery_name: %s\noptimal_alignment_score: %d\t", ref_seq->name.s, read_name, a->score1);
+		if (strand == 0) fprintf(stdout, "strand: +\t");
+		else fprintf(stdout, "strand: -\t");
+		if (a->ref_begin1) fprintf(stdout, "target_begin: %d\t", a->ref_begin1);
+		fprintf(stdout, "target_end: %d\t", a->ref_end1);
+		if (a->read_begin1) fprintf(stdout, "query_begin: %d\t", a->read_begin1);
+		fprintf(stdout, "query_end: %d\n", a->read_end1);
+		if (a->cigar) {
+			int32_t i, c , q = a->ref_begin1 - 1, p = a->read_begin1 - 1;
+			fprintf(stdout, "Target:\t");
+			for (c = 0; c < a->cigarLen; ++c) {
+				int32_t letter = 0xf&*(a->cigar + c);
+				int32_t length = 0xfffffff0&*(a->cigar + c);
+				if (letter == 1) for (i = 0; i < length; ++i) fprintf(stdout, "-");
+				else {
+					for (i = 0; i < length; ++i) fprintf(stdout, "%c", *(ref_seq->seq.s + q + i));
+					q += length;
+				}	
+			//	switch (w->al->cigar + c + 1) {
+			//		case 'M':
+			//		case 'D':
+						
+			//			break;
+			//		case 'I':
+						
+			//			break;
+			//	}
+			}
+			fprintf(stdout, "\n\t\t");
+			q = a->ref_begin1 - 1;
+			p = a->read_begin1 - 1;
+			for (c = 0; c < a->cigarLen; ++c) {
+				int32_t letter = 0xf&*(a->cigar + c);
+				int32_t length = 0xfffffff0&*(a->cigar + c);
+				if (letter == 0) {
+					for (i = 0; i < length; ++i) 
+						if (*(ref_seq->seq.s + q + i) == *(read_seq + p + i))fprintf(stdout, "|");
+						else fprintf(stdout, "*");
+					q += length;
+					p += length;	
+				}else { 
+					for (i = 0; i < length; ++i) fprintf(stdout, "*");
+					if (letter == 1) p += length;
+					else q += length;
+				}
+			}
+			fprintf(stdout, "\nQuery:\t");
+		//	q = a->ref_begin1 - 1;
+			p = a->read_begin1 - 1;
+			for (c = 0; c < a->cigarLen; ++c) {
+				int32_t letter = 0xf&*(a->cigar + c);
+				int32_t length = 0xfffffff0&*(a->cigar + c);
+				if (letter == 2) for (i = 0; i < length; ++i) fprintf(stdout, "-");
+				else {
+					for (i = 0; i < length; ++i) fprintf(stdout, "%c", *(read_seq + p + i));
+					p += length;
+				}
+			}	
+		}
+		fprintf(stdout, "\n\n");
+	}else {	// Sam format output
+		//FIXME: print sam
+	}
+}
 
 int main (int argc, char * const argv[]) {
 	clock_t start, end;
@@ -203,7 +278,7 @@ int main (int argc, char * const argv[]) {
 		while ((l = kseq_read(ref_seq)) >= 0) {
 			s_align* result, *result_rc = 0;
 			int32_t refLen = ref_seq->seq.l;
-			int8_t strand = 0, flag = 0;
+			int8_t flag = 0;
 			int8_t* ref_num = char2num(ref_seq->seq.s, table, refLen);
 			printf("ref_name: %s\n", ref_seq->name.s);
 			if (path == 1) flag = 1;
@@ -211,13 +286,15 @@ int main (int argc, char * const argv[]) {
 			if (reverse == 1) result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, 0);
 			
 			if (result_rc && result_rc->score1 > result->score1) {
-				fprintf(stdout, "%d\t%s\n", strand, read_rc);
-				fprintf(stdout, "score1: %d\tscore2: %d\tref_begin1: %d\tref_end1: %d\tread_begin1: %d\tread_end1: %d\tref_end2: %d\n", result_rc->score1, result_rc->score2, result_rc->ref_begin1, result_rc->ref_end1, result_rc->read_begin1, result_rc->read_end1, result_rc->ref_end2);
-				if (path == 1) fprintf(stdout, "cigar: %s\n\n", result_rc->cigar);
+			//	fprintf(stdout, "%d\t%s\n", strand, read_rc);
+			//	fprintf(stdout, "score1: %d\tscore2: %d\tref_begin1: %d\tref_end1: %d\tread_begin1: %d\tread_end1: %d\tref_end2: %d\n", result_rc->score1, result_rc->score2, result_rc->ref_begin1, result_rc->ref_end1, result_rc->read_begin1, result_rc->read_end1, result_rc->ref_end2);
+			//	if (path == 1) fprintf(stdout, "cigar: %s\n\n", result_rc->cigar);
+				ssw_write (result_rc, ref_seq, read_seq->name.s, read_rc, 1, 0);
 			} else {
-				fprintf(stdout, "%d\t%s\n", strand, read_seq->seq.s);
-				fprintf(stdout, "score1: %d\tscore2: %d\tref_begin1: %d\tref_end1: %d\tread_begin1: %d\tread_end1: %d\tref_end2: %d\n", result->score1, result->score2, result->ref_begin1, result->ref_end1, result->read_begin1, result->read_end1, result->ref_end2);
-				if (path == 1) fprintf(stdout, "cigar: %s\n\n", result->cigar);
+			//	fprintf(stdout, "%d\t%s\n", strand, read_seq->seq.s);
+			//	fprintf(stdout, "score1: %d\tscore2: %d\tref_begin1: %d\tref_end1: %d\tread_begin1: %d\tread_end1: %d\tref_end2: %d\n", result->score1, result->score2, result->ref_begin1, result->ref_end1, result->read_begin1, result->read_end1, result->ref_end2);
+			//	if (path == 1) fprintf(stdout, "cigar: %s\n\n", result->cigar);
+				ssw_write(result, ref_seq, read_seq->name.s, read_seq->seq.s, 0, 0);
 			}
 			if (result_rc) align_destroy(result_rc);
 			align_destroy(result);

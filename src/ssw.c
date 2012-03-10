@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 03/07/12.
+ *	Last revision by Mengyao Zhao on 03/09/12.
  *	New features: Combine files for api wrapping. 
  *
  */
@@ -42,6 +42,11 @@ typedef struct {
 	int32_t ref;	 //0-based position 
 	int32_t read;    //alignment ending position on read, 0-based 
 } alignment_end;
+
+typedef struct {
+	uint32_t* seq;
+	int32_t length;
+} cigar;
 
 struct _profile{
 	__m128i* profile_byte;	// 0: none
@@ -479,6 +484,7 @@ end:
 }
 
 // Convert a positive integer to a string.
+/*
 char* itoa(int32_t i) {
 	char* p0 = calloc(8, sizeof(char));
 	char c[8], *p1 = c, *p = p0;
@@ -495,8 +501,8 @@ char* itoa(int32_t i) {
 	*p = '\0';
     return p0;
 }
-
-char* banded_sw (int8_t* ref,
+*/
+cigar* banded_sw (int8_t* ref,
 				 int8_t* read, 
 				 int32_t refLen, 
 				 int32_t readLen,
@@ -507,11 +513,13 @@ char* banded_sw (int8_t* ref,
 				 int8_t* mat,	/* pointer to the weight matrix */
 				 int32_t n) {	
 
-	char* cigar = (char*)calloc(16, sizeof(char)), *p = cigar, ci = 'M';
-	char* cigar1, *p1;	// reverse cigar
-	int32_t i, j, e, f, temp1, temp2, s = 16, c = 0, l, max = 0;
+	//char* cigar = (char*)calloc(16, sizeof(char)), *p = cigar, ci = 'M';
+	//char* cigar1, *p1;	// reverse cigar
+	uint32_t *c = (uint32_t*)calloc(16, sizeof(uint32_t)), *c1;
+	int32_t i, j, e, f, temp1, temp2, s = 16, l, max = 0;
 	int32_t width, width_d, *h_b, *e_b, *h_c;
 	int8_t *direction, *direction_line;
+	cigar* result = (cigar*)calloc(1, sizeof(cigar));
 
 	do {
 		width = band_width * 2 + 3, width_d = band_width * 2 + 1;
@@ -569,7 +577,8 @@ char* banded_sw (int8_t* ref,
 	i = readLen - 1;
 	j = refLen - 1;
 	e = 0;	// Count the number of M, D or I.
-	f = 'M';
+	l = 0;	// record length of current cigar
+	f = max = 0; // M
 	temp2 = 2;	// h
 	while (LIKELY(i > 0)) {
 		set_d(temp1, band_width, i, j, temp2);
@@ -579,92 +588,112 @@ char* banded_sw (int8_t* ref,
 				--j;
 				temp2 = 2;
 				direction_line -= width_d * 3;
-				f = 'M';
+				f = 0;	// M
 				break;
 			case 2:
 			 	--i;
 				temp2 = 0;	// e
 				direction_line -= width_d * 3;
-				f = 'I';
+				f = 1;	// I
 				break;		
 			case 3:
 				--i;
 				temp2 = 2;
 				direction_line -= width_d * 3;
-				f = 'I';
+				f = 1;	// I
 				break;
 			case 4:
 				--j;
 				temp2 = 1;
-				f = 'D';
+				f = 2;	// D
 				break;
 			case 5:
 				--j;
 				temp2 = 2;
-				f = 'D';
+				f = 2;	// D
 				break;
 			default: 
 				fprintf(stderr, "Trace back error: %d.\n", direction_line[temp1 - 1]);
 				return 0;
 		}
-		if (f == ci) ++ e;
+		if (f == max) ++ e;
 		else {
-			char* num = itoa(e);
-			l = strlen(num);
-			c += l + 1;
-			if (c >= s) {
+//			char* num = itoa(e);
+//			l = strlen(num);
+//			c += l + 1;
+		//	l += 2;
+			++l;
+			if (l >= s) {
 				++s;
 				kroundup32(s);
-				cigar = realloc(cigar, s * sizeof(char));
-				p = cigar + c - l - 1;
+				c = realloc(c, s * sizeof(char));
+			//	p = cigar + c - l - 1;
 			}
-			strcpy(p, num);
-			free(num);
-			p += l;
-			*p = ci;
-			ci = f;
-			++p;
+		//	strcpy(p, num);
+		//	free(num);
+//			p += l;
+//			*p = ci;
+
+			c[l - 1] = e<<4&max;
+			max = f;
+		//	++p;
 			e = 1;
 		}
 	}
-	if (f == 'M') {
-		char* num = itoa(e + 1);
-		l = strlen(num);
-		c += l + 1;
-		if (c >= s) {
+	if (f == 0) {
+	//	char* num = itoa(e + 1);
+	//	l = strlen(num);
+	//	c += l + 1;
+		++l;
+		if (l >= s) {
 			++s;
 			kroundup32(s);
-			cigar = realloc(cigar, s * sizeof(char));
-			p = cigar + c - l - 1;
+			c = realloc(c, s * sizeof(char));
+		//	p = cigar + c - l - 1;
 		}
-		strcpy(p, num);
-		free(num);
-		p += l;
-		*p = 'M';
+	//	strcpy(p, num);
+	//	free(num);
+	//	p += l;
+	//	*p = 'M';
+		c[l - 1] = e<<4;
 	}else {
-		char* num = itoa(e);
-		l = strlen(num);
-		c += l + 3;	
-		if (c >= s) {
+	//	char* num = itoa(e);
+	//	l = strlen(num);
+	//	c += l + 3;	
+		l += 2;
+		if (l >= s) {
 			++s;
 			kroundup32(s);
-			cigar = realloc(cigar, s * sizeof(char));
-			p = cigar + c - l - 3;
+			c = realloc(c, s * sizeof(char));
+	//		p = cigar + c - l - 3;
 		}
-		strcpy(p, num);
-		free(num);
-		p += l;
-		*p = f;
-		++p;
+	//	strcpy(p, num);
+	//	free(num);
+	//	p += l;
+	//	*p = f;
+		c[l - 2] = e<<4&f;
+		c[l - 1] = 16;	// 1M
+	/*	++p;
 		*p = '1';
 		++p;
-		*p = 'M';
+		*p = 'M';*/
 	}
-	++p; *p = '\0';
+	//++p; *p = '\0';
 
 	// reverse cigar
-	cigar1 = (char*)calloc(strlen(cigar) + 1, sizeof(char));
-	p1 = cigar1;
+//	cigar1 = (char*)calloc(strlen(cigar) + 1, sizeof(char));
+	c1 = (uint32_t*)calloc(l, sizeof(uint32_t));
+	s = 0;
+	e = l - 1;
+	while (LIKELY(s <= e)) {			
+		c1[s] = c[e];		
+		c1[e] = c[s];		
+		++ s;					
+		-- e;						
+	}								
+	result->seq = c1;
+	result->length = l;
+/*	p1 = cigar1;
 	l = 0;
 	ci = 'M';
 	p = cigar + strlen(cigar) - 1;
@@ -688,14 +717,14 @@ char* banded_sw (int8_t* ref,
 	p1 += l;
 	*p1 = ci;
 	++p1;
-	*p1 = '\0';
+	*p1 = '\0';*/
 
 	free(direction);
 	free(h_c);
 	free(e_b);
 	free(h_b);
-	free(cigar);
-	return cigar1;
+	free(c);
+	return result;
 }
 
 int8_t* seq_reverse(int8_t* seq, int32_t end)	/* end is 0-based alignment ending position */	
@@ -744,6 +773,7 @@ s_align* ssw_align (s_profile* prof,
 	int32_t readLen = prof->readLen, word = 0;
 	int32_t n = prof->n, band_width = 0;
 	int8_t* read_reverse = 0;
+	cigar* path;
 	s_align* r = (s_align*)calloc(1, sizeof(s_align));
 	r->score1 = 0;
 	r->score2 = 0;
@@ -753,6 +783,7 @@ s_align* ssw_align (s_profile* prof,
 	r->read_end1 = 0;
 	r->ref_end2 = 0;
 	r->cigar = 0;
+	r->cigarLen = 0;
 
 	// Find the alignment scores and ending positions
 	if (prof->profile_byte) {
@@ -796,7 +827,10 @@ s_align* ssw_align (s_profile* prof,
 	refLen = r->ref_end1 - r->ref_begin1 + 1;
 	readLen = r->read_end1 - r->read_begin1 + 1;
 	band_width = abs(refLen - readLen) + 1;
-	r->cigar = banded_sw(ref + r->ref_begin1 - 1, prof->read + r->read_begin1 - 1, refLen, readLen, r->score1, weight_gapO, weight_gapE, band_width, prof->mat, n);
+	path = banded_sw(ref + r->ref_begin1 - 1, prof->read + r->read_begin1 - 1, refLen, readLen, r->score1, weight_gapO, weight_gapE, band_width, prof->mat, n);
+	r->cigar = path->seq;
+	r->cigarLen = path->length;
+	free(path);
 	
 end: 
 	return r;
@@ -808,33 +842,5 @@ void align_destroy (s_align* c) {
 }
 /*
 void ssw_write (write* w) {
-	if (w->sam == 0) {	// Blast like output
-		fprintf(stdout, "target_name: %s\nquery_name: %s\noptimal_alignment_score: %d\t", w->ref_name, w->read_name, w->al->score1);
-		if (w->strand == 0) fprintf(stdout, "strand: +\t");
-		else fprintf(stdout, "strand: -\t");
-		if (w->al->ref_begin1) fprintf(stdout, "target_begin: %d\t", w->al->ref_begin1);
-		fprintf(stdout, "target_end: %d\t", w->al->ref_end1);
-		if (w->al->read_begin1) fprintf(stdout, "query_begin: %d\t", w->al->read_begin1);
-		fprintf(stdout, "query_end: %d\n", w->al->read_end1);
-		if (w->al->cigar) {
-			int32_t i, c , q = w->al->ref_begin1 - 1;
-			fprintf(stdout, "Target:\t");
-			for (c = 0; c < strlen(w->al->cigar); c += 2) {
-				switch (w->al->cigar + c + 1) {
-		`			case 'M':
-					case 'D':
-						for (i = 0; i < (w->al->cigar + c), ++i) fprintf(stdout, "%c", w->ref_seq + q + i);
-						break;
-					case 'I':
-						for (i = 0; i < (w->al->cigar + c), ++i) fprintf(stdout, "-");
-						break;
-				}
-			}
-			fprintf(stdout, "\n\t\t");
-		}
-		fprintf(stdout, "\n");
-	}else {	// Sam format output
-
-	}
 }
 */
