@@ -626,15 +626,15 @@ cigar* banded_sw (int8_t* ref,
 			if (l >= s) {
 				++s;
 				kroundup32(s);
-				c = realloc(c, s * sizeof(char));
+				c = realloc(c, s * sizeof(uint32_t));
 			//	p = cigar + c - l - 1;
 			}
 		//	strcpy(p, num);
 		//	free(num);
 //			p += l;
 //			*p = ci;
-
-			c[l - 1] = e<<4&max;
+			fprintf(stderr, "e: %d\tmax:%d\n", e, max);
+			c[l - 1] = e<<4|max;
 			max = f;
 		//	++p;
 			e = 1;
@@ -648,14 +648,15 @@ cigar* banded_sw (int8_t* ref,
 		if (l >= s) {
 			++s;
 			kroundup32(s);
-			c = realloc(c, s * sizeof(char));
+			c = realloc(c, s * sizeof(uint32_t));
 		//	p = cigar + c - l - 1;
 		}
 	//	strcpy(p, num);
 	//	free(num);
 	//	p += l;
 	//	*p = 'M';
-		c[l - 1] = e<<4;
+		fprintf(stderr, "e: %d\n", e);
+		c[l - 1] = (e+1)<<4;
 	}else {
 	//	char* num = itoa(e);
 	//	l = strlen(num);
@@ -664,14 +665,15 @@ cigar* banded_sw (int8_t* ref,
 		if (l >= s) {
 			++s;
 			kroundup32(s);
-			c = realloc(c, s * sizeof(char));
+			c = realloc(c, s * sizeof(uint32_t));
 	//		p = cigar + c - l - 3;
 		}
 	//	strcpy(p, num);
 	//	free(num);
 	//	p += l;
 	//	*p = f;
-		c[l - 2] = e<<4&f;
+			fprintf(stderr, "e: %d\tf:%d\n", e, f);
+		c[l - 2] = e<<4|f;
 		c[l - 1] = 16;	// 1M
 	/*	++p;
 		*p = '1';
@@ -679,6 +681,8 @@ cigar* banded_sw (int8_t* ref,
 		*p = 'M';*/
 	}
 	//++p; *p = '\0';
+	for (s = 0; s < l; s++) fprintf(stderr, "%d\t", *(c + s));
+	fprintf(stderr, "\n");
 
 	// reverse cigar
 //	cigar1 = (char*)calloc(strlen(cigar) + 1, sizeof(char));
