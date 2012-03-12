@@ -29,17 +29,7 @@ typedef struct {
 	uint32_t* cigar;	// best alignment cigar, the same as that in Bam format, high 28 bits: length, low 4 bits: M/I/D (0/1/2), 0: none
 	int32_t cigarLen;	// length of the cigar string
 } s_align;
-/*
-typedef struct {
-	align* al;
-	char* ref_name;
-	char* ref_seq;
-	char* read_name;
-	char* read_seq;	
-	int8_t strand;	
-	int8_t sam;	
-} write_param;
-*/
+
 // @function	Create the ssw profile using the read sequence.
 s_profile* ssw_init (int8_t* read, int32_t readLen, int8_t* mat, int32_t n, int8_t score_size);
 
@@ -58,4 +48,3 @@ s_align* ssw_align (s_profile* prof,
 // @function	Release the memory alloced by function ssw_align.
 void align_destroy (s_align* c);
 
-//void ssw_write (write_param* w);

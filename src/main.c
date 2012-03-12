@@ -58,8 +58,6 @@ char* reverse_comple(const char* seq) {
 }							
 
 void ssw_write (s_align* a, 
-		//	char* ref_name, 
-		//	char* ref_seq, 
 			kseq_t* ref_seq,
 			char* read_name, 
 			char* read_seq,	// strand == 0: original read; strand == 1: reverse complement read
@@ -78,28 +76,19 @@ void ssw_write (s_align* a,
 		if (a->cigar) {
 			int32_t i, c , q = a->ref_begin1 - 1, p = a->read_begin1 - 1;
 
-			for (c = 0; c < a->cigarLen; c++) fprintf(stderr, "%d\t", *(a->cigar + c));
-			fprintf(stderr, "\n");
+		//	for (c = 0; c < a->cigarLen; c++) fprintf(stderr, "%d\t", *(a->cigar + c));
+		//	fprintf(stderr, "\n");
 
 			fprintf(stdout, "Target:\t");
 			for (c = 0; c < a->cigarLen; ++c) {
 				int32_t letter = 0xf&*(a->cigar + c);
 				int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
-				fprintf(stderr, "letter: %d\tlength: %d\n", letter, length);
+			//	fprintf(stderr, "letter: %d\tlength: %d\n", letter, length);
 				if (letter == 1) for (i = 0; i < length; ++i) fprintf(stdout, "-");
 				else {
 					for (i = 0; i < length; ++i) fprintf(stdout, "%c", *(ref_seq->seq.s + q + i));
 					q += length;
 				}	
-			//	switch (w->al->cigar + c + 1) {
-			//		case 'M':
-			//		case 'D':
-						
-			//			break;
-			//		case 'I':
-						
-			//			break;
-			//	}
 			}
 			fprintf(stdout, "\n\t");
 			q = a->ref_begin1 - 1;
@@ -120,7 +109,6 @@ void ssw_write (s_align* a,
 				}
 			}
 			fprintf(stdout, "\nQuery:\t");
-		//	q = a->ref_begin1 - 1;
 			p = a->read_begin1 - 1;
 			for (c = 0; c < a->cigarLen; ++c) {
 				int32_t letter = 0xf&*(a->cigar + c);
@@ -267,7 +255,7 @@ int main (int argc, char * const argv[]) {
 		char* read_rc = 0;
 		int8_t* num, *num_rc = 0;
 		
-		printf("read_name: %s\n", read_seq->name.s);
+//		printf("read_name: %s\n", read_seq->name.s);
 		num = char2num(read_seq->seq.s, table, readLen);
 		p = ssw_init(num, readLen, mat, n, 2);
 		if (reverse == 1 && n == 5) {
@@ -286,22 +274,15 @@ int main (int argc, char * const argv[]) {
 			int32_t refLen = ref_seq->seq.l;
 			int8_t flag = 0;
 			int8_t* ref_num = char2num(ref_seq->seq.s, table, refLen);
-			printf("ref_name: %s\n", ref_seq->name.s);
+//			printf("ref_name: %s\n", ref_seq->name.s);
 			if (path == 1) flag = 1;
 			result = ssw_align (p, ref_num, refLen, gap_open, gap_extension, flag, 0);
 			if (reverse == 1) result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, 0);
-			
-			if (result_rc && result_rc->score1 > result->score1) {
-			//	fprintf(stdout, "%d\t%s\n", strand, read_rc);
-			//	fprintf(stdout, "score1: %d\tscore2: %d\tref_begin1: %d\tref_end1: %d\tread_begin1: %d\tread_end1: %d\tref_end2: %d\n", result_rc->score1, result_rc->score2, result_rc->ref_begin1, result_rc->ref_end1, result_rc->read_begin1, result_rc->read_end1, result_rc->ref_end2);
-			//	if (path == 1) fprintf(stdout, "cigar: %s\n\n", result_rc->cigar);
-				ssw_write (result_rc, ref_seq, read_seq->name.s, read_rc, table, 1, 0);
-			} else {
-			//	fprintf(stdout, "%d\t%s\n", strand, read_seq->seq.s);
-			//	fprintf(stdout, "score1: %d\tscore2: %d\tref_begin1: %d\tref_end1: %d\tread_begin1: %d\tread_end1: %d\tref_end2: %d\n", result->score1, result->score2, result->ref_begin1, result->ref_end1, result->read_begin1, result->read_end1, result->ref_end2);
-			//	if (path == 1) fprintf(stdout, "cigar: %s\n\n", result->cigar);
+			if (result_rc && result_rc->score1 > result->score1) ssw_write (result_rc, ref_seq, read_seq->name.s, read_rc, table, 1, 0);
+			else if (result){
+				fprintf(stderr, "score: %d\n", result->score1);
 				ssw_write(result, ref_seq, read_seq->name.s, read_seq->seq.s, table, 0, 0);
-			}
+			} else return 1;
 			if (result_rc) align_destroy(result_rc);
 			align_destroy(result);
 			free(ref_num);

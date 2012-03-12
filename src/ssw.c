@@ -483,25 +483,6 @@ end:
 	return bests;
 }
 
-// Convert a positive integer to a string.
-/*
-char* itoa(int32_t i) {
-	char* p0 = calloc(8, sizeof(char));
-	char c[8], *p1 = c, *p = p0;
-	do {
-    	*p1 = '0' + (i % 10);
-    	i /= 10;
-		++p1;
-    } while (i != 0);
-	do {
-		--p1;
-		*p = *p1;
-		++p;
-	}while (p1 != c);
-	*p = '\0';
-    return p0;
-}
-*/
 cigar* banded_sw (int8_t* ref,
 				 int8_t* read, 
 				 int32_t refLen, 
@@ -513,8 +494,6 @@ cigar* banded_sw (int8_t* ref,
 				 int8_t* mat,	/* pointer to the weight matrix */
 				 int32_t n) {	
 
-	//char* cigar = (char*)calloc(16, sizeof(char)), *p = cigar, ci = 'M';
-	//char* cigar1, *p1;	// reverse cigar
 	uint32_t *c = (uint32_t*)calloc(16, sizeof(uint32_t)), *c1;
 	int32_t i, j, e, f, temp1, temp2, s = 16, l, max = 0;
 	int32_t width, width_d, *h_b, *e_b, *h_c;
@@ -574,6 +553,8 @@ cigar* banded_sw (int8_t* ref,
 	band_width /= 2;
 
 	// trace back
+
+	fprintf(stderr, "band_width: %d\n", band_width);
 	i = readLen - 1;
 	j = refLen - 1;
 	e = 0;	// Count the number of M, D or I.
@@ -618,74 +599,42 @@ cigar* banded_sw (int8_t* ref,
 		}
 		if (f == max) ++ e;
 		else {
-//			char* num = itoa(e);
-//			l = strlen(num);
-//			c += l + 1;
-		//	l += 2;
 			++l;
 			if (l >= s) {
 				++s;
 				kroundup32(s);
 				c = realloc(c, s * sizeof(uint32_t));
-			//	p = cigar + c - l - 1;
 			}
-		//	strcpy(p, num);
-		//	free(num);
-//			p += l;
-//			*p = ci;
-			fprintf(stderr, "e: %d\tmax:%d\n", e, max);
+	//		fprintf(stderr, "e: %d\tmax:%d\n", e, max);
 			c[l - 1] = e<<4|max;
 			max = f;
-		//	++p;
 			e = 1;
 		}
 	}
 	if (f == 0) {
-	//	char* num = itoa(e + 1);
-	//	l = strlen(num);
-	//	c += l + 1;
 		++l;
 		if (l >= s) {
 			++s;
 			kroundup32(s);
 			c = realloc(c, s * sizeof(uint32_t));
-		//	p = cigar + c - l - 1;
 		}
-	//	strcpy(p, num);
-	//	free(num);
-	//	p += l;
-	//	*p = 'M';
-		fprintf(stderr, "e: %d\n", e);
+	//	fprintf(stderr, "e: %d\n", e);
 		c[l - 1] = (e+1)<<4;
 	}else {
-	//	char* num = itoa(e);
-	//	l = strlen(num);
-	//	c += l + 3;	
 		l += 2;
 		if (l >= s) {
 			++s;
 			kroundup32(s);
 			c = realloc(c, s * sizeof(uint32_t));
-	//		p = cigar + c - l - 3;
 		}
-	//	strcpy(p, num);
-	//	free(num);
-	//	p += l;
-	//	*p = f;
-			fprintf(stderr, "e: %d\tf:%d\n", e, f);
+	//		fprintf(stderr, "e: %d\tf:%d\n", e, f);
 		c[l - 2] = e<<4|f;
 		c[l - 1] = 16;	// 1M
-	/*	++p;
-		*p = '1';
-		++p;
-		*p = 'M';*/
 	}
-	//++p; *p = '\0';
 	for (s = 0; s < l; s++) fprintf(stderr, "%d\t", *(c + s));
 	fprintf(stderr, "\n");
 
 	// reverse cigar
-//	cigar1 = (char*)calloc(strlen(cigar) + 1, sizeof(char));
 	c1 = (uint32_t*)calloc(l, sizeof(uint32_t));
 	s = 0;
 	e = l - 1;
@@ -697,31 +646,6 @@ cigar* banded_sw (int8_t* ref,
 	}								
 	result->seq = c1;
 	result->length = l;
-/*	p1 = cigar1;
-	l = 0;
-	ci = 'M';
-	p = cigar + strlen(cigar) - 1;
-	while (LIKELY(p >= cigar)) {
-		if (*p == 'M' || *p == 'I' || *p == 'D') {
-			if (l > 0) {
-				strncpy(p1, p + 1, l);
-				p1 += l;
-				*p1 = ci;
-				++p1;
-			}
-			ci = *p;
-			--p;
-			l = 0;
-		} else {
-			++l;
-			--p;
-		}
-	}
-	strncpy(p1, p + 1, l);
-	p1 += l;
-	*p1 = ci;
-	++p1;
-	*p1 = '\0';*/
 
 	free(direction);
 	free(h_c);
@@ -825,6 +749,8 @@ s_align* ssw_align (s_profile* prof,
 	r->ref_begin1 = bests_reverse[0].ref + 1;
 	r->read_begin1 = r->read_end1 - bests_reverse[0].read;
 	free(bests_reverse);
+
+	fprintf(stderr, "score: %d\tref_begin: %d\tread_begin: %d\tref_end: %d\tread_end: %d\n", r->score1, r->ref_begin1, r->read_begin1, r->ref_end1, r->read_end1);
 	if ((3&flag) == 0 || (flag == 6 && r->score1 < filter)) goto end;
 
 	// Generate cigar.
@@ -832,9 +758,12 @@ s_align* ssw_align (s_profile* prof,
 	readLen = r->read_end1 - r->read_begin1 + 1;
 	band_width = abs(refLen - readLen) + 1;
 	path = banded_sw(ref + r->ref_begin1 - 1, prof->read + r->read_begin1 - 1, refLen, readLen, r->score1, weight_gapO, weight_gapE, band_width, prof->mat, n);
-	r->cigar = path->seq;
-	r->cigarLen = path->length;
-	free(path);
+	if (path == 0) r = 0;
+	else {
+		r->cigar = path->seq;
+		r->cigarLen = path->length;
+		free(path);
+	}
 	
 end: 
 	return r;
@@ -844,7 +773,3 @@ void align_destroy (s_align* c) {
 	free(c->cigar);
 	free(c);
 }
-/*
-void ssw_write (write* w) {
-}
-*/
