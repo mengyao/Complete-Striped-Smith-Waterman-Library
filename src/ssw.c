@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 03/09/12.
+ *	Last revision by Mengyao Zhao on 03/09/13.
  *	New features: Combine files for api wrapping. 
  *
  */
@@ -254,8 +254,6 @@ end:
 		if (*t == max) {
 			temp = i / 16 + i % 16 * segLen;
 			if (temp < end_read) end_read = temp;
-		//	fprintf (stderr, "end_read: %d\n", end_read);
-		//	break;
 		}
 	}
 
@@ -457,7 +455,6 @@ end:
 		if (*t == max) {
 			temp = i / 8 + i % 8 * segLen;
 			if (temp < end_read) end_read = temp;
-		//	break;
 		}
 	}
 
@@ -558,8 +555,7 @@ cigar* banded_sw (int8_t* ref,
 	band_width /= 2;
 
 	// trace back
-
-	fprintf(stderr, "band_width: %d\n", band_width);
+//	fprintf(stderr, "band_width: %d\n", band_width);
 	i = readLen - 1;
 	j = refLen - 1;
 	e = 0;	// Count the number of M, D or I.
@@ -610,7 +606,6 @@ cigar* banded_sw (int8_t* ref,
 				kroundup32(s);
 				c = (uint32_t*)realloc(c, s * sizeof(uint32_t));
 			}
-	//		fprintf(stderr, "e: %d\tmax:%d\n", e, max);
 			c[l - 1] = e<<4|max;
 			max = f;
 			e = 1;
@@ -623,7 +618,6 @@ cigar* banded_sw (int8_t* ref,
 			kroundup32(s);
 			c = (uint32_t*)realloc(c, s * sizeof(uint32_t));
 		}
-	//	fprintf(stderr, "e: %d\n", e);
 		c[l - 1] = (e+1)<<4;
 	}else {
 		l += 2;
@@ -632,12 +626,11 @@ cigar* banded_sw (int8_t* ref,
 			kroundup32(s);
 			c = (uint32_t*)realloc(c, s * sizeof(uint32_t));
 		}
-	//		fprintf(stderr, "e: %d\tf:%d\n", e, f);
 		c[l - 2] = e<<4|f;
 		c[l - 1] = 16;	// 1M
 	}
-	for (s = 0; s < l; s++) fprintf(stderr, "%d\t", *(c + s));
-	fprintf(stderr, "\n");
+//	for (s = 0; s < l; s++) fprintf(stderr, "%d\t", *(c + s));
+//	fprintf(stderr, "\n");
 
 	// reverse cigar
 	c1 = (uint32_t*)calloc(l, sizeof(uint32_t));
@@ -755,7 +748,7 @@ s_align* ssw_align (s_profile* prof,
 	r->read_begin1 = r->read_end1 - bests_reverse[0].read;
 	free(bests_reverse);
 
-	fprintf(stderr, "score: %d\tref_begin: %d\tread_begin: %d\tref_end: %d\tread_end: %d\n", r->score1, r->ref_begin1, r->read_begin1, r->ref_end1, r->read_end1);
+//	fprintf(stderr, "score: %d\tref_begin: %d\tread_begin: %d\tref_end: %d\tread_end: %d\n", r->score1, r->ref_begin1, r->read_begin1, r->ref_end1, r->read_end1);
 	if ((3&flag) == 0 || (flag == 6 && r->score1 < filter)) goto end;
 
 	// Generate cigar.

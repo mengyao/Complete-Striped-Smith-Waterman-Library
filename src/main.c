@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 03/12/12.
+ *  Last revision by Mengyao Zhao on 03/12/13.
  *	New features: make weight as options 
  */
 
@@ -75,15 +75,10 @@ void ssw_write (s_align* a,
 		fprintf(stdout, "query_end: %d\n", a->read_end1);
 		if (a->cigar) {
 			int32_t i, c , q = a->ref_begin1 - 1, p = a->read_begin1 - 1;
-
-		//	for (c = 0; c < a->cigarLen; c++) fprintf(stderr, "%d\t", *(a->cigar + c));
-		//	fprintf(stderr, "\n");
-
 			fprintf(stdout, "Target:\t");
 			for (c = 0; c < a->cigarLen; ++c) {
 				int32_t letter = 0xf&*(a->cigar + c);
 				int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
-			//	fprintf(stderr, "letter: %d\tlength: %d\n", letter, length);
 				if (letter == 1) for (i = 0; i < length; ++i) fprintf(stdout, "-");
 				else {
 					for (i = 0; i < length; ++i) fprintf(stdout, "%c", *(ref_seq->seq.s + q + i));
@@ -255,14 +250,11 @@ int main (int argc, char * const argv[]) {
 
 	// alignment
 	while ((m = kseq_read(read_seq)) >= 0) {
-	//	gzFile ref_fp;
-	//	kseq_t *ref_seq;
 		s_profile* p, *p_rc = 0;
 		int32_t readLen = read_seq->seq.l; 
 		char* read_rc = 0;
 		int8_t* num, *num_rc = 0;
 		
-//		printf("read_name: %s\n", read_seq->name.s);
 		num = char2num(read_seq->seq.s, table, readLen);
 		p = ssw_init(num, readLen, mat, n, 2);
 		if (reverse == 1 && n == 5) {
@@ -281,13 +273,11 @@ int main (int argc, char * const argv[]) {
 			int32_t refLen = ref_seq->seq.l;
 			int8_t flag = 0;
 			int8_t* ref_num = char2num(ref_seq->seq.s, table, refLen);
-//			printf("ref_name: %s\n", ref_seq->name.s);
 			if (path == 1) flag = 1;
 			result = ssw_align (p, ref_num, refLen, gap_open, gap_extension, flag, 0);
 			if (reverse == 1) result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, 0);
 			if (result_rc && result_rc->score1 > result->score1) ssw_write (result_rc, ref_seq, read_seq->name.s, read_rc, table, 1, 0);
 			else if (result){
-			//	fprintf(stderr, "score: %d\n", result->score1);
 				if (sam) ssw_write(result, ref_seq, read_seq->name.s, read_seq->seq.s, table, 0, 1);
 				else ssw_write(result, ref_seq, read_seq->name.s, read_seq->seq.s, table, 0, 0);
 			} else return 1;
