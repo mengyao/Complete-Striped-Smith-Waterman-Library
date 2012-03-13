@@ -40,10 +40,10 @@ char* reverse_comple(const char* seq) {
 		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
 		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
 		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 54, 4, 47, 4,  4,  4, 43, 4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4,  4, 4,  41, 41, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 54, 4, 47, 4,  4,  4, 43, 4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4,  4, 4,  41, 41, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4 
+		4, 84, 4, 71, 4,  4,  4, 67, 4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 4,  4, 4,  65, 65, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 84, 4, 71, 4,  4,  4, 67, 4, 4, 4, 4,  4, 4, 4, 4, 
+		4, 4,  4, 4,  65, 65, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4 
 	};
 	rc[end] = '\0';
 	-- end;				
@@ -259,6 +259,7 @@ int main (int argc, char * const argv[]) {
 		p = ssw_init(num, readLen, mat, n, 2);
 		if (reverse == 1 && n == 5) {
 			read_rc = reverse_comple(read_seq->seq.s);
+		//	fprintf(stderr, "read: %s\nread_rc: %s\n", read_seq->seq.s, read_rc);
 			num_rc = char2num(read_rc, table, readLen);
 			p_rc = ssw_init(num_rc, readLen, mat, n, 2);
 		}else if (reverse == 1 && n == 24) {
