@@ -35,28 +35,28 @@ typedef struct {
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif	// __cplusplus
 
 // @function	Create the ssw profile using the read sequence.
-s_profile* ssw_init (int8_t* read, int32_t readLen, int8_t* mat, int32_t n, int8_t score_size);
+s_profile* ssw_init (const int8_t* read, const int32_t readLen, const int8_t* mat, const int32_t n, const int8_t score_size);
 
 // @function	Release the memory alloced by function ssw_init.
 void init_destroy (s_profile* p);
 
 // @function	ssw alignment.
-s_align* ssw_align (s_profile* prof, 
-					int8_t* ref, 
-					int32_t refLen, 
-					uint8_t weight_gapO, 
-					uint8_t weight_gapE, 
-					uint8_t flag,	//  (from high to low) bit 6: return the best alignment beginning position; 7: if max score >= filter, return cigar; 8: always return cigar
-					uint16_t filter);
+s_align* ssw_align (const s_profile* prof, 
+					const int8_t* ref, 
+					const int32_t refLen, 
+					const uint8_t weight_gapO, 
+					const uint8_t weight_gapE, 
+					const uint8_t flag,	//  (from high to low) bit 6: return the best alignment beginning position; 7: if max score >= filter, return cigar; 8: always return cigar
+					const uint16_t filter);
 
 // @function	Release the memory alloced by function ssw_align.
-void align_destroy (s_align* c);
+void align_destroy (s_align* a);
 
 #ifdef __cplusplus
 }
-#endif
+#endif	// __cplusplus
 
-#endif
+#endif	// SSW_H
