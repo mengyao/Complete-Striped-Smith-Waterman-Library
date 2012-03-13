@@ -115,7 +115,7 @@ alignment_end* sw_sse2_byte (int8_t* ref,
 					  (m) = _mm_extract_epi16((vm), 0)
 
 	uint8_t max = 0;		                     /* the max alignment score */
-	int32_t end_read = 0;
+	int32_t end_read = readLen - 1;
 	int32_t end_ref = 0; /* 1_based best alignment ending point; Initialized as isn't aligned - 0. */
 	int32_t segLen = (readLen + 15) / 16; /* number of segment */
 	
@@ -250,9 +250,12 @@ end:
 	uint8_t *t = (uint8_t*)pvHmax;
 	int32_t column_len = segLen * 16;
 	for (i = 0; LIKELY(i < column_len); ++i, ++t) {
+		int32_t temp;
 		if (*t == max) {
-			end_read = i / 16 + i % 16 * segLen;
-			break;
+			temp = i / 16 + i % 16 * segLen;
+			if (temp < end_read) end_read = temp;
+		//	fprintf (stderr, "end_read: %d\n", end_read);
+		//	break;
 		}
 	}
 
@@ -324,7 +327,7 @@ alignment_end* sw_sse2_word (int8_t* ref,
 					(m) = _mm_extract_epi16((vm), 0)
 	
 	uint16_t max = 0;		                     /* the max alignment score */
-	int32_t end_read = 0;
+	int32_t end_read = readLen - 1;
 	int32_t end_ref = 0; /* 1_based best alignment ending point; Initialized as isn't aligned - 0. */
 	int32_t segLen = (readLen + 7) / 8; /* number of segment */
 	
@@ -450,9 +453,11 @@ end:
 	uint16_t *t = (uint16_t*)pvHmax;
 	int32_t column_len = segLen * 8;
 	for (i = 0; LIKELY(i < column_len); ++i, ++t) {
+		int32_t temp;
 		if (*t == max) {
-			end_read = i / 8 + i % 8 * segLen;
-			break;
+			temp = i / 8 + i % 8 * segLen;
+			if (temp < end_read) end_read = temp;
+		//	break;
 		}
 	}
 
@@ -603,7 +608,7 @@ cigar* banded_sw (int8_t* ref,
 			if (l >= s) {
 				++s;
 				kroundup32(s);
-				c = realloc(c, s * sizeof(uint32_t));
+				c = (uint32_t*)realloc(c, s * sizeof(uint32_t));
 			}
 	//		fprintf(stderr, "e: %d\tmax:%d\n", e, max);
 			c[l - 1] = e<<4|max;
@@ -616,7 +621,7 @@ cigar* banded_sw (int8_t* ref,
 		if (l >= s) {
 			++s;
 			kroundup32(s);
-			c = realloc(c, s * sizeof(uint32_t));
+			c = (uint32_t*)realloc(c, s * sizeof(uint32_t));
 		}
 	//	fprintf(stderr, "e: %d\n", e);
 		c[l - 1] = (e+1)<<4;
@@ -625,7 +630,7 @@ cigar* banded_sw (int8_t* ref,
 		if (l >= s) {
 			++s;
 			kroundup32(s);
-			c = realloc(c, s * sizeof(uint32_t));
+			c = (uint32_t*)realloc(c, s * sizeof(uint32_t));
 		}
 	//		fprintf(stderr, "e: %d\tf:%d\n", e, f);
 		c[l - 2] = e<<4|f;

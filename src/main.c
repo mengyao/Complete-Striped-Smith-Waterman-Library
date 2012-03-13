@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 03/09/12.
+ *  Last revision by Mengyao Zhao on 03/12/12.
  *	New features: make weight as options 
  */
 
@@ -122,6 +122,7 @@ void ssw_write (s_align* a,
 		}
 		fprintf(stdout, "\n\n");
 	}else {	// Sam format output
+		fprintf(stdout, "%s\t", read_name);
 		//FIXME: print sam
 	}
 }
@@ -129,9 +130,9 @@ void ssw_write (s_align* a,
 int main (int argc, char * const argv[]) {
 	clock_t start, end;
 	float cpu_time;
-	gzFile read_fp;
-	kseq_t *read_seq;
-	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5;
+	gzFile read_fp, ref_fp;
+	kseq_t *read_seq, *ref_seq;
+	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0;
 	int8_t* mat = (int8_t*)calloc(25, sizeof(int8_t));
 	char mat_name[16];
 	mat_name[0] = '\0';
@@ -170,7 +171,7 @@ int main (int argc, char * const argv[]) {
 	for (m = 0; LIKELY(m < 5); ++m) mat[k++] = 0;
 
 	// Parse command line.
-	while ((l = getopt(argc, argv, "m:x:o:e:a:cr")) >= 0) {
+	while ((l = getopt(argc, argv, "m:x:o:e:a:crs")) >= 0) {
 		switch (l) {
 			case 'm': match = atoi(optarg); break;
 			case 'x': mismatch = atoi(optarg); break;
@@ -179,6 +180,7 @@ int main (int argc, char * const argv[]) {
 			case 'a': strcpy(mat_name, optarg); break;
 			case 'c': path = 1; break;
 			case 'r': reverse = 1; break;
+			case 's': sam = 1; break;
 		}
 	}
 	if (optind + 2 > argc) {
@@ -191,7 +193,8 @@ int main (int argc, char * const argv[]) {
 		fprintf(stderr, "\t-e N\tN is a positive integer. -N will be used as the weight for the gap extension.\n");
 		fprintf(stderr, "\t-a FILE\tFor protein sequence alignment. FILE is either the Blosum or Pam weight matrix. Recommend to use the matrix\n\t\tincluding B Z X * columns. Otherwise, corresponding scores will be signed to 0.\n"); 
 		fprintf(stderr, "\t-c\tReturn the alignment in cigar format.\n");
-		fprintf(stderr, "\t-r\tThe best alignment will be picked between the original read alignment and the reverse complement read alignment.\n\n");
+		fprintf(stderr, "\t-r\tThe best alignment will be picked between the original read alignment and the reverse complement read alignment.\n");
+		fprintf(stderr, "\t-s\tOutput in SAM format.\n\n");
 		return 1;
 	}
 
@@ -199,7 +202,7 @@ int main (int argc, char * const argv[]) {
 	if (strcmp(mat_name, "\0"))	{
 		FILE *f_mat = fopen(mat_name, "r");
 		char line[128];
-		mat = realloc(mat, 1024 * sizeof(int8_t));
+		mat = (int8_t*)realloc(mat, 1024 * sizeof(int8_t));
 		k = 0;
 		while (fgets(line, 128, f_mat)) {
 			if (line[0] == '*' || (line[0] >= 'A' && line[0] <= 'Z')) {
@@ -244,12 +247,16 @@ int main (int argc, char * const argv[]) {
 
 	read_fp = gzopen(argv[optind + 1], "r");
 	read_seq = kseq_init(read_fp);
+	if (sam) {
+		fprintf(stdout, "@HD\tVN:1.4\tSO:queryname\n");
+		while ((l = kseq_read(ref_seq)) >= 0) fprintf(stdout, "@SQ\tSN:%s\tLN:%d\n", ref_seq->name.s, (int32_t)ref_seq->seq.l);
+	}
 	start = clock();
 
 	// alignment
 	while ((m = kseq_read(read_seq)) >= 0) {
-		gzFile ref_fp;
-		kseq_t *ref_seq;
+	//	gzFile ref_fp;
+	//	kseq_t *ref_seq;
 		s_profile* p, *p_rc = 0;
 		int32_t readLen = read_seq->seq.l; 
 		char* read_rc = 0;
@@ -280,8 +287,9 @@ int main (int argc, char * const argv[]) {
 			if (reverse == 1) result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, 0);
 			if (result_rc && result_rc->score1 > result->score1) ssw_write (result_rc, ref_seq, read_seq->name.s, read_rc, table, 1, 0);
 			else if (result){
-				fprintf(stderr, "score: %d\n", result->score1);
-				ssw_write(result, ref_seq, read_seq->name.s, read_seq->seq.s, table, 0, 0);
+			//	fprintf(stderr, "score: %d\n", result->score1);
+				if (sam) ssw_write(result, ref_seq, read_seq->name.s, read_seq->seq.s, table, 0, 1);
+				else ssw_write(result, ref_seq, read_seq->name.s, read_seq->seq.s, table, 0, 0);
 			} else return 1;
 			if (result_rc) align_destroy(result_rc);
 			align_destroy(result);

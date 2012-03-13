@@ -4,10 +4,13 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 03/09/12.
+ *	Last revision by Mengyao Zhao on 03/12/12.
  *	New features: This is the api file.
  *
  */
+
+#ifndef SSW_H
+#define SSW_H
 
 #include <stdio.h>
 #include <stdint.h>
@@ -30,6 +33,10 @@ typedef struct {
 	int32_t cigarLen;	// length of the cigar string
 } s_align;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // @function	Create the ssw profile using the read sequence.
 s_profile* ssw_init (int8_t* read, int32_t readLen, int8_t* mat, int32_t n, int8_t score_size);
 
@@ -48,3 +55,8 @@ s_align* ssw_align (s_profile* prof,
 // @function	Release the memory alloced by function ssw_align.
 void align_destroy (s_align* c);
 
+#ifdef __cplusplus
+}
+#endif
+
+#endif
