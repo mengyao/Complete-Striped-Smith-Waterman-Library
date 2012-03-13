@@ -747,8 +747,6 @@ s_align* ssw_align (s_profile* prof,
 	r->ref_begin1 = bests_reverse[0].ref + 1;
 	r->read_begin1 = r->read_end1 - bests_reverse[0].read;
 	free(bests_reverse);
-
-//	fprintf(stderr, "score: %d\tref_begin: %d\tread_begin: %d\tref_end: %d\tread_end: %d\n", r->score1, r->ref_begin1, r->read_begin1, r->ref_end1, r->read_end1);
 	if ((3&flag) == 0 || (flag == 6 && r->score1 < filter)) goto end;
 
 	// Generate cigar.
