@@ -277,6 +277,8 @@ int main (int argc, char * const argv[]) {
 		table = aa_table;
 	}
 
+	ref_fp = gzopen(argv[optind], "r");
+	ref_seq = kseq_init(ref_fp);
 	read_fp = gzopen(argv[optind + 1], "r");
 	read_seq = kseq_init(read_fp);
 	if (sam) {
@@ -304,8 +306,6 @@ int main (int argc, char * const argv[]) {
 			return 1;
 		}
 
-		ref_fp = gzopen(argv[optind], "r");
-		ref_seq = kseq_init(ref_fp);
 		while ((l = kseq_read(ref_seq)) >= 0) {
 			s_align* result, *result_rc = 0;
 			int32_t refLen = ref_seq->seq.l;

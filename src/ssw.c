@@ -51,17 +51,17 @@ typedef struct {
 struct _profile{
 	__m128i* profile_byte;	// 0: none
 	__m128i* profile_word;	// 0: none
-	int8_t* read;
-	int8_t* mat;
+	const int8_t* read;
+	const int8_t* mat;
 	int32_t readLen;
 	int32_t n;
 };
 
 /* Generate query profile rearrange query sequence & calculate the weight of match/mismatch. */
-__m128i* qP_byte (int8_t* read_num,
-				  int8_t* mat,
-				  int32_t readLen,
-				  int32_t n,	/* the edge length of the squre matrix mat */
+__m128i* qP_byte (const int8_t* read_num,
+				  const int8_t* mat,
+				  const int32_t readLen,
+				  const int32_t n,	/* the edge length of the squre matrix mat */
 				  uint8_t bias) { 
 					
 	int32_t
@@ -95,12 +95,12 @@ __m128i* qP_byte (int8_t* read_num,
    wight_match > 0, all other weights < 0.
    The returned positions are 0-based.
  */ 
-alignment_end* sw_sse2_byte (int8_t* ref,
+alignment_end* sw_sse2_byte (const int8_t* ref,
 							 int8_t ref_dir,	// 0: forward ref; 1: reverse ref
 							 int32_t refLen,
 							 int32_t readLen, 
-							 uint8_t weight_gapO, /* will be used as - */
-							 uint8_t weight_gapE, /* will be used as - */
+							 const uint8_t weight_gapO, /* will be used as - */
+							 const uint8_t weight_gapE, /* will be used as - */
 							 __m128i* vProfile,
 							 uint8_t terminate,	/* the best alignment score: used to terminate 
 												   the matrix calculation when locating the 
@@ -284,13 +284,12 @@ end:
 	return bests;
 }
 
-__m128i* qP_word (int8_t* read_num,
-				  int8_t* mat,
-				  int32_t readLen,
-				  int32_t n) { 
+__m128i* qP_word (const int8_t* read_num,
+				  const int8_t* mat,
+				  const int32_t readLen,
+				  const int32_t n) { 
 					
-	int32_t
-	segLen = (readLen + 7) / 8; 
+	int32_t segLen = (readLen + 7) / 8; 
 	__m128i* vProfile = (__m128i*)calloc(n * segLen, sizeof(__m128i));
 	int16_t* t = (int16_t*)vProfile;
 	int32_t nt, i, j;
@@ -310,12 +309,12 @@ __m128i* qP_word (int8_t* read_num,
 	return vProfile;
 }
 
-alignment_end* sw_sse2_word (int8_t* ref, 
+alignment_end* sw_sse2_word (const int8_t* ref, 
 							 int8_t ref_dir,	// 0: forward ref; 1: reverse ref
 							 int32_t refLen,
 							 int32_t readLen, 
-							 uint8_t weight_gapO, /* will be used as - */
-							 uint8_t weight_gapE, /* will be used as - */
+							 const uint8_t weight_gapO, /* will be used as - */
+							 const uint8_t weight_gapE, /* will be used as - */
 						     __m128i* vProfile,
 							 uint16_t terminate) { 
 
@@ -485,15 +484,15 @@ end:
 	return bests;
 }
 
-cigar* banded_sw (int8_t* ref,
-				 int8_t* read, 
+cigar* banded_sw (const int8_t* ref,
+				 const int8_t* read, 
 				 int32_t refLen, 
 				 int32_t readLen,
 				 int32_t score,
-				 uint32_t weight_gapO,  /* will be used as - */
-				 uint32_t weight_gapE,  /* will be used as - */
+				 const uint32_t weight_gapO,  /* will be used as - */
+				 const uint32_t weight_gapE,  /* will be used as - */
 				 int32_t band_width,
-				 int8_t* mat,	/* pointer to the weight matrix */
+				 const int8_t* mat,	/* pointer to the weight matrix */
 				 int32_t n) {	
 
 	uint32_t *c = (uint32_t*)calloc(16, sizeof(uint32_t)), *c1;
@@ -653,7 +652,7 @@ cigar* banded_sw (int8_t* ref,
 	return result;
 }
 
-int8_t* seq_reverse(int8_t* seq, int32_t end)	/* end is 0-based alignment ending position */	
+int8_t* seq_reverse(const int8_t* seq, int32_t end)	/* end is 0-based alignment ending position */	
 {									
 	int8_t* reverse = (int8_t*)calloc(end + 1, sizeof(int8_t));	
 	int32_t start = 0;
