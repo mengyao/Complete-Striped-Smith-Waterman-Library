@@ -215,7 +215,7 @@ int main (int argc, char * const argv[]) {
 	}
 	if (optind + 2 > argc) {
 		fprintf(stderr, "\n");
-		fprintf(stderr, "Usage: ssw_test [options] ... <target.fa> <query.fa>\n");	
+		fprintf(stderr, "Usage: ssw_test [options] ... <target.fa> <query.fasta>(or <query.fastq>)\n");	
 		fprintf(stderr, "Options:\n");
 		fprintf(stderr, "\t-m N\tN is a positive integer for weight match in genome sequence alignment.\n");
 		fprintf(stderr, "\t-x N\tN is a positive integer. -N will be used as weight mismatch in genome sequence alignment.\n");
