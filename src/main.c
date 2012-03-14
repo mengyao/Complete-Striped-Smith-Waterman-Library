@@ -123,13 +123,13 @@ void ssw_write (s_align* a,
 		fprintf(stdout, "%s\t", read->name.s);
 		if (a->score1 == 0) fprintf(stdout, "4\t*\t0\t255\t*\t*\t0\t0\t*\t*\n");
 		else {
+			int32_t c, l = a->read_end1 - a->read_begin1 + 1, p;
 			int32_t mapq = -4.343 * log(1 - abs(a->score1 - a->score2)/a->score1);
 			mapq = (int32_t) (mapq + 4.99);
 			mapq = mapq < 254 ? mapq : 254;
 			if (strand) fprintf(stdout, "16\t");
 			else fprintf(stdout, "0\t");
 			fprintf(stdout, "%s\t%d\t%d\t", ref_seq->name.s, a->ref_begin1, mapq);
-			int32_t c, length = a->read_end1 - a->read_begin1 + 1, p;
 			for (c = 0; c < a->cigarLen; ++c) {
 				int32_t letter = 0xf&*(a->cigar + c);
 				int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
@@ -141,19 +141,19 @@ void ssw_write (s_align* a,
 			fprintf(stdout, "\t*\t0\t0\t");
 			for (c = (a->read_begin1 - 1); c < a->read_end1; ++c) fprintf(stdout, "%c", read_seq[c]);
 			fprintf(stdout, "\t");
-			if (strand) {
-				p = length - a->read_begin1;
-				for (c = 0; c < length; ++c) {
+			if (read->qual.s && strand) {
+				p = l - a->read_begin1;
+				for (c = 0; c < l; ++c) {
 					fprintf(stdout, "%c", read->qual.s[p]);
 					--p;
 				}
-			}else {
+			}else if (read->qual.s){
 				p = a->read_begin1 - 1;
-				for (c = 0; c < length; ++c) {
+				for (c = 0; c < l; ++c) {
 					fprintf(stdout, "%c", read->qual.s[p]);
 					++p;
 				}
-			}
+			} else fprintf(stdout, "*");
 			fprintf(stdout,"\n");
 		}
 	}
@@ -306,7 +306,10 @@ int main (int argc, char * const argv[]) {
 			return 1;
 		}
 
+		ref_fp = gzopen(argv[optind], "r");
+		ref_seq = kseq_init(ref_fp);
 		while ((l = kseq_read(ref_seq)) >= 0) {
+	//		fprintf(stderr, "here\n");
 			s_align* result, *result_rc = 0;
 			int32_t refLen = ref_seq->seq.l;
 			int8_t flag = 0;
@@ -328,7 +331,11 @@ int main (int argc, char * const argv[]) {
 				//	free(qual_rc);
 				}else ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 0);
 			}else if (result){
-				if (sam) ssw_write(result, ref_seq, read_seq, read_seq->seq.s, table, 0, 1);
+	//			fprintf(stderr, "here\n");
+				if (sam) {
+	//				fprintf(stderr, "here\n");
+					ssw_write(result, ref_seq, read_seq, read_seq->seq.s, table, 0, 1);
+				}
 				else ssw_write(result, ref_seq, read_seq, read_seq->seq.s, table, 0, 0);
 			} else return 1;
 			if (result_rc) align_destroy(result_rc);
