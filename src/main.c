@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
+#include <math.h>
 #include "ssw.h"
 #include "kseq.h"
 
@@ -59,15 +60,16 @@ char* reverse_comple(const char* seq) {
 
 void ssw_write (s_align* a, 
 			kseq_t* ref_seq,
-			char* read_name, 
+			kseq_t* read,
+		//	char* read_name, 
 			char* read_seq,	// strand == 0: original read; strand == 1: reverse complement read
-			char* read_qual,	// strand == 0: original read base quality seq; strand == 1: reverse complement read quality seq
+		//	char* read_qual,	// strand == 0: original read base quality seq; strand == 1: reverse complement read quality seq
 			int8_t* table, 
 			int8_t strand,	// 0: forward aligned ; 1: reverse complement aligned 
 			int8_t sam) {	// 0: Blast like output; 1: Sam format output
 
 	if (sam == 0) {	// Blast like output
-		fprintf(stdout, "target_name: %s\nquery_name: %s\noptimal_alignment_score: %d\t", ref_seq->name.s, read_name, a->score1);
+		fprintf(stdout, "target_name: %s\nquery_name: %s\noptimal_alignment_score: %d\t", ref_seq->name.s, read->name.s, a->score1);
 		if (strand == 0) fprintf(stdout, "strand: +\t");
 		else fprintf(stdout, "strand: -\t");
 		if (a->ref_begin1) fprintf(stdout, "target_begin: %d\t", a->ref_begin1);
@@ -118,11 +120,16 @@ void ssw_write (s_align* a,
 		}
 		fprintf(stdout, "\n\n");
 	}else {	// Sam format output
-		fprintf(stdout, "%s\t", read_name);
-		if (a->score1 == 0) fprintf(stdout, "*\t0\t*\t*\t0\t0\t*\t*\n");
+		fprintf(stdout, "%s\t", read->name.s);
+		if (a->score1 == 0) fprintf(stdout, "4\t*\t0\t255\t*\t*\t0\t0\t*\t*\n");
 		else {
-			fprintf(stdout, "%s\t%d\t", ref_seq->name.s, a->ref_begin1);
-			int32_t c;
+			int32_t mapq = -4.343 * log(1 - abs(a->score1 - a->score2)/a->score1);
+			mapq = (int32_t) (mapq + 4.99);
+			mapq = mapq < 254 ? mapq : 254;
+			if (strand) fprintf(stdout, "16\t");
+			else fprintf(stdout, "0\t");
+			fprintf(stdout, "%s\t%d\t%d\t", ref_seq->name.s, a->ref_begin1, mapq);
+			int32_t c, length = a->read_end1 - a->read_begin1 + 1, p;
 			for (c = 0; c < a->cigarLen; ++c) {
 				int32_t letter = 0xf&*(a->cigar + c);
 				int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
@@ -134,10 +141,21 @@ void ssw_write (s_align* a,
 			fprintf(stdout, "\t*\t0\t0\t");
 			for (c = (a->read_begin1 - 1); c < a->read_end1; ++c) fprintf(stdout, "%c", read_seq[c]);
 			fprintf(stdout, "\t");
-			if (read_qual) fprintf(stdout, "%s\n", read_qual);
-			else fprintf(stdout, "*\n");
+			if (strand) {
+				p = length - a->read_begin1;
+				for (c = 0; c < length; ++c) {
+					fprintf(stdout, "%c", read->qual.s[p]);
+					--p;
+				}
+			}else {
+				p = a->read_begin1 - 1;
+				for (c = 0; c < length; ++c) {
+					fprintf(stdout, "%c", read->qual.s[p]);
+					++p;
+				}
+			}
+			fprintf(stdout,"\n");
 		}
-		//FIXME: print sam
 	}
 }
 
@@ -269,7 +287,7 @@ int main (int argc, char * const argv[]) {
 
 	// alignment
 	while ((m = kseq_read(read_seq)) >= 0) {
-fprintf(stderr, "qual: %s\n", read_seq->qual.s);
+//fprintf(stderr, "qual: %s\n", read_seq->qual.s);
 		s_profile* p, *p_rc = 0;
 		int32_t readLen = read_seq->seq.l; 
 		char* read_rc = 0;
@@ -298,22 +316,20 @@ fprintf(stderr, "qual: %s\n", read_seq->qual.s);
 			if (reverse == 1) result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, 0);
 			if (result_rc && result_rc->score1 > result->score1) {
 				if (sam) {
-					int32_t length = result_rc->read_end1 - result_rc->read_begin1 + 1, s = 0, p = length - result_rc->read_begin1;
+				/*	int32_t length = result_rc->read_end1 - result_rc->read_begin1 + 1, s = 0, p = length - result_rc->read_begin1;
 					char* qual_rc = (char*)calloc(length + 1, sizeof(char));
 					qual_rc[length] = '\0';
-				//	-- end;				
 					while (LIKELY(s < length)) {			
 						qual_rc[s] = read_seq->qual.s[p];		
-					//	qual_rc[end] = (char)rc_table[(int8_t)seq[start]];		
 						++ s;					
 						-- p;						
-					}					
-					ssw_write (result_rc, ref_seq, read_seq->name.s, read_rc, qual_rc, table, 1, 1);
-					free(qual_rc);
-				}else ssw_write (result_rc, ref_seq, read_seq->name.s, read_rc, 0, table, 1, 0);
+					}*/					
+					ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 1);
+				//	free(qual_rc);
+				}else ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 0);
 			}else if (result){
-				if (sam) ssw_write(result, ref_seq, read_seq->name.s, read_seq->seq.s, read_seq->qual.s, table, 0, 1);
-				else ssw_write(result, ref_seq, read_seq->name.s, read_seq->seq.s, 0, table, 0, 0);
+				if (sam) ssw_write(result, ref_seq, read_seq, read_seq->seq.s, table, 0, 1);
+				else ssw_write(result, ref_seq, read_seq, read_seq->seq.s, table, 0, 0);
 			} else return 1;
 			if (result_rc) align_destroy(result_rc);
 			align_destroy(result);
