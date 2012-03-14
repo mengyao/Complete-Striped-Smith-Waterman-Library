@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 03/13/12.
+ *  Last revision by Mengyao Zhao on 03/14/12.
  *	New features: make weight as options 
  */
 
@@ -61,9 +61,7 @@ char* reverse_comple(const char* seq) {
 void ssw_write (s_align* a, 
 			kseq_t* ref_seq,
 			kseq_t* read,
-		//	char* read_name, 
 			char* read_seq,	// strand == 0: original read; strand == 1: reverse complement read
-		//	char* read_qual,	// strand == 0: original read base quality seq; strand == 1: reverse complement read quality seq
 			int8_t* table, 
 			int8_t strand,	// 0: forward aligned ; 1: reverse complement aligned 
 			int8_t sam) {	// 0: Blast like output; 1: Sam format output
@@ -289,7 +287,6 @@ int main (int argc, char * const argv[]) {
 
 	// alignment
 	while ((m = kseq_read(read_seq)) >= 0) {
-//fprintf(stderr, "qual: %s\n", read_seq->qual.s);
 		s_profile* p, *p_rc = 0;
 		int32_t readLen = read_seq->seq.l; 
 		char* read_rc = 0;
@@ -309,7 +306,6 @@ int main (int argc, char * const argv[]) {
 		ref_fp = gzopen(argv[optind], "r");
 		ref_seq = kseq_init(ref_fp);
 		while ((l = kseq_read(ref_seq)) >= 0) {
-	//		fprintf(stderr, "here\n");
 			s_align* result, *result_rc = 0;
 			int32_t refLen = ref_seq->seq.l;
 			int8_t flag = 0;
@@ -318,24 +314,10 @@ int main (int argc, char * const argv[]) {
 			result = ssw_align (p, ref_num, refLen, gap_open, gap_extension, flag, 0);
 			if (reverse == 1) result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, 0);
 			if (result_rc && result_rc->score1 > result->score1) {
-				if (sam) {
-				/*	int32_t length = result_rc->read_end1 - result_rc->read_begin1 + 1, s = 0, p = length - result_rc->read_begin1;
-					char* qual_rc = (char*)calloc(length + 1, sizeof(char));
-					qual_rc[length] = '\0';
-					while (LIKELY(s < length)) {			
-						qual_rc[s] = read_seq->qual.s[p];		
-						++ s;					
-						-- p;						
-					}*/					
-					ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 1);
-				//	free(qual_rc);
-				}else ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 0);
+				if (sam) ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 1);
+				else ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 0);
 			}else if (result){
-	//			fprintf(stderr, "here\n");
-				if (sam) {
-	//				fprintf(stderr, "here\n");
-					ssw_write(result, ref_seq, read_seq, read_seq->seq.s, table, 0, 1);
-				}
+				if (sam) ssw_write(result, ref_seq, read_seq, read_seq->seq.s, table, 0, 1);
 				else ssw_write(result, ref_seq, read_seq, read_seq->seq.s, table, 0, 0);
 			} else return 1;
 			if (result_rc) align_destroy(result_rc);

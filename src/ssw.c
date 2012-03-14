@@ -554,7 +554,6 @@ cigar* banded_sw (const int8_t* ref,
 	band_width /= 2;
 
 	// trace back
-//	fprintf(stderr, "band_width: %d\n", band_width);
 	i = readLen - 1;
 	j = refLen - 1;
 	e = 0;	// Count the number of M, D or I.
@@ -628,8 +627,6 @@ cigar* banded_sw (const int8_t* ref,
 		c[l - 2] = e<<4|f;
 		c[l - 1] = 16;	// 1M
 	}
-//	for (s = 0; s < l; s++) fprintf(stderr, "%d\t", *(c + s));
-//	fprintf(stderr, "\n");
 
 	// reverse cigar
 	c1 = (uint32_t*)calloc(l, sizeof(uint32_t));
