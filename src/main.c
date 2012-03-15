@@ -140,7 +140,7 @@ void ssw_write (s_align* a,
 			for (c = (a->read_begin1 - 1); c < a->read_end1; ++c) fprintf(stdout, "%c", read_seq[c]);
 			fprintf(stdout, "\t");
 			if (read->qual.s && strand) {
-				p = l - a->read_begin1;
+				p = a->read_end1 - 1;
 				for (c = 0; c < l; ++c) {
 					fprintf(stdout, "%c", read->qual.s[p]);
 					--p;
