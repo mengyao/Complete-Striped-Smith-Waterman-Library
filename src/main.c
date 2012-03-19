@@ -75,48 +75,116 @@ void ssw_write (s_align* a,
 		if (a->read_begin1) fprintf(stdout, "query_begin: %d\t", a->read_begin1);
 		fprintf(stdout, "query_end: %d\n", a->read_end1);
 		if (a->cigar) {
-			int32_t i, c , q = a->ref_begin1 - 1, p = a->read_begin1 - 1;
-			fprintf(stdout, "Target:\t");
-			for (c = 0; c < a->cigarLen; ++c) {
-				int32_t letter = 0xf&*(a->cigar + c);
-				int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
-				if (letter == 1) for (i = 0; i < length; ++i) fprintf(stdout, "-");
-				else {
-					for (i = 0; i < length; ++i) fprintf(stdout, "%c", *(ref_seq->seq.s + q + i));
-					q += length;
-				}	
-			}
-			fprintf(stdout, "\n\t");
-			q = a->ref_begin1 - 1;
-			p = a->read_begin1 - 1;
-			for (c = 0; c < a->cigarLen; ++c) {
-				int32_t letter = 0xf&*(a->cigar + c);
-				int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
-				if (letter == 0) {
-					for (i = 0; i < length; ++i) 
-						if (table[(int)*(ref_seq->seq.s + q + i)] == table[(int)*(read_seq + p + i)])fprintf(stdout, "|");
-						else fprintf(stdout, "*");
-					q += length;
-					p += length;	
-				}else { 
-					for (i = 0; i < length; ++i) fprintf(stdout, "*");
-					if (letter == 1) p += length;
-					else q += length;
+			int32_t i, c = 0, left = 0, e = 0, qb = a->ref_begin1 - 1, pb = a->read_begin1 - 1;
+			while (e < a->cigarLen || left > 0) {
+//			fprintf(stderr, "e: %d\n", e);
+				int32_t count = 0;
+				int32_t q = qb;
+				int32_t p = pb;
+			//	end = end < a->cigarLen ? end : a->cigarLen;
+				fprintf(stdout, "Target:\t");
+				for (c = e; c < a->cigarLen; ++c) {
+//					fprintf(stderr, "c: %d\n", c);
+					int32_t letter = 0xf&*(a->cigar + c);
+					int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
+					int32_t l = (count == 0 && left > 0) ? left: length;
+//					fprintf(stderr, "l: %d\n", l);
+					if (letter == 1) {
+						for (i = 0; i < l; ++i) {
+							fprintf(stdout, "-");
+							++ count;
+							if (count == 60) goto step2;
+						}
+					}else {
+						for (i = 0; i < l; ++i) {	
+							fprintf(stdout, "%c", *(ref_seq->seq.s + q));
+							++ q;
+							++ count;
+							if (count == 60) goto step2;
+						}
+					//	q += i;
+					}	
 				}
-			}
-			fprintf(stdout, "\nQuery:\t");
-			p = a->read_begin1 - 1;
-			for (c = 0; c < a->cigarLen; ++c) {
-				int32_t letter = 0xf&*(a->cigar + c);
-				int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
-				if (letter == 2) for (i = 0; i < length; ++i) fprintf(stdout, "-");
-				else {
-					for (i = 0; i < length; ++i) fprintf(stdout, "%c", *(read_seq + p + i));
-					p += length;
+			//	qb = q;
+step2:
+				fprintf(stdout, "\n\t");
+				q = qb;
+			//	p = a->read_begin1 - 1 + 60*r;
+				count = 0;
+				for (c = e; c < a->cigarLen; ++c) {
+					int32_t letter = 0xf&*(a->cigar + c);
+					int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
+					int32_t l = (count == 0 && left > 0) ? left: length;
+					if (letter == 0) {
+						for (i = 0; i < l; ++i){ 
+							if (table[(int)*(ref_seq->seq.s + q)] == table[(int)*(read_seq + p)])fprintf(stdout, "|");
+							else fprintf(stdout, "*");
+							++q;
+							++p;
+							++ count;
+							if (count == 60) {
+								qb = q;
+								goto step3;
+							}
+						}
+				//		q += i;
+				//		p += i;	
+					}else { 
+						for (i = 0; i < l; ++i) {
+							fprintf(stdout, "*");
+							if (letter == 1) ++p;
+							else ++q;
+							++ count;
+							if (count == 60) {
+								qb = q;
+								goto step3;
+							}
+						}
+					}
 				}
-			}	
+step3:
+				fprintf(stdout, "\nQuery:\t");
+				p = pb;
+			//	fprintf(stderr, "p: %d\n", p);
+				count = 0;
+				for (c = e; c < a->cigarLen; ++c) {
+					int32_t letter = 0xf&*(a->cigar + c);
+					int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
+					int32_t l = (count == 0 && left > 0) ? left: length;
+					if (letter == 2){ 
+						for (i = 0; i < l; ++i) { 
+							fprintf(stdout, "-");
+							++ count;
+							if (count == 60) {
+								left = length - i - 1;
+			//			fprintf(stderr, "left: %d\n", left);
+								e = (left == 0) ? (c + 1) : c;
+								goto end;
+							}
+						}
+					}else {
+						for (i = 0; i < l; ++i) {
+							fprintf(stdout, "%c", *(read_seq + p));
+							++p;
+							++ count;
+							if (count == 60) {
+								pb = p;
+								left = length - i - 1;
+			//			fprintf(stderr, "left: %d\n", left);
+								e = (left == 0) ? (c + 1) : c;
+								goto end;
+							}
+						}
+				//		p += i;
+					}
+				}
+				e = c;
+end:
+				fprintf(stdout, "\n\n");
+//				++r;	
+			}
 		}
-		fprintf(stdout, "\n\n");
+	//	fprintf(stdout, "\n\n");
 	}else {	// Sam format output
 		fprintf(stdout, "%s\t", read->name.s);
 		if (a->score1 == 0) fprintf(stdout, "4\t*\t0\t255\t*\t*\t0\t0\t*\t*\n");
