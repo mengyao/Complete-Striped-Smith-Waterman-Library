@@ -75,20 +75,31 @@ void ssw_write (s_align* a,
 		if (a->read_begin1) fprintf(stdout, "query_begin: %d\t", a->read_begin1);
 		fprintf(stdout, "query_end: %d\n", a->read_end1);
 		if (a->cigar) {
-			int32_t i, c = 0, left = 0, e = 0, qb = a->ref_begin1 - 1, pb = a->read_begin1 - 1;
+			int32_t i, c = 0, left = 0, e = 0, qb = a->ref_begin1 - 1, pb = a->read_begin1 - 1, n = 10;
 			while (e < a->cigarLen || left > 0) {
-//			fprintf(stderr, "e: %d\n", e);
 				int32_t count = 0;
 				int32_t q = qb;
 				int32_t p = pb;
-			//	end = end < a->cigarLen ? end : a->cigarLen;
+				int32_t ln = 0;
+				for (c = e; c < a->cigarLen; ++c) {
+				//	int32_t letter = 0xf&*(a->cigar + c);
+					int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
+					int32_t l = (c == e && left > 0) ? left: length;
+					ln += l;
+				}
+				ln = (ln >= 60) ? 6 : (ln/10);
+				fprintf(stdout, "\t");
+				for (i = 0; i < ln; ++i) {
+					fprintf(stdout, "      %4d", n);
+					n += 10;
+				}
+				fprintf(stdout, "\n");
+
 				fprintf(stdout, "Target:\t");
 				for (c = e; c < a->cigarLen; ++c) {
-//					fprintf(stderr, "c: %d\n", c);
 					int32_t letter = 0xf&*(a->cigar + c);
 					int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
 					int32_t l = (count == 0 && left > 0) ? left: length;
-//					fprintf(stderr, "l: %d\n", l);
 					if (letter == 1) {
 						for (i = 0; i < l; ++i) {
 							fprintf(stdout, "-");
@@ -102,14 +113,11 @@ void ssw_write (s_align* a,
 							++ count;
 							if (count == 60) goto step2;
 						}
-					//	q += i;
 					}	
 				}
-			//	qb = q;
 step2:
 				fprintf(stdout, "\n\t");
 				q = qb;
-			//	p = a->read_begin1 - 1 + 60*r;
 				count = 0;
 				for (c = e; c < a->cigarLen; ++c) {
 					int32_t letter = 0xf&*(a->cigar + c);
@@ -127,8 +135,6 @@ step2:
 								goto step3;
 							}
 						}
-				//		q += i;
-				//		p += i;	
 					}else { 
 						for (i = 0; i < l; ++i) {
 							fprintf(stdout, "*");
@@ -145,7 +151,6 @@ step2:
 step3:
 				fprintf(stdout, "\nQuery:\t");
 				p = pb;
-			//	fprintf(stderr, "p: %d\n", p);
 				count = 0;
 				for (c = e; c < a->cigarLen; ++c) {
 					int32_t letter = 0xf&*(a->cigar + c);
@@ -157,7 +162,6 @@ step3:
 							++ count;
 							if (count == 60) {
 								left = length - i - 1;
-			//			fprintf(stderr, "left: %d\n", left);
 								e = (left == 0) ? (c + 1) : c;
 								goto end;
 							}
@@ -170,21 +174,24 @@ step3:
 							if (count == 60) {
 								pb = p;
 								left = length - i - 1;
-			//			fprintf(stderr, "left: %d\n", left);
 								e = (left == 0) ? (c + 1) : c;
 								goto end;
 							}
 						}
-				//		p += i;
 					}
 				}
 				e = c;
 end:
+				fprintf(stdout, "\n");
+				n -= 60;
+				fprintf(stdout, "\t");
+				for (i = 0; i < ln; ++i) {
+					fprintf(stdout, "      %4d", n);
+					n += 10;
+				}
 				fprintf(stdout, "\n\n");
-//				++r;	
 			}
 		}
-	//	fprintf(stdout, "\n\n");
 	}else {	// Sam format output
 		fprintf(stdout, "%s\t", read->name.s);
 		if (a->score1 == 0) fprintf(stdout, "4\t*\t0\t255\t*\t*\t0\t0\t*\t*\n");
