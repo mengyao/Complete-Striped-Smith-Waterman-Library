@@ -292,11 +292,11 @@ int main (int argc, char * const argv[]) {
 		fprintf(stderr, "\n");
 		fprintf(stderr, "Usage: ssw_test [options] ... <target.fa> <query.fasta>(or <query.fastq>)\n");	
 		fprintf(stderr, "Options:\n");
-		fprintf(stderr, "\t-m N\tN is a positive integer for weight match in genome sequence alignment.\n");
-		fprintf(stderr, "\t-x N\tN is a positive integer. -N will be used as weight mismatch in genome sequence alignment.\n");
-		fprintf(stderr, "\t-o N\tN is a positive integer. -N will be used as the weight for the gap opening.\n");
-		fprintf(stderr, "\t-e N\tN is a positive integer. -N will be used as the weight for the gap extension.\n");
-		fprintf(stderr, "\t-a FILE\tFor protein sequence alignment. FILE is either the Blosum or Pam weight matrix. Recommend to use the matrix\n\t\tincluding B Z X * columns. Otherwise, corresponding scores will be signed to 0.\n"); 
+		fprintf(stderr, "\t-m N\tN is a positive integer for weight match in genome sequence alignment. [default: 2]\n");
+		fprintf(stderr, "\t-x N\tN is a positive integer. -N will be used as weight mismatch in genome sequence alignment. [default: 2]\n");
+		fprintf(stderr, "\t-o N\tN is a positive integer. -N will be used as the weight for the gap opening. [default: 3]\n");
+		fprintf(stderr, "\t-e N\tN is a positive integer. -N will be used as the weight for the gap extension. [default: 1]\n");
+		fprintf(stderr, "\t-a FILE\tRequired for protein sequence alignment. If don't set this option, the protein alignment results will be wrong. FILE is either the Blosum or Pam weight matrix. Recommend to use the matrix\n\t\tincluding B Z X * columns. Otherwise, corresponding scores will be signed to 0.\n"); 
 		fprintf(stderr, "\t-c\tReturn the alignment in cigar format.\n");
 		fprintf(stderr, "\t-r\tThe best alignment will be picked between the original read alignment and the reverse complement read alignment.\n");
 		fprintf(stderr, "\t-s\tOutput in SAM format.\n\n");
