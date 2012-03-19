@@ -183,7 +183,7 @@ step3:
 				e = c;
 end:
 				fprintf(stdout, "\n");
-				n -= 60;
+				n -= ln * 10;
 				fprintf(stdout, "\t");
 				for (i = 0; i < ln; ++i) {
 					fprintf(stdout, "      %4d", n);
