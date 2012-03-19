@@ -82,20 +82,19 @@ void ssw_write (s_align* a,
 				int32_t p = pb;
 				int32_t ln = 0;
 				for (c = e; c < a->cigarLen; ++c) {
-				//	int32_t letter = 0xf&*(a->cigar + c);
 					int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
 					int32_t l = (c == e && left > 0) ? left: length;
 					ln += l;
 				}
 				ln = (ln >= 60) ? 6 : (ln/10);
-				fprintf(stdout, "\t");
+				fprintf(stdout, "        ");
 				for (i = 0; i < ln; ++i) {
 					fprintf(stdout, "      %4d", n);
 					n += 10;
 				}
 				fprintf(stdout, "\n");
 
-				fprintf(stdout, "Target:\t");
+				fprintf(stdout, "Target: ");
 				for (c = e; c < a->cigarLen; ++c) {
 					int32_t letter = 0xf&*(a->cigar + c);
 					int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
@@ -116,7 +115,7 @@ void ssw_write (s_align* a,
 					}	
 				}
 step2:
-				fprintf(stdout, "\n\t");
+				fprintf(stdout, "\n        ");
 				q = qb;
 				count = 0;
 				for (c = e; c < a->cigarLen; ++c) {
@@ -149,7 +148,7 @@ step2:
 					}
 				}
 step3:
-				fprintf(stdout, "\nQuery:\t");
+				fprintf(stdout, "\nQuery:  ");
 				p = pb;
 				count = 0;
 				for (c = e; c < a->cigarLen; ++c) {
@@ -181,10 +180,11 @@ step3:
 					}
 				}
 				e = c;
+				left = 0;
 end:
 				fprintf(stdout, "\n");
 				n -= ln * 10;
-				fprintf(stdout, "\t");
+				fprintf(stdout, "        ");
 				for (i = 0; i < ln; ++i) {
 					fprintf(stdout, "      %4d", n);
 					n += 10;
