@@ -84,7 +84,7 @@ __m128i* qP_byte (const int8_t* read_num,
 			j = i; 
 			for (segNum = 0; LIKELY(segNum < 16) ; segNum ++) {
 				*t++ = j>= readLen ? 0 : mat[nt * n + read_num[j]] + bias;
-				fprintf(stderr, "t: %d\t", *(t - 1));
+				fprintf(stderr, "t: %d, num: %d\t", *(t - 1), read_num[j]);
 				j += segLen;
 			}
 		}
