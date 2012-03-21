@@ -421,7 +421,8 @@ int main (int argc, char * const argv[]) {
 		ref_seq = kseq_init(ref_fp);
 		while ((l = kseq_read(ref_seq)) >= 0) {
 			s_align* result, *result_rc = 0;
-			int32_t refLen = ref_seq->seq.l;
+			//int32_t refLen = ref_seq->seq.l;
+			int32_t refLen = (ref_seq->seq.s[ref_seq->seq.l] == 0) ? (ref_seq->seq.l - 1) : ref_seq->seq.l; 
 			int8_t flag = 0;
 			int8_t* ref_num = char2num(ref_seq->seq.s, table, refLen);
 			if (path == 1) flag = 1;
