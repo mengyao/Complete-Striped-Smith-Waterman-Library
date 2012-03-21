@@ -73,7 +73,10 @@ __m128i* qP_byte (const int8_t* read_num,
 	int8_t* t = (int8_t*)vProfile;
 	int32_t nt, i, j;
 	int32_t segNum;
-
+	for (j = 0; j < 24; ++j) {
+		for (i = 0; i < 24; ++i) fprintf(stderr, "%d\t", mat[j*24+i]);
+		fprintf(stderr, "\n");
+	}
 	fprintf(stderr, "readLen: %d\tsegLen: %d\tn: %d\n", readLen, segLen, n);
 	for(i = 0; i < readLen; ++i) fprintf(stderr, "%d\t", read_num[i]);
 	fprintf(stderr, "\n");	
@@ -84,7 +87,7 @@ __m128i* qP_byte (const int8_t* read_num,
 			j = i; 
 			for (segNum = 0; LIKELY(segNum < 16) ; segNum ++) {
 				*t++ = j>= readLen ? 0 : mat[nt * n + read_num[j]] + bias;
-				fprintf(stderr, "t: %d, num: %d\t", *(t - 1), read_num[j]);
+		//		fprintf(stderr, "t: %d, num[%d]: %d\t", *(t - 1), j, read_num[j]);
 				j += segLen;
 			}
 		}
