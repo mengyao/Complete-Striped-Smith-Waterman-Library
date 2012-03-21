@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 03/14/12.
+ *  Last revision by Mengyao Zhao on 03/20/12.
  *	New features: make weight as options 
  */
 
@@ -237,11 +237,40 @@ int main (int argc, char * const argv[]) {
 	float cpu_time;
 	gzFile read_fp, ref_fp;
 	kseq_t *read_seq, *ref_seq;
-	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0;
-	int8_t* mat = (int8_t*)calloc(25, sizeof(int8_t));
+	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0;
+	int8_t* mata = (int8_t*)calloc(25, sizeof(int8_t)), *mat = mata;
 	char mat_name[16];
 	mat_name[0] = '\0';
 
+	int8_t mat50[] = {
+	//  A   R   N   D   C   Q   E   G   H   I   L   K   M   F   P   S   T   W   Y   V   B   J   Z   X   *   
+     	5, -2, -1, -2, -1, -1, -1,  0, -2, -1, -2, -1, -1, -3, -1,  1,  0, -3, -2,  0, -2, -2, -1, -1, -5,	// A
+       -2,  7, -1, -2, -4,  1,  0, -3,  0, -4, -3,  3, -2, -3, -3, -1, -1, -3, -1, -3, -1, -3,  0, -1, -5,	// R
+       -1, -1,  7,  2, -2,  0,  0,  0,  1, -3, -4,  0, -2, -4, -2,  1,  0, -4, -2, -3,  5, -4,  0, -1, -5,	// N
+       -2, -2,  2,  8, -4,  0,  2, -1, -1, -4, -4, -1, -4, -5, -1,  0, -1, -5, -3, -4,  6, -4,  1, -1, -5,	// D
+       -1, -4, -2, -4, 13, -3, -3, -3, -3, -2, -2, -3, -2, -2, -4, -1, -1, -5, -3, -1, -3, -2, -3, -1, -5,	// C
+       -1,  1,  0,  0, -3,  7,  2, -2,  1, -3, -2,  2,  0, -4, -1,  0, -1, -1, -1, -3,  0, -3,  4, -1, -5,	// Q
+       -1,  0,  0,  2, -3,  2,  6, -3,  0, -4, -3,  1, -2, -3, -1, -1, -1, -3, -2, -3,  1, -3,  5, -1, -5,	// E
+     	0, -3,  0, -1, -3, -2, -3,  8, -2, -4, -4, -2, -3, -4, -2,  0, -2, -3, -3, -4, -1, -4, -2, -1, -5,	// G
+       -2,  0,  1, -1, -3,  1,  0, -2, 10, -4, -3,  0, -1, -1, -2, -1, -2, -3,  2, -4,  0, -3,  0, -1, -5,	// H
+       -1, -4, -3, -4, -2, -3, -4, -4, -4,  5,  2, -3,  2,  0, -3, -3, -1, -3, -1,  4, -4,  4, -3, -1, -5,	// I
+       -2, -3, -4, -4, -2, -2, -3, -4, -3,  2,  5, -3,  3,  1, -4, -3, -1, -2, -1,  1, -4,  4, -3, -1, -5,	// L
+       -1,  3,  0, -1, -3,  2,  1, -2,  0, -3, -3,  6, -2, -4, -1,  0, -1, -3, -2, -3,  0, -3,  1, -1, -5,	// K
+       -1, -2, -2, -4, -2,  0, -2, -3, -1,  2,  3, -2,  7,  0, -3, -2, -1, -1,  0,  1, -3,  2, -1, -1, -5,	// M
+       -3, -3, -4, -5, -2, -4, -3, -4, -1,  0,  1, -4,  0,  8, -4, -3, -2,  1,  4, -1, -4,  1, -4, -1, -5,	// F
+       -1, -3, -2, -1, -4, -1, -1, -2, -2, -3, -4, -1, -3, -4, 10, -1, -1, -4, -3, -3, -2, -3, -1, -1, -5,	// P
+     	1, -1,  1,  0, -1,  0, -1,  0, -1, -3, -3,  0, -2, -3, -1,  5,  2, -4, -2, -2,  0, -3,  0, -1, -5,	// S
+    	0, -1,  0, -1, -1, -1, -1, -2, -2, -1, -1, -1, -1, -2, -1,  2,  5, -3, -2,  0,  0, -1, -1, -1, -5, 	// T
+       -3, -3, -4, -5, -5, -1, -3, -3, -3, -3, -2, -3, -1,  1, -4, -4, -3, 15,  2, -3, -5, -2, -2, -1, -5, 	// W
+       -2, -1, -2, -3, -3, -1, -2, -3,  2, -1, -1, -2,  0,  4, -3, -2, -2,  2,  8, -1, -3, -1, -2, -1, -5, 	// Y
+     	0, -3, -3, -4, -1, -3, -3, -4, -4,  4,  1, -3,  1, -1, -3, -2,  0, -3, -1,  5, -3,  2, -3, -1, -5, 	// V
+       -2, -1,  5,  6, -3,  0,  1, -1,  0, -4, -4,  0, -3, -4, -2,  0,  0, -5, -3, -3,  6, -4,  1, -1, -5, 	// B
+       -2, -3, -4, -4, -2, -3, -3, -4, -3,  4,  4, -3,  2,  1, -3, -3, -1, -2, -1,  2, -4,  4, -3, -1, -5, 	// J
+       -1,  0,  0,  1, -3,  4,  5, -2,  0, -3, -3,  1, -1, -4, -1,  0, -1, -2, -2, -3,  1, -3,  5, -1, -5, 	// Z
+       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -5, 	// X
+       -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5,  1 	// *
+	};	
+	
 	/* This table is used to transform amino acid letters into numbers. */
 	int8_t aa_table[128] = {
 		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 
@@ -270,19 +299,20 @@ int main (int argc, char * const argv[]) {
 
 	// initialize scoring matrix for genome sequences
 	for (l = k = 0; LIKELY(l < 4); ++l) {
-		for (m = 0; LIKELY(m < 4); ++m) mat[k++] = l == m ? match : -mismatch;	/* weight_match : -weight_mismatch */
-		mat[k++] = 0; // ambiguous base
+		for (m = 0; LIKELY(m < 4); ++m) mata[k++] = l == m ? match : -mismatch;	/* weight_match : -weight_mismatch */
+		mata[k++] = 0; // ambiguous base
 	}
-	for (m = 0; LIKELY(m < 5); ++m) mat[k++] = 0;
+	for (m = 0; LIKELY(m < 5); ++m) mata[k++] = 0;
 
 	// Parse command line.
-	while ((l = getopt(argc, argv, "m:x:o:e:a:crs")) >= 0) {
+	while ((l = getopt(argc, argv, "m:x:o:e:a:pcrs")) >= 0) {
 		switch (l) {
 			case 'm': match = atoi(optarg); break;
 			case 'x': mismatch = atoi(optarg); break;
 			case 'o': gap_open = atoi(optarg); break;
 			case 'e': gap_extension = atoi(optarg); break;
 			case 'a': strcpy(mat_name, optarg); break;
+			case 'p': protein = 1; break;
 			case 'c': path = 1; break;
 			case 'r': reverse = 1; break;
 			case 's': sam = 1; break;
@@ -296,18 +326,23 @@ int main (int argc, char * const argv[]) {
 		fprintf(stderr, "\t-x N\tN is a positive integer. -N will be used as weight mismatch in genome sequence alignment. [default: 2]\n");
 		fprintf(stderr, "\t-o N\tN is a positive integer. -N will be used as the weight for the gap opening. [default: 3]\n");
 		fprintf(stderr, "\t-e N\tN is a positive integer. -N will be used as the weight for the gap extension. [default: 1]\n");
-		fprintf(stderr, "\t-a FILE\tRequired for protein sequence alignment. If don't set this option, the protein alignment results will be wrong. FILE is either the Blosum or Pam weight matrix. Recommend to use the matrix\n\t\tincluding B Z X * columns. Otherwise, corresponding scores will be signed to 0.\n"); 
+		fprintf(stderr, "\t-p\tDo protein sequence alignment. Without this option, the ssw_test will do genome sequence alignment.\n");
+		fprintf(stderr, "\t-a FILE\tFILE is either the Blosum or Pam weight matrix. Recommend to use the matrix\n\t\tincluding B Z X * columns. Otherwise, corresponding scores will be signed to 0. [default: Blosum50]\n"); 
 		fprintf(stderr, "\t-c\tReturn the alignment in cigar format.\n");
 		fprintf(stderr, "\t-r\tThe best alignment will be picked between the original read alignment and the reverse complement read alignment.\n");
 		fprintf(stderr, "\t-s\tOutput in SAM format.\n\n");
 		return 1;
 	}
 
+	if (protein == 1 && (! strcmp(mat_name, "\0"))) {
+		n = 24;
+		table = aa_table;
+		mat = mat50;
+	} else if (strcmp(mat_name, "\0")) {
 	// Parse score matrix.
-	if (strcmp(mat_name, "\0"))	{
 		FILE *f_mat = fopen(mat_name, "r");
 		char line[128];
-		mat = (int8_t*)realloc(mat, 1024 * sizeof(int8_t));
+		mata = (int8_t*)realloc(mata, 1024 * sizeof(int8_t));
 		k = 0;
 		while (fgets(line, 128, f_mat)) {
 			if (line[0] == '*' || (line[0] >= 'A' && line[0] <= 'Z')) {
@@ -318,7 +353,7 @@ int main (int argc, char * const argv[]) {
 					if ((line[l] >= '0' && line[l] <= '9') || line[l] == '-') *s++ = line[l];	
 					else if (str[0] != '\0') {					
 						*s = '\0';
-						mat[k++] = (int8_t)atoi(str);
+						mata[k++] = (int8_t)atoi(str);
 						s = str;
 						str[0] = '\0';			
 					}
@@ -326,7 +361,7 @@ int main (int argc, char * const argv[]) {
 				}
 				if (str[0] != '\0') {
 					*s = '\0';
-					mat[k++] = (int8_t)atoi(str);
+					mata[k++] = (int8_t)atoi(str);
 					s = str;
 					str[0] = '\0';			
 				}
@@ -342,12 +377,13 @@ int main (int argc, char * const argv[]) {
 			return 1;
 		} 
 		fclose(f_mat);	
-		if (mat[525] <= 0) {
+		if (mata[525] <= 0) {
 			fprintf(stderr, "Improper weight matrix file format. Please use standard Blosum or Pam files.\n");
 			return 1;
 		}
 		n = 24;
 		table = aa_table;
+	//	mat = matp;
 	}
 
 	ref_fp = gzopen(argv[optind], "r");
@@ -363,10 +399,14 @@ int main (int argc, char * const argv[]) {
 	// alignment
 	while ((m = kseq_read(read_seq)) >= 0) {
 		s_profile* p, *p_rc = 0;
-		int32_t readLen = read_seq->seq.l; 
+		//int32_t readLen = read_seq->seq.l; 
+		int32_t readLen = (read_seq->seq.s[read_seq->seq.l] == 0) ? (read_seq->seq.l - 1) : read_seq->seq.l; 
 		char* read_rc = 0;
 		int8_t* num, *num_rc = 0;
-		
+	
+		fprintf(stderr, "readLen1: %d\n", readLen);
+		fprintf(stderr, "read[last]: %d\n", read_seq->seq.s[read_seq->seq.l]);
+	
 		num = char2num(read_seq->seq.s, table, readLen);
 		p = ssw_init(num, readLen, mat, n, 2);
 		if (reverse == 1 && n == 5) {
@@ -387,6 +427,7 @@ int main (int argc, char * const argv[]) {
 			int8_t* ref_num = char2num(ref_seq->seq.s, table, refLen);
 			if (path == 1) flag = 1;
 			result = ssw_align (p, ref_num, refLen, gap_open, gap_extension, flag, 0);
+			fprintf(stderr, "result score: %d\n", result->score1);
 			if (reverse == 1) result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, 0);
 			if (result_rc && result_rc->score1 > result->score1) {
 				if (sam) ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 1);
@@ -411,7 +452,7 @@ int main (int argc, char * const argv[]) {
 	cpu_time = ((float) (end - start)) / CLOCKS_PER_SEC;
 	fprintf(stdout, "CPU time: %f seconds\n", cpu_time);
 
-	free(mat);
+	if (mat == mata) free(mat);
 	kseq_destroy(read_seq);
 	gzclose(read_fp);
 	return 0;
