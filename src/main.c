@@ -346,7 +346,7 @@ int main (int argc, char * const argv[]) {
 		m = 0;
 		while (fgets(line, 128, f_mat)) {
 			if (line[0] == '*' || (line[0] >= 'A' && line[0] <= 'Z')) {
-				if (line[0] >= 'A' && line[0] <= 'Z') aa_table[(int)line[0]] = aa_table[(int)line[0]] = m;
+				if (line[0] >= 'A' && line[0] <= 'Z') aa_table[(int)line[0]] = aa_table[(int)line[0] + 32] = m;
 				char str[4], *s = str;
 				str[0] = '\0';
 				l = 1;
@@ -392,7 +392,8 @@ int main (int argc, char * const argv[]) {
 	// alignment
 	while ((m = kseq_read(read_seq)) >= 0) {
 		s_profile* p, *p_rc = 0;
-		int32_t readLen = (read_seq->seq.s[read_seq->seq.l] == 0) ? (read_seq->seq.l - 1) : read_seq->seq.l; 
+		int32_t readLen = (read_seq->seq.s[read_seq->seq.l] == 0) ? (read_seq->seq.l - 1) : read_seq->seq.l;
+		fprintf(stderr, "readLen: %d\n", readLen); 
 		char* read_rc = 0;
 		int8_t* num, *num_rc = 0;
 	
@@ -412,6 +413,7 @@ int main (int argc, char * const argv[]) {
 		while ((l = kseq_read(ref_seq)) >= 0) {
 			s_align* result, *result_rc = 0;
 			int32_t refLen = (ref_seq->seq.s[ref_seq->seq.l] == 0) ? (ref_seq->seq.l - 1) : ref_seq->seq.l; 
+		fprintf(stderr, "refLen: %d\n", refLen); 
 			int8_t flag = 0;
 			int8_t* ref_num = char2num(ref_seq->seq.s, table, refLen);
 			if (path == 1) flag = 1;

@@ -73,12 +73,12 @@ __m128i* qP_byte (const int8_t* read_num,
 	int8_t* t = (int8_t*)vProfile;
 	int32_t nt, i, j;
 	int32_t segNum;
-/*	for (j = 0; j < n; ++j) {
+	for (j = 0; j < n; ++j) {
 		for (i = 0; i < n; ++i) fprintf(stderr, "%d\t", mat[j*n+i]);
 		fprintf(stderr, "\n");
-	}*/
-/*	fprintf(stderr, "readLen: %d\tsegLen: %d\tn: %d\n", readLen, segLen, n);
-	for(i = 0; i < readLen; ++i) fprintf(stderr, "%d\t", read_num[i]);
+	}
+	fprintf(stderr, "readLen: %d\tsegLen: %d\tn: %d\n", readLen, segLen, n);
+/*	for(i = 0; i < readLen; ++i) fprintf(stderr, "%d\t", read_num[i]);
 	fprintf(stderr, "\n");	*/
 	
 	/* Generate query profile rearrange query sequence & calculate the weight of match/mismatch */
@@ -729,7 +729,6 @@ s_align* ssw_align (const s_profile* prof,
 	// Find the alignment scores and ending positions
 	if (prof->profile_byte) {
 		bests = sw_sse2_byte(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_byte, -1, 4);
-//	fprintf(stderr, "bests[0].score1: %d\n", bests[0].score);
 		if (prof->profile_word && bests[0].score == 225) {
 			bests = sw_sse2_word(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_word, -1);
 			word = 1;
@@ -742,7 +741,6 @@ s_align* ssw_align (const s_profile* prof,
 		return 0;
 	}
 	r->score1 = bests[0].score;
-//	fprintf(stderr, "bests[0].score: %d\n", bests[0].score);
 	r->score2 = bests[1].score;
 	r->ref_end1 = bests[0].ref + 1;
 	r->read_end1 = bests[0].read + 1;
