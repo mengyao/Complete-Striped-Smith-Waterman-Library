@@ -87,7 +87,8 @@ __m128i* qP_byte (const int8_t* read_num,
 			j = i; 
 			for (segNum = 0; LIKELY(segNum < 16) ; segNum ++) {
 				*t++ = j>= readLen ? 0 : mat[nt * n + read_num[j]] + bias;
-				fprintf(stderr, "t: %d, num[%d]: %d\t", *(t - 1), j, read_num[j]);
+//				fprintf(stderr, "t: %d, num[%d]: %d, mat: %d\t", *(t - 1), j, read_num[j], read_num[j] + nt*n);
+	//			fprintf(stderr, "t: %d\t", *(t - 1));
 				j += segLen;
 			}
 		}
@@ -190,14 +191,14 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
 		for (j = 0; LIKELY(j < segLen); ++j) {
 
 			vH = _mm_adds_epu8(vH, _mm_load_si128(vP + j));
-	/*		int8_t* test = (int8_t*)(vP + j);
+			int8_t* test = (int8_t*)(vP + j);
 			int32_t test1;
 			for (test1 = 0; test1 < 16; ++test1) fprintf(stderr, "vP: %d\t", *(test + test1));
 			fprintf(stderr, "\n");
 			test = (int8_t*)&vH;
 			for (test1 = 0; test1 < 16; ++test1) fprintf(stderr, "vP: %d\t", *(test + test1));
 			fprintf(stderr, "\n");
-	*/	
+		
 			vH = _mm_subs_epu8(vH, vBias); /* vH will be always > 0 */
 
 			/* Get max from vH, vE and vF. */
@@ -250,7 +251,7 @@ end:
 			
 			if (LIKELY(temp > max)) {
 				max = temp;
-	//			fprintf(stderr, "max: %d\n", max);
+				fprintf(stderr, "max: %d\n", max);
 				if (max + bias >= 255) break;	//overflow
 				end_ref = i;
 			
@@ -729,8 +730,11 @@ s_align* ssw_align (const s_profile* prof,
 	// Find the alignment scores and ending positions
 	if (prof->profile_byte) {
 		bests = sw_sse2_byte(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_byte, -1, 4);
-		if (prof->profile_word && bests[0].score == 225) {
+		fprintf(stderr, "profile_word: %d\tbest: %d\n", prof->profile_word, bests[0].score);
+		if (prof->profile_word && bests[0].score == 255) {
+			fprintf(stderr, "here\n");
 			bests = sw_sse2_word(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_word, -1);
+			fprintf(stderr, "word: %d\n", bests[0].score);
 			word = 1;
 		}
 	}else if (prof->profile_word) {
