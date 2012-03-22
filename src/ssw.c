@@ -73,10 +73,10 @@ __m128i* qP_byte (const int8_t* read_num,
 	int8_t* t = (int8_t*)vProfile;
 	int32_t nt, i, j;
 	int32_t segNum;
-	for (j = 0; j < 24; ++j) {
-		for (i = 0; i < 24; ++i) fprintf(stderr, "%d\t", mat[j*24+i]);
+/*	for (j = 0; j < n; ++j) {
+		for (i = 0; i < n; ++i) fprintf(stderr, "%d\t", mat[j*n+i]);
 		fprintf(stderr, "\n");
-	}
+	}*/
 	fprintf(stderr, "readLen: %d\tsegLen: %d\tn: %d\n", readLen, segLen, n);
 	for(i = 0; i < readLen; ++i) fprintf(stderr, "%d\t", read_num[i]);
 	fprintf(stderr, "\n");	

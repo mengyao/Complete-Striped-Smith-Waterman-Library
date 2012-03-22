@@ -343,8 +343,10 @@ int main (int argc, char * const argv[]) {
 		char line[128];
 		mata = (int8_t*)realloc(mata, 1024 * sizeof(int8_t));
 		k = 0;
+		m = 0;
 		while (fgets(line, 128, f_mat)) {
 			if (line[0] == '*' || (line[0] >= 'A' && line[0] <= 'Z')) {
+				if (line[0] >= 'A' && line[0] <= 'Z') aa_table[(int)line[0]] = aa_table[(int)line[0]] = m;
 				char str[4], *s = str;
 				str[0] = '\0';
 				l = 1;
@@ -364,25 +366,33 @@ int main (int argc, char * const argv[]) {
 					s = str;
 					str[0] = '\0';			
 				}
+				++m;
 			}
-			m = k%24;
-			while ((m%23 == 0 || m%22 == 0 || m%21 == 0 || m%20 == 0) && m != 0) {
-				k++;
-				m = k%24;
-			} // If the weight matrix doesn't BZX*, set their values 0.
+//			m = k%24;
+//			while ((m%23 == 0 || m%22 == 0 || m%21 == 0 || m%20 == 0) && m != 0) {
+//				k++;
+//				m = k%24;
+//			} // If the weight matrix doesn't BZX*, set their values 0.
 		}
 		if (k == 0) {
 			fprintf(stderr, "Problem of reading the weight matrix file.\n");
 			return 1;
 		} 
 		fclose(f_mat);	
-		if (mata[525] <= 0) {
+/*		if (mata[525] <= 0) {
 			fprintf(stderr, "Improper weight matrix file format. Please use standard Blosum or Pam files.\n");
 			return 1;
 		}
-		n = 24;
+		n = 24;*/
+		n = m;
 		table = aa_table;
+		mat = mata;
 	//	mat = matp;
+	}
+	int32_t i, j;
+	for (j = 0; j < n; ++j) {
+		for (i = 0; i < n; ++i) fprintf(stderr, "%d\t", mata[j*n+i]);
+		fprintf(stderr, "\n");
 	}
 
 	ref_fp = gzopen(argv[optind], "r");
