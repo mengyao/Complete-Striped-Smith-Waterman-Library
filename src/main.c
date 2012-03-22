@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 03/20/12.
+ *  Last revision by Mengyao Zhao on 03/22/12.
  *	New features: make weight as options 
  */
 
@@ -368,31 +368,15 @@ int main (int argc, char * const argv[]) {
 				}
 				++m;
 			}
-//			m = k%24;
-//			while ((m%23 == 0 || m%22 == 0 || m%21 == 0 || m%20 == 0) && m != 0) {
-//				k++;
-//				m = k%24;
-//			} // If the weight matrix doesn't BZX*, set their values 0.
 		}
 		if (k == 0) {
 			fprintf(stderr, "Problem of reading the weight matrix file.\n");
 			return 1;
 		} 
 		fclose(f_mat);	
-/*		if (mata[525] <= 0) {
-			fprintf(stderr, "Improper weight matrix file format. Please use standard Blosum or Pam files.\n");
-			return 1;
-		}
-		n = 24;*/
 		n = m;
 		table = aa_table;
 		mat = mata;
-	//	mat = matp;
-	}
-	int32_t i, j;
-	for (j = 0; j < n; ++j) {
-		for (i = 0; i < n; ++i) fprintf(stderr, "%d\t", mata[j*n+i]);
-		fprintf(stderr, "\n");
 	}
 
 	ref_fp = gzopen(argv[optind], "r");
@@ -408,13 +392,9 @@ int main (int argc, char * const argv[]) {
 	// alignment
 	while ((m = kseq_read(read_seq)) >= 0) {
 		s_profile* p, *p_rc = 0;
-		//int32_t readLen = read_seq->seq.l; 
 		int32_t readLen = (read_seq->seq.s[read_seq->seq.l] == 0) ? (read_seq->seq.l - 1) : read_seq->seq.l; 
 		char* read_rc = 0;
 		int8_t* num, *num_rc = 0;
-	
-		fprintf(stderr, "readLen1: %d\n", readLen);
-		fprintf(stderr, "read[last]: %d\n", read_seq->seq.s[read_seq->seq.l]);
 	
 		num = char2num(read_seq->seq.s, table, readLen);
 		p = ssw_init(num, readLen, mat, n, 2);
@@ -431,14 +411,12 @@ int main (int argc, char * const argv[]) {
 		ref_seq = kseq_init(ref_fp);
 		while ((l = kseq_read(ref_seq)) >= 0) {
 			s_align* result, *result_rc = 0;
-			//int32_t refLen = ref_seq->seq.l;
 			int32_t refLen = (ref_seq->seq.s[ref_seq->seq.l] == 0) ? (ref_seq->seq.l - 1) : ref_seq->seq.l; 
 			int8_t flag = 0;
 			int8_t* ref_num = char2num(ref_seq->seq.s, table, refLen);
 			if (path == 1) flag = 1;
 			result = ssw_align (p, ref_num, refLen, gap_open, gap_extension, flag, 0);
-			fprintf(stderr, "result score: %d\n", result->score1);
-			if (reverse == 1) result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, 0);
+			if (reverse == 1 && protein == 0) result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, 0);
 			if (result_rc && result_rc->score1 > result->score1) {
 				if (sam) ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 1);
 				else ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 0);
