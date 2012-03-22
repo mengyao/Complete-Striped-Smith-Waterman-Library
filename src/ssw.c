@@ -78,8 +78,8 @@ __m128i* qP_byte (const int8_t* read_num,
 		fprintf(stderr, "\n");
 	}
 	fprintf(stderr, "readLen: %d\tsegLen: %d\tn: %d\n", readLen, segLen, n);
-/*	for(i = 0; i < readLen; ++i) fprintf(stderr, "%d\t", read_num[i]);
-	fprintf(stderr, "\n");	*/
+	for(i = 0; i < readLen; ++i) fprintf(stderr, "%d\t", read_num[i]);
+	fprintf(stderr, "\n");	
 	
 	/* Generate query profile rearrange query sequence & calculate the weight of match/mismatch */
 	for (nt = 0; LIKELY(nt < n); nt ++) {
@@ -87,7 +87,7 @@ __m128i* qP_byte (const int8_t* read_num,
 			j = i; 
 			for (segNum = 0; LIKELY(segNum < 16) ; segNum ++) {
 				*t++ = j>= readLen ? 0 : mat[nt * n + read_num[j]] + bias;
-		//		fprintf(stderr, "t: %d, num[%d]: %d\t", *(t - 1), j, read_num[j]);
+				fprintf(stderr, "t: %d, num[%d]: %d\t", *(t - 1), j, read_num[j]);
 				j += segLen;
 			}
 		}
