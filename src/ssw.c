@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 03/22/12.
+ *	Last revision by Mengyao Zhao on 03/23/12.
  *	New features: Combine files for api wrapping. 
  *
  */
@@ -301,7 +301,6 @@ __m128i* qP_word (const int8_t* read_num,
 			j = i; 
 			for (segNum = 0; LIKELY(segNum < 8) ; segNum ++) {
 				*t++ = j>= readLen ? 0 : mat[nt * n + read_num[j]];
-//				fprintf(stderr, "t: %d\t", *(t - 1));
 				j += segLen;
 			}
 		}
@@ -436,7 +435,6 @@ end:
 			
 			if (LIKELY(temp > max)) {
 				max = temp;
-//				fprintf(stderr, "max: %d\n", max);
 				end_ref = i;
 				for (j = 0; LIKELY(j < segLen); ++j) pvHmax[j] = pvHStore[j];
 			}

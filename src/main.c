@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 03/22/12.
+ *  Last revision by Mengyao Zhao on 03/23/12.
  *	New features: make weight as options 
  */
 
