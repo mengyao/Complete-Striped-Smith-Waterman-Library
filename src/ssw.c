@@ -73,22 +73,20 @@ __m128i* qP_byte (const int8_t* read_num,
 	int8_t* t = (int8_t*)vProfile;
 	int32_t nt, i, j;
 	int32_t segNum;
-	for (j = 0; j < n; ++j) {
+/*	for (j = 0; j < n; ++j) {
 		for (i = 0; i < n; ++i) fprintf(stderr, "%d\t", mat[j*n+i]);
 		fprintf(stderr, "\n");
 	}
 	fprintf(stderr, "readLen: %d\tsegLen: %d\tn: %d\n", readLen, segLen, n);
 	for(i = 0; i < readLen; ++i) fprintf(stderr, "%d\t", read_num[i]);
 	fprintf(stderr, "\n");	
-	
+*/	
 	/* Generate query profile rearrange query sequence & calculate the weight of match/mismatch */
 	for (nt = 0; LIKELY(nt < n); nt ++) {
 		for (i = 0; i < segLen; i ++) {
 			j = i; 
 			for (segNum = 0; LIKELY(segNum < 16) ; segNum ++) {
 				*t++ = j>= readLen ? 0 : mat[nt * n + read_num[j]] + bias;
-//				fprintf(stderr, "t: %d, num[%d]: %d, mat: %d\t", *(t - 1), j, read_num[j], read_num[j] + nt*n);
-	//			fprintf(stderr, "t: %d\t", *(t - 1));
 				j += segLen;
 			}
 		}
@@ -183,7 +181,6 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
 		
 		__m128i* vP = vProfile + ref[i] * segLen; /* Right part of the vProfile */
 
-	//	fprintf(stderr, "ref[%d]: %d\n", i, ref[i]);
 		pvHLoad = pvHStore;
 		pvHStore = pv;
 		
@@ -191,14 +188,14 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
 		for (j = 0; LIKELY(j < segLen); ++j) {
 
 			vH = _mm_adds_epu8(vH, _mm_load_si128(vP + j));
-			int8_t* test = (int8_t*)(vP + j);
+		/*	int8_t* test = (int8_t*)(vP + j);
 			int32_t test1;
 			for (test1 = 0; test1 < 16; ++test1) fprintf(stderr, "vP: %d\t", *(test + test1));
 			fprintf(stderr, "\n");
 			test = (int8_t*)&vH;
 			for (test1 = 0; test1 < 16; ++test1) fprintf(stderr, "vP: %d\t", *(test + test1));
 			fprintf(stderr, "\n");
-		
+		*/
 			vH = _mm_subs_epu8(vH, vBias); /* vH will be always > 0 */
 
 			/* Get max from vH, vE and vF. */
@@ -251,7 +248,7 @@ end:
 			
 			if (LIKELY(temp > max)) {
 				max = temp;
-				fprintf(stderr, "max: %d\n", max);
+		//		fprintf(stderr, "max: %d\n", max);
 				if (max + bias >= 255) break;	//overflow
 				end_ref = i;
 			
@@ -737,11 +734,8 @@ s_align* ssw_align (const s_profile* prof,
 	// Find the alignment scores and ending positions
 	if (prof->profile_byte) {
 		bests = sw_sse2_byte(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_byte, -1, 4);
-//		fprintf(stderr, "profile_word: %d\tbest: %d\n", prof->profile_word, bests[0].score);
 		if (prof->profile_word && bests[0].score == 255) {
-//			fprintf(stderr, "here\n");
 			bests = sw_sse2_word(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_word, -1);
-//			fprintf(stderr, "word: %d\n", bests[0].score);
 			word = 1;
 		}
 	}else if (prof->profile_word) {
@@ -757,7 +751,7 @@ s_align* ssw_align (const s_profile* prof,
 	r->read_end1 = bests[0].read + 1;
 	r->ref_end2 = bests[1].ref + 1;
 	free(bests);
-	if (flag == 0 || r->score1 == 225 || (flag == 2 && r->score1 < filter)) goto end;
+	if (flag == 0 || r->score1 == 255 || (flag == 2 && r->score1 < filter)) goto end;
 
 	// Find the beginning position of the best alignment.
 	read_reverse = seq_reverse(prof->read, r->read_end1 - 1);
