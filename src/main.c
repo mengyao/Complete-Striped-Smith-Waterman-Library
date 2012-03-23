@@ -67,7 +67,7 @@ void ssw_write (s_align* a,
 			int8_t sam) {	// 0: Blast like output; 1: Sam format output
 
 	if (sam == 0) {	// Blast like output
-		fprintf(stdout, "target_name: %s\nquery_name: %s\noptimal_alignment_score: %d\t", ref_seq->name.s, read->name.s, a->score1);
+		fprintf(stdout, "target_name: %s\nquery_name: %s\noptimal_alignment_score: %d\tsub-optimal_alignment_score: %d\t", ref_seq->name.s, read->name.s, a->score1, a->score2);
 		if (strand == 0) fprintf(stdout, "strand: +\t");
 		else fprintf(stdout, "strand: -\t");
 		if (a->ref_begin1) fprintf(stdout, "target_begin: %d\t", a->ref_begin1);
@@ -192,13 +192,13 @@ end:
 				fprintf(stdout, "\n\n");
 			}
 		}
-	}else {	// Sam format output
+	}else if (a->read_begin1 > 0) {	// Sam format output
 		fprintf(stdout, "%s\t", read->name.s);
 		if (a->score1 == 0) fprintf(stdout, "4\t*\t0\t255\t*\t*\t0\t0\t*\t*\n");
 		else {
-			int32_t c, l = a->read_end1 - a->read_begin1 + 1, p;
-			int32_t mapq = -4.343 * log(1 - abs(a->score1 - a->score2)/a->score1);
-			mapq = (int32_t) (mapq + 4.99);
+			int32_t c, l = a->read_end1 - a->read_begin1 + 1, qb = a->ref_begin1 - 1, pb = a->read_begin1 - 1, p;
+			uint32_t mapq = -4.343 * log(1 - (double)abs(a->score1 - a->score2)/(double)a->score1);
+			mapq = (uint32_t) (mapq + 4.99);
 			mapq = mapq < 254 ? mapq : 254;
 			if (strand) fprintf(stdout, "16\t");
 			else fprintf(stdout, "0\t");
@@ -227,9 +227,22 @@ end:
 					++p;
 				}
 			} else fprintf(stdout, "*");
-			fprintf(stdout,"\n");
+			fprintf(stdout, "\tAS:i:%d", a->score1);
+			mapq = 0;	// counter of difference
+			for (c = 0; c < a->cigarLen; ++c) {
+				int32_t letter = 0xf&*(a->cigar + c);
+				int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
+				if (letter == 0) {
+					for (p = 0; p < length; ++p){ 
+						if (table[(int)*(ref_seq->seq.s + qb)] != table[(int)*(read_seq + pb)]) ++mapq;
+						++qb;
+						++pb;
+					}
+				} else mapq += length; 
+			}
+			fprintf(stdout,"\tNM:i:%d\n", mapq);
 		}
-	}
+	} else fprintf(stderr, "SAM format out put is only available together with option -c.\n");
 }
 
 int main (int argc, char * const argv[]) {

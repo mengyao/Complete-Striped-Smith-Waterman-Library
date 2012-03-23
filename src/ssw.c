@@ -386,7 +386,14 @@ alignment_end* sw_sse2_word (const int8_t* ref,
 		/* inner loop to process the query sequence */
 		for (j = 0; LIKELY(j < segLen); j ++) {
 			vH = _mm_adds_epi16(vH, _mm_load_si128(vP + j));
-
+	/*		int8_t* test = (int8_t*)(vP + j);
+			int32_t test1;
+			for (test1 = 0; test1 < 16; ++test1) fprintf(stderr, "vP: %d\t", *(test + test1));
+			fprintf(stderr, "\n");
+			test = (int8_t*)&vH;
+			for (test1 = 0; test1 < 16; ++test1) fprintf(stderr, "vP: %d\t", *(test + test1));
+			fprintf(stderr, "\n");
+*/
 			/* Get max from vH, vE and vF. */
 			e = _mm_load_si128(pvE + j);
 			vH = _mm_max_epu8(vH, e);
@@ -435,9 +442,9 @@ end:
 			
 			if (LIKELY(temp > max)) {
 				max = temp;
+				fprintf(stderr, "max: %d\n", max);
 				end_ref = i;
-				for (j = 0; LIKELY(j < segLen); ++j) // keep the H1 vector
-					pvHmax[j] = pvHStore[j];
+				for (j = 0; LIKELY(j < segLen); ++j) pvHmax[j] = pvHStore[j];
 			}
 		}
 		
