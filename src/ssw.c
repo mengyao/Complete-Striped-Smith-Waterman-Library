@@ -687,7 +687,14 @@ s_profile* ssw_init (const int8_t* read, const int32_t readLen, const int8_t* ma
 	p->profile_byte = 0;
 	p->profile_word = 0;
 	
-	if (score_size == 0 || score_size == 2) p->profile_byte = qP_byte (read, mat, readLen, n, 4);
+	if (score_size == 0 || score_size == 2) {
+		/* Find the bias to use in the substitution matrix */
+		int32_t bias = 127, i;
+		for (i = 0; i < n*n; i++) if (mat[i] < bias) bias = mat[i];
+		if (bias > 0) bias = 0;
+
+		p->profile_byte = qP_byte (read, mat, readLen, n, bias);
+	}
 	if (score_size == 1 || score_size == 2) p->profile_word = qP_word (read, mat, readLen, n);
 	p->read = read;
 	p->mat = mat;
@@ -730,11 +737,11 @@ s_align* ssw_align (const s_profile* prof,
 	// Find the alignment scores and ending positions
 	if (prof->profile_byte) {
 		bests = sw_sse2_byte(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_byte, -1, 4);
-		fprintf(stderr, "profile_word: %d\tbest: %d\n", prof->profile_word, bests[0].score);
+//		fprintf(stderr, "profile_word: %d\tbest: %d\n", prof->profile_word, bests[0].score);
 		if (prof->profile_word && bests[0].score == 255) {
-			fprintf(stderr, "here\n");
+//			fprintf(stderr, "here\n");
 			bests = sw_sse2_word(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_word, -1);
-			fprintf(stderr, "word: %d\n", bests[0].score);
+//			fprintf(stderr, "word: %d\n", bests[0].score);
 			word = 1;
 		}
 	}else if (prof->profile_word) {
