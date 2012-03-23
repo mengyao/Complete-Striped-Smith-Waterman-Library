@@ -301,6 +301,7 @@ __m128i* qP_word (const int8_t* read_num,
 			j = i; 
 			for (segNum = 0; LIKELY(segNum < 8) ; segNum ++) {
 				*t++ = j>= readLen ? 0 : mat[nt * n + read_num[j]];
+//				fprintf(stderr, "t: %d\t", *(t - 1));
 				j += segLen;
 			}
 		}
@@ -386,17 +387,10 @@ alignment_end* sw_sse2_word (const int8_t* ref,
 		/* inner loop to process the query sequence */
 		for (j = 0; LIKELY(j < segLen); j ++) {
 			vH = _mm_adds_epi16(vH, _mm_load_si128(vP + j));
-	/*		int8_t* test = (int8_t*)(vP + j);
-			int32_t test1;
-			for (test1 = 0; test1 < 16; ++test1) fprintf(stderr, "vP: %d\t", *(test + test1));
-			fprintf(stderr, "\n");
-			test = (int8_t*)&vH;
-			for (test1 = 0; test1 < 16; ++test1) fprintf(stderr, "vP: %d\t", *(test + test1));
-			fprintf(stderr, "\n");
-*/
+
 			/* Get max from vH, vE and vF. */
 			e = _mm_load_si128(pvE + j);
-			vH = _mm_max_epu8(vH, e);
+			vH = _mm_max_epi16(vH, e);
 			vH = _mm_max_epi16(vH, vF);
 			vMaxColumn = _mm_max_epi16(vMaxColumn, vH);
 			
@@ -442,7 +436,7 @@ end:
 			
 			if (LIKELY(temp > max)) {
 				max = temp;
-				fprintf(stderr, "max: %d\n", max);
+//				fprintf(stderr, "max: %d\n", max);
 				end_ref = i;
 				for (j = 0; LIKELY(j < segLen); ++j) pvHmax[j] = pvHStore[j];
 			}
