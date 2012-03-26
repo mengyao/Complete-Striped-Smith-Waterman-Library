@@ -595,7 +595,7 @@ cigar* banded_sw (const int8_t* ref,
 				fprintf(stderr, "Trace back error: %d.\n", direction_line[temp1 - 1]);
 				return 0;
 		}
-		if (f == max) ++ e;
+		if (f == max) ++e;
 		else {
 			++l;
 			if (l >= s) {
@@ -616,6 +616,7 @@ cigar* banded_sw (const int8_t* ref,
 			c = (uint32_t*)realloc(c, s * sizeof(uint32_t));
 		}
 		c[l - 1] = (e+1)<<4;
+	//	c[l - 1] = e<<4;
 	}else {
 		l += 2;
 		if (l >= s) {

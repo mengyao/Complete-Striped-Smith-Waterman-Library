@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 03/12/12.
+ *	Last revision by Mengyao Zhao on 03/26/12.
  *	New features: This is the api file.
  *
  */
@@ -17,20 +17,35 @@
 #include <string.h>
 #include <emmintrin.h>
 
+/*!	@typedef	structure of the return values of the function ssw_init; contains the quiry profile	*/
 struct _profile;
 typedef struct _profile s_profile;
 
-// Positions are all 1-based.
+/*!	@typedef	structure of the return values of the function ssw_align
+	@field	score1	the best alignment score; score1 = 255 when the best alignment score is >= 255
+	@field	score2	sub-optimal alignment score
+	@field	ref_begin1	best alignment beginning position on reference;	ref_begin1 = 0 when the best alignment beginning position 
+						is not available
+	@field	ref_end1	best alignment ending position on reference
+	@field	read_begin1	best alignment beginning position on read; read_begin1 = 0 when the best alignment beginning position is 
+						not available
+	@field	read_end1	best alignment ending position on read
+	@field	read_end2	sub-optimal alignment ending position on read
+	@field	cigar	best alignment cigar; stored the same as that in BAM format, high 28 bits: length, low 4 bits: M/I/D (0/1/2); 
+					cigar = 0 when the best alignment path is not available
+	@field	cigarLen	length of the cigar string; cigarLen = 0 when the best alignment path is not available
+	@note	The fields ref_begin1, ref_end1, read_begin1 read_end1 and read_end2 all have 1-based coordinate.
+*/
 typedef struct {
-	uint16_t score1;	// best alignment score, 225: best alignment score is > 225
-	uint16_t score2;	// sub-optimal alignment score
-	int32_t ref_begin1;	// best alignment beginning position on reference, 0: none
-	int32_t ref_end1;	// best alignment ending position on reference
-	int32_t	read_begin1;	// best alignment beginning position on read, 0: none
-	int32_t read_end1;	// best alignment ending position on read
-	int32_t ref_end2;	// sub-optimal alignment ending position on reference
-	uint32_t* cigar;	// best alignment cigar, the same as that in Bam format, high 28 bits: length, low 4 bits: M/I/D (0/1/2), 0: none
-	int32_t cigarLen;	// length of the cigar string
+	uint16_t score1;	
+	uint16_t score2;	
+	int32_t ref_begin1;	
+	int32_t ref_end1;	
+	int32_t	read_begin1;	
+	int32_t read_end1;	
+	int32_t ref_end2;
+	uint32_t* cigar;	
+	int32_t cigarLen;	
 } s_align;
 
 #ifdef __cplusplus

@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 03/23/12.
+ *  Last revision by Mengyao Zhao on 03/26/12.
  *	New features: make weight as options 
  */
 
@@ -73,15 +73,15 @@ void ssw_write (s_align* a,
 		if (a->ref_begin1) fprintf(stdout, "target_begin: %d\t", a->ref_begin1);
 		fprintf(stdout, "target_end: %d\t", a->ref_end1);
 		if (a->read_begin1) fprintf(stdout, "query_begin: %d\t", a->read_begin1);
-		fprintf(stdout, "query_end: %d\n", a->read_end1);
+		fprintf(stdout, "query_end: %d\n\n", a->read_end1);
 		if (a->cigar) {
-			int32_t i, c = 0, left = 0, e = 0, qb = a->ref_begin1 - 1, pb = a->read_begin1 - 1, n = 10;
+			int32_t i, c = 0, left = 0, e = 0, qb = a->ref_begin1 - 1, pb = a->read_begin1 - 1;
 			while (e < a->cigarLen || left > 0) {
 				int32_t count = 0;
 				int32_t q = qb;
 				int32_t p = pb;
-				int32_t ln = 0;
-				for (c = e; c < a->cigarLen; ++c) {
+		//		int32_t ln = 0;
+/*				for (c = e; c < a->cigarLen; ++c) {
 					int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
 					int32_t l = (c == e && left > 0) ? left: length;
 					ln += l;
@@ -93,12 +93,13 @@ void ssw_write (s_align* a,
 					n += 10;
 				}
 				fprintf(stdout, "\n");
-
-				fprintf(stdout, "Target: ");
+*/
+				fprintf(stdout, "Target: %8d    ", q + 1);
 				for (c = e; c < a->cigarLen; ++c) {
 					int32_t letter = 0xf&*(a->cigar + c);
 					int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
 					int32_t l = (count == 0 && left > 0) ? left: length;
+//					fprintf(stderr, "left: %d\n", left);
 					if (letter == 1) {
 						for (i = 0; i < l; ++i) {
 							fprintf(stdout, "-");
@@ -115,7 +116,7 @@ void ssw_write (s_align* a,
 					}	
 				}
 step2:
-				fprintf(stdout, "\n        ");
+				fprintf(stdout, "    %d\n                    ", q);
 				q = qb;
 				count = 0;
 				for (c = e; c < a->cigarLen; ++c) {
@@ -148,8 +149,8 @@ step2:
 					}
 				}
 step3:
-				fprintf(stdout, "\nQuery:  ");
 				p = pb;
+				fprintf(stdout, "\nQuery:  %8d    ", p + 1);
 				count = 0;
 				for (c = e; c < a->cigarLen; ++c) {
 					int32_t letter = 0xf&*(a->cigar + c);
@@ -172,6 +173,7 @@ step3:
 							++ count;
 							if (count == 60) {
 								pb = p;
+//				fprintf(stderr, "length: %d\n", length);
 								left = length - i - 1;
 								e = (left == 0) ? (c + 1) : c;
 								goto end;
@@ -182,14 +184,14 @@ step3:
 				e = c;
 				left = 0;
 end:
-				fprintf(stdout, "\n");
+/*				fprintf(stdout, "\n");
 				n -= ln * 10;
 				fprintf(stdout, "        ");
 				for (i = 0; i < ln; ++i) {
 					fprintf(stdout, "      %4d", n);
 					n += 10;
-				}
-				fprintf(stdout, "\n\n");
+				}*/
+				fprintf(stdout, "    %d\n\n", p);
 			}
 		}
 	}else if (a->read_begin1 > 0) {	// Sam format output
