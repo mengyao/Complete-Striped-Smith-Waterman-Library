@@ -35,14 +35,12 @@ KSEQ_INIT(gzFile, gzread)
 
 void char2num (char* seq, int8_t* table, int32_t l, int8_t* num) {	// input l: 0; output l: length of the sequence
 	int32_t i;
-//	int8_t* num = (int8_t*)malloc(l, sizeof(int8_t));
 	for (i = 0; i < l; ++i) num[i] = table[(int)seq[i]];
-//	return num;
 }
 
-char* reverse_comple(const char* seq) {
+void reverse_comple(const char* seq, char* rc) {
 	int32_t end = strlen(seq), start = 0;
-	char* rc = (char*)malloc(end + 1);
+//	char* rc = (char*)malloc(end + 1);
 	int8_t rc_table[128] = {
 		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
 		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
@@ -62,7 +60,7 @@ char* reverse_comple(const char* seq) {
 		-- end;						
 	}					
 	if (start == end) rc[start] = (char)rc_table[(int8_t)seq[start]];			
-	return rc;					
+//	return rc;					
 }							
 
 void ssw_write (s_align* a, 
@@ -236,7 +234,7 @@ int main (int argc, char * const argv[]) {
 	float cpu_time;
 	gzFile read_fp, ref_fp;
 	kseq_t *read_seq, *ref_seq;
-	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0, s1 = 268435456, s2 = 128;
+	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0, s1 = 67108864, s2 = 128;
 	int8_t* mata = (int8_t*)calloc(25, sizeof(int8_t)), *mat = mata;
 	char mat_name[16];
 	mat_name[0] = '\0';
@@ -389,26 +387,33 @@ int main (int argc, char * const argv[]) {
 
 	// alignment
 	int8_t* ref_num = (int8_t*)malloc(s1);
-	int8_t* num = (int8_t*)malloc(s2), *num_rc;
-	if (reverse == 1 && n == 5) num_rc = (int8_t*)malloc(s2);
+	int8_t* num = (int8_t*)malloc(s2), *num_rc = 0;
+	char* read_rc = 0;
+	if (reverse == 1 && n == 5) {
+		read_rc = (char*)malloc(s2);
+		num_rc = (int8_t*)malloc(s2);
+	}
 	start = clock();
 	while ((m = kseq_read(read_seq)) >= 0) {
 		s_profile* p, *p_rc = 0;
 	//	int32_t readLen = (read_seq->seq.s[read_seq->seq.l] == 0) ? (read_seq->seq.l - 1) : read_seq->seq.l;
 		int32_t readLen = read_seq->seq.l;	
-		char* read_rc = 0;
+	//	char* read_rc = 0;
 	//	int8_t* num, *num_rc = 0;
 	
-		if (readLen > s2) {
+		if (readLen >= s2) {
 			++s2;
 			kroundup32(s2);
 			num = (int8_t*)realloc(num, s2);
-			if (reverse == 1 && n == 5) num_rc = (int8_t*)realloc(num_rc, s2);
+			if (reverse == 1 && n == 5) {
+				read_rc = (char*)realloc(read_rc, s2);
+				num_rc = (int8_t*)realloc(num_rc, s2);
+			}
 		}
 		char2num(read_seq->seq.s, table, readLen, num);
 		p = ssw_init(num, readLen, mat, n, 2);
 		if (reverse == 1 && n == 5) {
-			read_rc = reverse_comple(read_seq->seq.s);
+			reverse_comple(read_seq->seq.s, read_rc);
 			char2num(read_rc, table, readLen, num_rc);
 			p_rc = ssw_init(num_rc, readLen, mat, n, 2);
 		}else if (reverse == 1 && n == 24) {
@@ -454,7 +459,10 @@ int main (int argc, char * const argv[]) {
 	cpu_time = ((float) (end - start)) / CLOCKS_PER_SEC;
 	fprintf(stderr, "CPU time: %f seconds\n", cpu_time);
 
-	if (num_rc) free(num_rc);
+	if (num_rc) {
+		free(num_rc);
+		free(read_rc);
+	}
 	free(num);
 	free(ref_num);
 	if (mat == mata) free(mat);

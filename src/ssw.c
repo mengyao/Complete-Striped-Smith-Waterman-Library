@@ -616,7 +616,6 @@ cigar* banded_sw (const int8_t* ref,
 			c = (uint32_t*)realloc(c, s * sizeof(uint32_t));
 		}
 		c[l - 1] = (e+1)<<4;
-	//	c[l - 1] = e<<4;
 	}else {
 		l += 2;
 		if (l >= s) {
