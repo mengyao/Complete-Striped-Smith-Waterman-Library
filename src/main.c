@@ -40,7 +40,6 @@ void char2num (char* seq, int8_t* table, int32_t l, int8_t* num) {	// input l: 0
 
 void reverse_comple(const char* seq, char* rc) {
 	int32_t end = strlen(seq), start = 0;
-//	char* rc = (char*)malloc(end + 1);
 	int8_t rc_table[128] = {
 		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
 		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
@@ -60,7 +59,6 @@ void reverse_comple(const char* seq, char* rc) {
 		-- end;						
 	}					
 	if (start == end) rc[start] = (char)rc_table[(int8_t)seq[start]];			
-//	return rc;					
 }							
 
 void ssw_write (s_align* a, 
@@ -396,10 +394,7 @@ int main (int argc, char * const argv[]) {
 	start = clock();
 	while ((m = kseq_read(read_seq)) >= 0) {
 		s_profile* p, *p_rc = 0;
-	//	int32_t readLen = (read_seq->seq.s[read_seq->seq.l] == 0) ? (read_seq->seq.l - 1) : read_seq->seq.l;
 		int32_t readLen = read_seq->seq.l;	
-	//	char* read_rc = 0;
-	//	int8_t* num, *num_rc = 0;
 	
 		if (readLen >= s2) {
 			++s2;
@@ -446,12 +441,10 @@ int main (int argc, char * const argv[]) {
 			} else return 1;
 			if (result_rc) align_destroy(result_rc);
 			align_destroy(result);
-		//	free(ref_num);
 		}
 		
 		if(p_rc) init_destroy(p_rc);
 		init_destroy(p);
-//		free(num);
 		kseq_destroy(ref_seq);
 		gzclose(ref_fp);
 	}
