@@ -80,26 +80,11 @@ void ssw_write (s_align* a,
 				int32_t count = 0;
 				int32_t q = qb;
 				int32_t p = pb;
-		//		int32_t ln = 0;
-/*				for (c = e; c < a->cigarLen; ++c) {
-					int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
-					int32_t l = (c == e && left > 0) ? left: length;
-					ln += l;
-				}
-				ln = (ln >= 60) ? 6 : (ln/10);
-				fprintf(stdout, "        ");
-				for (i = 0; i < ln; ++i) {
-					fprintf(stdout, "      %4d", n);
-					n += 10;
-				}
-				fprintf(stdout, "\n");
-*/
 				fprintf(stdout, "Target: %8d    ", q + 1);
 				for (c = e; c < a->cigarLen; ++c) {
 					int32_t letter = 0xf&*(a->cigar + c);
 					int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
 					int32_t l = (count == 0 && left > 0) ? left: length;
-//					fprintf(stderr, "left: %d\n", left);
 					if (letter == 1) {
 						for (i = 0; i < l; ++i) {
 							fprintf(stdout, "-");
@@ -173,7 +158,6 @@ step3:
 							++ count;
 							if (count == 60) {
 								pb = p;
-//				fprintf(stderr, "length: %d\n", length);
 								left = length - i - 1;
 								e = (left == 0) ? (c + 1) : c;
 								goto end;
@@ -184,13 +168,6 @@ step3:
 				e = c;
 				left = 0;
 end:
-/*				fprintf(stdout, "\n");
-				n -= ln * 10;
-				fprintf(stdout, "        ");
-				for (i = 0; i < ln; ++i) {
-					fprintf(stdout, "      %4d", n);
-					n += 10;
-				}*/
 				fprintf(stdout, "    %d\n\n", p);
 			}
 		}
