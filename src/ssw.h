@@ -17,7 +17,7 @@
 #include <string.h>
 #include <emmintrin.h>
 
-/*!	@typedef	structure of the return values of the function ssw_init; contains the quiry profile	*/
+/*!	@typedef	structure of the return values of the function ssw_init; contains the query profile	*/
 struct _profile;
 typedef struct _profile s_profile;
 
@@ -52,7 +52,15 @@ typedef struct {
 extern "C" {
 #endif	// __cplusplus
 
-// @function	Create the ssw profile using the read sequence.
+/*!	@function	Create the query profile using the query sequence.
+	@param	read	pointer to the query sequence; the query sequence needs to be represented in numbers
+	@param	readLen	length of the query sequence
+	@param	mat	pointer to the substitution matrix
+	@param	n	the number of elements in mat is n*n
+	@param	score_size	estimated Smith-Waterman score; if your estimated best alignment score is surely < 255 or you would like to 
+						stop the best alignment searching when its score reaches 255, please set 0; if your estimated best alignment
+						score >= 255, please set 1; if you don't know, please set 2 
+*/
 s_profile* ssw_init (const int8_t* read, const int32_t readLen, const int8_t* mat, const int32_t n, const int8_t score_size);
 
 // @function	Release the memory alloced by function ssw_init.

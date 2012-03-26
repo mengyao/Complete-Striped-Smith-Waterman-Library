@@ -24,18 +24,25 @@
 #define UNLIKELY(x) (x)
 #endif
 
+/*! @function
+  @abstract  Round an integer to the next closest power-2 integer.
+  @param  x  integer to be rounded (in place)
+  @discussion x will be modified.
+ */
+#define kroundup32(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, ++(x))
+
 KSEQ_INIT(gzFile, gzread)
 
-int8_t* char2num (char* seq, int8_t* table, int32_t l) {	// input l: 0; output l: length of the sequence
+void char2num (char* seq, int8_t* table, int32_t l, int8_t* num) {	// input l: 0; output l: length of the sequence
 	int32_t i;
-	int8_t* num = (int8_t*)calloc(l, sizeof(int8_t));
+//	int8_t* num = (int8_t*)malloc(l, sizeof(int8_t));
 	for (i = 0; i < l; ++i) num[i] = table[(int)seq[i]];
-	return num;
+//	return num;
 }
 
 char* reverse_comple(const char* seq) {
 	int32_t end = strlen(seq), start = 0;
-	char* rc = (char*)calloc(end + 1, sizeof(char));
+	char* rc = (char*)malloc(end + 1);
 	int8_t rc_table[128] = {
 		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
 		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
@@ -229,7 +236,7 @@ int main (int argc, char * const argv[]) {
 	float cpu_time;
 	gzFile read_fp, ref_fp;
 	kseq_t *read_seq, *ref_seq;
-	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0;
+	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0, s1 = 268435456, s2 = 128;
 	int8_t* mata = (int8_t*)calloc(25, sizeof(int8_t)), *mat = mata;
 	char mat_name[16];
 	mat_name[0] = '\0';
@@ -379,21 +386,30 @@ int main (int argc, char * const argv[]) {
 		fprintf(stdout, "@HD\tVN:1.4\tSO:queryname\n");
 		while ((l = kseq_read(ref_seq)) >= 0) fprintf(stdout, "@SQ\tSN:%s\tLN:%d\n", ref_seq->name.s, (int32_t)ref_seq->seq.l);
 	}
-	start = clock();
 
 	// alignment
+	int8_t* ref_num = (int8_t*)malloc(s1);
+	int8_t* num = (int8_t*)malloc(s2), *num_rc;
+	if (reverse == 1 && n == 5) num_rc = (int8_t*)malloc(s2);
+	start = clock();
 	while ((m = kseq_read(read_seq)) >= 0) {
 		s_profile* p, *p_rc = 0;
 	//	int32_t readLen = (read_seq->seq.s[read_seq->seq.l] == 0) ? (read_seq->seq.l - 1) : read_seq->seq.l;
 		int32_t readLen = read_seq->seq.l;	
 		char* read_rc = 0;
-		int8_t* num, *num_rc = 0;
+	//	int8_t* num, *num_rc = 0;
 	
-		num = char2num(read_seq->seq.s, table, readLen);
+		if (readLen > s2) {
+			++s2;
+			kroundup32(s2);
+			num = (int8_t*)realloc(num, s2);
+			if (reverse == 1 && n == 5) num_rc = (int8_t*)realloc(num_rc, s2);
+		}
+		char2num(read_seq->seq.s, table, readLen, num);
 		p = ssw_init(num, readLen, mat, n, 2);
 		if (reverse == 1 && n == 5) {
 			read_rc = reverse_comple(read_seq->seq.s);
-			num_rc = char2num(read_rc, table, readLen);
+			char2num(read_rc, table, readLen, num_rc);
 			p_rc = ssw_init(num_rc, readLen, mat, n, 2);
 		}else if (reverse == 1 && n == 24) {
 			fprintf (stderr, "Reverse complement alignment is not available for protein sequences. \n");
@@ -407,7 +423,12 @@ int main (int argc, char * const argv[]) {
 		//	int32_t refLen = (ref_seq->seq.s[ref_seq->seq.l - 1] == 0) ? (ref_seq->seq.l - 1) : ref_seq->seq.l;
 			int32_t refLen = ref_seq->seq.l; 
 			int8_t flag = 0;
-			int8_t* ref_num = char2num(ref_seq->seq.s, table, refLen);
+			if (refLen > s1) {
+				++s1;
+				kroundup32(s1);
+				ref_num = (int8_t*)realloc(ref_num, s1);
+			}
+			char2num(ref_seq->seq.s, table, refLen, ref_num);
 			if (path == 1) flag = 1;
 			result = ssw_align (p, ref_num, refLen, gap_open, gap_extension, flag, 0);
 			if (reverse == 1 && protein == 0) result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, 0);
@@ -420,13 +441,12 @@ int main (int argc, char * const argv[]) {
 			} else return 1;
 			if (result_rc) align_destroy(result_rc);
 			align_destroy(result);
-			free(ref_num);
+		//	free(ref_num);
 		}
 		
 		if(p_rc) init_destroy(p_rc);
 		init_destroy(p);
-		if (num_rc) free(num_rc);
-		free(num);
+//		free(num);
 		kseq_destroy(ref_seq);
 		gzclose(ref_fp);
 	}
@@ -434,6 +454,9 @@ int main (int argc, char * const argv[]) {
 	cpu_time = ((float) (end - start)) / CLOCKS_PER_SEC;
 	fprintf(stderr, "CPU time: %f seconds\n", cpu_time);
 
+	if (num_rc) free(num_rc);
+	free(num);
+	free(ref_num);
 	if (mat == mata) free(mat);
 	kseq_destroy(read_seq);
 	gzclose(read_fp);
