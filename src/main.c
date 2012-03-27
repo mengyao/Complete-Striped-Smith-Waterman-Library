@@ -32,12 +32,7 @@
 #define kroundup32(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, ++(x))
 
 KSEQ_INIT(gzFile, gzread)
-/*
-void char2num (char* seq, int8_t* table, int32_t l, int8_t* num) {	// input l: 0; output l: length of the sequence
-	int32_t i;
-	for (i = 0; i < l; ++i) num[i] = table[(int)seq[i]];
-}
-*/
+
 void reverse_comple(const char* seq, char* rc) {
 	int32_t end = strlen(seq), start = 0;
 	int8_t rc_table[128] = {
@@ -232,7 +227,7 @@ int main (int argc, char * const argv[]) {
 	float cpu_time;
 	gzFile read_fp, ref_fp;
 	kseq_t *read_seq, *ref_seq;
-	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0, /*s1 = 67108864,*/ s2 = 128, s1 = 10;
+	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0, s1 = 67108864, s2 = 128;
 	int8_t* mata = (int8_t*)calloc(25, sizeof(int8_t)), *mat = mata;
 	char mat_name[16];
 	mat_name[0] = '\0';
@@ -405,12 +400,10 @@ int main (int argc, char * const argv[]) {
 				num_rc = (int8_t*)realloc(num_rc, s2);
 			}
 		}
-//		char2num(read_seq->seq.s, table, readLen, num);
 		for (m = 0; m < readLen; ++m) num[m] = table[(int)read_seq->seq.s[m]];
 		p = ssw_init(num, readLen, mat, n, 2);
 		if (reverse == 1 && n == 5) {
 			reverse_comple(read_seq->seq.s, read_rc);
-	//		char2num(read_rc, table, readLen, num_rc);
 			for (m = 0; m < readLen; ++m) num_rc[m] = table[(int)read_rc[m]];
 			p_rc = ssw_init(num_rc, readLen, mat, n, 2);
 		}else if (reverse == 1 && n == 24) {
@@ -422,16 +415,13 @@ int main (int argc, char * const argv[]) {
 		ref_seq = kseq_init(ref_fp);
 		while (kseq_read(ref_seq) >= 0) {
 			s_align* result, *result_rc = 0;
-		//	int32_t refLen = (ref_seq->seq.s[ref_seq->seq.l - 1] == 0) ? (ref_seq->seq.l - 1) : ref_seq->seq.l;
 			int32_t refLen = ref_seq->seq.l; 
 			int8_t flag = 0;
 			while (refLen > s1) {
 				++s1;
 				kroundup32(s1);
-			//	fprintf(stderr, "s1: %d\n", s1);
 				ref_num = (int8_t*)realloc(ref_num, s1);
 			}
-		//	char2num(ref_seq->seq.s, table, refLen, ref_num);
 			for (m = 0; m < refLen; ++m) ref_num[m] = table[(int)ref_seq->seq.s[m]];
 			if (path == 1) flag = 1;
 			result = ssw_align (p, ref_num, refLen, gap_open, gap_extension, flag, 0);
