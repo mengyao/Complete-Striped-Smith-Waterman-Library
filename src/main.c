@@ -169,7 +169,7 @@ end:
 				fprintf(stdout, "    %d\n\n", p);
 			}
 		}
-	}else if (a->read_begin1 > 0) {	// Sam format output
+	}else {	// Sam format output
 		fprintf(stdout, "%s\t", read->name.s);
 		if (a->score1 == 0) fprintf(stdout, "4\t*\t0\t255\t*\t*\t0\t0\t*\t*\n");
 		else {
@@ -219,7 +219,7 @@ end:
 			}
 			fprintf(stdout,"\tNM:i:%d\n", mapq);
 		}
-	} else fprintf(stderr, "SAM format out put is only available together with option -c.\n");
+	}  
 }
 
 int main (int argc, char * const argv[]) {
@@ -375,9 +375,12 @@ int main (int argc, char * const argv[]) {
 	ref_seq = kseq_init(ref_fp);
 	read_fp = gzopen(argv[optind + 1], "r");
 	read_seq = kseq_init(read_fp);
-	if (sam && header) {
+	if (sam && header && path) {
 		fprintf(stdout, "@HD\tVN:1.4\tSO:queryname\n");
 		while ((l = kseq_read(ref_seq)) >= 0) fprintf(stdout, "@SQ\tSN:%s\tLN:%d\n", ref_seq->name.s, (int32_t)ref_seq->seq.l);
+	} else if (sam && !path) {
+		fprintf(stderr, "SAM format output is only available together with option -c.\n");
+		sam = 0;
 	}
 
 	// alignment

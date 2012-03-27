@@ -134,11 +134,6 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
 	__m128i* pvHmax = (__m128i*) calloc(segLen, sizeof(__m128i));
 
 	int32_t i, j, k;
-	for (i = 0; LIKELY(i < segLen); i ++) {
-		pvHStore[i] = vZero;
-		pvE[i] = vZero;
-	}
-	
 	/* 16 byte insertion begin vector */
 	__m128i vGapO = _mm_set1_epi8(weight_gapO);
 	
@@ -244,8 +239,8 @@ end:
 		/* Record the max score of current column. */	
 		max16(maxColumn[i], vMaxColumn);
 		if (maxColumn[i] == terminate) break;
-	} 	
-
+	}
+	
 	/* Trace the alignment ending position on read. */
 	uint8_t *t = (uint8_t*)pvHmax;
 	int32_t column_len = segLen * 16;
@@ -256,6 +251,11 @@ end:
 			if (temp < end_read) end_read = temp;
 		}
 	}
+
+	free(pvHmax);
+	free(pvE);
+	free(pvHLoad);
+	free(pvHStore); 	
 
 	/* Find the most possible 2nd best alignment. */
 	alignment_end* bests = (alignment_end*) calloc(2, sizeof(alignment_end));
@@ -278,7 +278,6 @@ end:
 			bests[1].score = maxColumn[i];
 	}
 	
-	free(pvHStore);
 	free(maxColumn);
 	free(end_read_column);
 	return bests;
@@ -343,11 +342,6 @@ alignment_end* sw_sse2_word (const int8_t* ref,
 	__m128i* pvHmax = (__m128i*) calloc(segLen, sizeof(__m128i));
 
 	int32_t i, j, k;
-	for (i = 0; LIKELY(i < segLen); i ++) {
-		pvHStore[i] = vZero;
-		pvE[i] = vZero;
-	}
-	
 	/* 16 byte insertion begin vector */
 	__m128i vGapO = _mm_set1_epi16(weight_gapO);
 	
@@ -456,6 +450,11 @@ end:
 		}
 	}
 
+	free(pvHmax);
+	free(pvE);
+	free(pvHLoad);
+	free(pvHStore); 
+	
 	/* Find the most possible 2nd best alignment. */
 	alignment_end* bests = (alignment_end*) calloc(2, sizeof(alignment_end));
 	bests[0].score = max;
@@ -477,7 +476,6 @@ end:
 			bests[1].score = maxColumn[i];
 	}
 	
-	free(pvHStore);
 	free(maxColumn);
 	free(end_read_column);
 	return bests;
@@ -717,6 +715,7 @@ s_align* ssw_align (const s_profile* prof,
 	if (prof->profile_byte) {
 		bests = sw_sse2_byte(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_byte, -1, 4);
 		if (prof->profile_word && bests[0].score == 255) {
+			free(bests);
 			bests = sw_sse2_word(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_word, -1);
 			word = 1;
 		}
