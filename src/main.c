@@ -227,7 +227,7 @@ int main (int argc, char * const argv[]) {
 	float cpu_time;
 	gzFile read_fp, ref_fp;
 	kseq_t *read_seq, *ref_seq;
-	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0, s1 = 67108864, s2 = 128;
+	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0, header = 0, s1 = 67108864, s2 = 128;
 	int8_t* mata = (int8_t*)calloc(25, sizeof(int8_t)), *mat = mata;
 	char mat_name[16];
 	mat_name[0] = '\0';
@@ -294,7 +294,7 @@ int main (int argc, char * const argv[]) {
 	for (m = 0; LIKELY(m < 5); ++m) mata[k++] = 0;
 
 	// Parse command line.
-	while ((l = getopt(argc, argv, "m:x:o:e:a:pcrs")) >= 0) {
+	while ((l = getopt(argc, argv, "m:x:o:e:a:pcrsh")) >= 0) {
 		switch (l) {
 			case 'm': match = atoi(optarg); break;
 			case 'x': mismatch = atoi(optarg); break;
@@ -305,6 +305,7 @@ int main (int argc, char * const argv[]) {
 			case 'c': path = 1; break;
 			case 'r': reverse = 1; break;
 			case 's': sam = 1; break;
+			case 'h': header = 1; break;
 		}
 	}
 	if (optind + 2 > argc) {
@@ -319,7 +320,8 @@ int main (int argc, char * const argv[]) {
 		fprintf(stderr, "\t-a FILE\tFILE is either the Blosum or Pam weight matrix. Recommend to use the matrix\n\t\tincluding B Z X * columns. Otherwise, corresponding scores will be signed to 0. [default: Blosum50]\n"); 
 		fprintf(stderr, "\t-c\tReturn the alignment in cigar format.\n");
 		fprintf(stderr, "\t-r\tThe best alignment will be picked between the original read alignment and the reverse complement read alignment.\n");
-		fprintf(stderr, "\t-s\tOutput in SAM format.\n\n");
+		fprintf(stderr, "\t-s\tOutput in SAM format. [default: no header]\n");
+		fprintf(stderr, "\t-h\tInclude header in SAM output.\n\n");
 		return 1;
 	}
 
@@ -373,7 +375,7 @@ int main (int argc, char * const argv[]) {
 	ref_seq = kseq_init(ref_fp);
 	read_fp = gzopen(argv[optind + 1], "r");
 	read_seq = kseq_init(read_fp);
-	if (sam) {
+	if (sam && header) {
 		fprintf(stdout, "@HD\tVN:1.4\tSO:queryname\n");
 		while ((l = kseq_read(ref_seq)) >= 0) fprintf(stdout, "@SQ\tSN:%s\tLN:%d\n", ref_seq->name.s, (int32_t)ref_seq->seq.l);
 	}
