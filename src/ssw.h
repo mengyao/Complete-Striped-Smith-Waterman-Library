@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 03/26/12.
+ *	Last revision by Mengyao Zhao on 03/27/12.
  *	New features: This is the api file.
  *
  */
@@ -21,7 +21,7 @@
 struct _profile;
 typedef struct _profile s_profile;
 
-/*!	@typedef	structure of the return values of the function ssw_align
+/*!	@typedef	structure of the alignment result
 	@field	score1	the best alignment score; score1 = 255 when the best alignment score is >= 255
 	@field	score2	sub-optimal alignment score
 	@field	ref_begin1	best alignment beginning position on reference;	ref_begin1 = 0 when the best alignment beginning position 
@@ -53,20 +53,36 @@ extern "C" {
 #endif	// __cplusplus
 
 /*!	@function	Create the query profile using the query sequence.
-	@param	read	pointer to the query sequence; the query sequence needs to be represented in numbers
+	@param	read	pointer to the query sequence; the query sequence is represented in numbers
 	@param	readLen	length of the query sequence
 	@param	mat	pointer to the substitution matrix
 	@param	n	the number of elements in mat is n*n
-	@param	score_size	estimated Smith-Waterman score; if your estimated best alignment score is surely < 255 or you would like to 
-						stop the best alignment searching when its score reaches 255, please set 0; if your estimated best alignment
-						score >= 255, please set 1; if you don't know, please set 2 
+	@param	score_size	estimated Smith-Waterman score; if your estimated best alignment score is surely < 255 or you would like t 
+						stop the best alignment searching when its score reaches 255, please set 0; if your estimated best 
+						alignment score >= 255, please set 1; if you don't know, please set 2 
+	@return	pointer to the query profile structure
 */
 s_profile* ssw_init (const int8_t* read, const int32_t readLen, const int8_t* mat, const int32_t n, const int8_t score_size);
 
-// @function	Release the memory alloced by function ssw_init.
+/*!	@function	Release the memory allocated by function ssw_init.
+	@param	p	pointer to the query profile structure	
+*/
 void init_destroy (s_profile* p);
 
 // @function	ssw alignment.
+/*!	@function	Do Striped Smith-Waterman alignment.
+	@param	prof	pointer to the query profile structure
+	@param	ref	pointer to the target sequence; the target sequence is represented in numbers
+	@param	refLen	length of the target sequence
+	@param	weight_gapO	the absolute value of gap open penalty  
+	@param	weight_gapE	the absolute value of gap extension penalty
+	@param	flag	bitwise FLAG; (from high to low) bit 6: when setted as 1, function ssw_align will return the best alignment 
+					beginning position; bit 7: when setted as 1, if the best alignment score >= filter, (whatever bit 6 is setted)
+					the function will return the best alignment beginning position and cigar; bit 8: when setted as 1, (whatever 
+					bit 6 or 7 is setted) the function will always return the best alignment beginning position and cigar
+	@param	filter	when bit 7 of flag is setted as 1 and bit 8 is setted as 0, filter will be used
+	@return	pointer to the alignment result structure  	
+*/
 s_align* ssw_align (const s_profile* prof, 
 					const int8_t* ref, 
 					int32_t refLen, 
