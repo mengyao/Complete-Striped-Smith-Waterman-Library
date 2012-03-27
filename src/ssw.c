@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 03/23/12.
+ *	Last revision by Mengyao Zhao on 03/27/12.
  *	New features: Combine files for api wrapping. 
  *
  */
@@ -598,7 +598,7 @@ cigar* banded_sw (const int8_t* ref,
 		if (f == max) ++e;
 		else {
 			++l;
-			if (l >= s) {
+			while (l >= s) {
 				++s;
 				kroundup32(s);
 				c = (uint32_t*)realloc(c, s * sizeof(uint32_t));
@@ -610,7 +610,7 @@ cigar* banded_sw (const int8_t* ref,
 	}
 	if (f == 0) {
 		++l;
-		if (l >= s) {
+		while (l >= s) {
 			++s;
 			kroundup32(s);
 			c = (uint32_t*)realloc(c, s * sizeof(uint32_t));
@@ -618,7 +618,7 @@ cigar* banded_sw (const int8_t* ref,
 		c[l - 1] = (e+1)<<4;
 	}else {
 		l += 2;
-		if (l >= s) {
+		while (l >= s) {
 			++s;
 			kroundup32(s);
 			c = (uint32_t*)realloc(c, s * sizeof(uint32_t));
