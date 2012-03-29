@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 03/27/12.
+ *	Last revision by Mengyao Zhao on 03/28/12.
  *	New features: This is the api file.
  *
  */
@@ -17,12 +17,12 @@
 #include <string.h>
 #include <emmintrin.h>
 
-/*!	@typedef	structure of the return values of the function ssw_init; contains the query profile	*/
+/*!	@typedef	structure of the query profile	*/
 struct _profile;
 typedef struct _profile s_profile;
 
 /*!	@typedef	structure of the alignment result
-	@field	score1	the best alignment score; score1 = 255 when the best alignment score is >= 255
+	@field	score1	the best alignment score
 	@field	score2	sub-optimal alignment score
 	@field	ref_begin1	best alignment beginning position on reference;	ref_begin1 = 0 when the best alignment beginning position 
 						is not available
@@ -34,7 +34,7 @@ typedef struct _profile s_profile;
 	@field	cigar	best alignment cigar; stored the same as that in BAM format, high 28 bits: length, low 4 bits: M/I/D (0/1/2); 
 					cigar = 0 when the best alignment path is not available
 	@field	cigarLen	length of the cigar string; cigarLen = 0 when the best alignment path is not available
-	@note	The fields ref_begin1, ref_end1, read_begin1 read_end1 and read_end2 all have 1-based coordinate.
+	@note	The fields ref_begin1, ref_end1, read_begin1 read_end1 and read_end2 all have 1-based coordinates.
 */
 typedef struct {
 	uint16_t score1;	
@@ -53,14 +53,22 @@ extern "C" {
 #endif	// __cplusplus
 
 /*!	@function	Create the query profile using the query sequence.
-	@param	read	pointer to the query sequence; the query sequence is represented in numbers
+	@param	read	pointer to the query sequence; the query sequence needs to be numbers
 	@param	readLen	length of the query sequence
-	@param	mat	pointer to the substitution matrix
+	@param	mat	pointer to the substitution matrix; mat needs to be corresponding to the read sequence
 	@param	n	the number of elements in mat is n*n
-	@param	score_size	estimated Smith-Waterman score; if your estimated best alignment score is surely < 255 or you would like t 
-						stop the best alignment searching when its score reaches 255, please set 0; if your estimated best 
-						alignment score >= 255, please set 1; if you don't know, please set 2 
+	@param	score_size	estimated Smith-Waterman score; if your estimated best alignment score is surely < 255 please set 0; if 
+						your estimated best alignment score >= 255, please set 1; if you don't know, please set 2 
 	@return	pointer to the query profile structure
+	@note	example for parameter read and mat:
+			If the query sequence is: ACGTATC, the sequence that read points to can be: 1234142
+			Then if the penalty for match is 2 and for mismatch is -2, the substitution matrix of parameter mat will be:
+			//A  C  G  T  
+			  2	-2 -2 -2 //A
+			 -2  2 -2 -2 //C
+			 -2 -2  2 -2 //G
+			 -2 -2 -2  2 //T
+			mat is the pointer to the array {2, -2, -2, -2, -2, 2, -2, -2, -2, -2, 2, -2, -2, -2, -2, 2}
 */
 s_profile* ssw_init (const int8_t* read, const int32_t readLen, const int8_t* mat, const int32_t n, const int8_t score_size);
 
@@ -72,7 +80,8 @@ void init_destroy (s_profile* p);
 // @function	ssw alignment.
 /*!	@function	Do Striped Smith-Waterman alignment.
 	@param	prof	pointer to the query profile structure
-	@param	ref	pointer to the target sequence; the target sequence is represented in numbers
+	@param	ref	pointer to the target sequence; the target sequence needs to be numbers and corresponding to the mat parameter of
+				function ssw_init
 	@param	refLen	length of the target sequence
 	@param	weight_gapO	the absolute value of gap open penalty  
 	@param	weight_gapE	the absolute value of gap extension penalty
@@ -88,10 +97,12 @@ s_align* ssw_align (const s_profile* prof,
 					int32_t refLen, 
 					const uint8_t weight_gapO, 
 					const uint8_t weight_gapE, 
-					const uint8_t flag,	//  (from high to low) bit 6: return the best alignment beginning position; 7: if max score >= filter, return cigar; 8: always return cigar
+					const uint8_t flag,	
 					const uint16_t filter);
 
-// @function	Release the memory alloced by function ssw_align.
+/*!	@function	Release the memory allocated by function ssw_align.
+	@param	a	pointer to the alignment result structure
+*/
 void align_destroy (s_align* a);
 
 #ifdef __cplusplus

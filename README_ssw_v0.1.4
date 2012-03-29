@@ -1,99 +1,67 @@
-SSW: Striped Smith-Waterman Sequence Alignment Algorithm
+SSW C Lib: A Genetic Striped Smith-Waterman Sequence Alignment Library Written in C
 
 Author: Mengyao Zhao, Ph.D. student of Boston College
-Last revision: 06/24/2011
+Contact: zhangmp@bc.edu
+Last revision: 03/29/2012
 
 1. Overview
-SSW is a fast implementation of the Smith-Waterman algorithm, which use the Single-Instruction Multiple-Data (SIMD) instructions 
-to parallelize the algorithm at the instruction level. The SIMD registers are parallel to the query sequence, but are accessed in 
-a striped pattern. The query profile is calculated once for the database search, but the conditional F matrix adjustment and the 
-best lignment location tracing are moved outside the inner loop for achieving high performance [1][2]. Current version is ~90 times
-faster than the Smith-Waterman in Mozaik and can return optimal and sub-optimal alignment locations.
+SSW is a fast implementation of the Smith-Waterman algorithm, which uses the Single-Instruction Multiple-Data (SIMD) instructions 
+to parallelize the algorithm at the instruction level. SSW C Lib provides an API that can be flexibly used by programs written in 
+C, C++ and other languages. We also provide a software that can do protein and genome alignment directly. Current version of our 
+implementation is ~50 times faster than an ordinary Smith-Waterman. It can return the Smith-Waterman score, alignment location and 
+traceback path (cigar) of the optimal alignment accurately; and return the sub-optimal alignment score and location heuristically.
 
-2. Input and output
-The input files to SSW are: (1) a FASTA format reference sequence file; (2) a FASTA or FASTQ format read sequence file.
+2. Install the software
+1) Download the software.
+2) cd src
+3) make
+4) the executable file will be ssw_test
 
-The output of SSW reports the optimal and sub_optimal alignment scores and alignment ending positions of each read in the read file
-to each reference in the reference file.
+3. Run the software
+Usage: ssw_test [options] ... <target.fasta> <query.fasta>(or <query.fastq>)
+Options:
+	-m N	N is a positive integer for weight match in genome sequence alignment. [default: 2]
+	-x N	N is a positive integer. -N will be used as weight mismatch in genome sequence alignment. [default: 2]
+	-o N	N is a positive integer. -N will be used as the weight for the gap opening. [default: 3]
+	-e N	N is a positive integer. -N will be used as the weight for the gap extension. [default: 1]
+	-p	Do protein sequence alignment. Without this option, the ssw_test will do genome sequence alignment.
+	-a FILE	FILE is either the Blosum or Pam weight matrix. [default: Blosum50]
+	-c	Return the alignment in cigar format.
+	-r	The best alignment will be picked between the original read alignment and the reverse complement read alignment.
+	-s	Output in SAM format. [default: no header]
+	-h	Include header in SAM output.
 
-An example of the output:
+4. Software output
+The software can output in SAM format or BLAST like format. 
+1) An example of the SAM format output:
+@HD	VN:1.4	SO:queryname
+@SQ	SN:chr1	LN:1001
+6:163296599:F:198;None;None/1	0	chr1	453	5	3M2D3M1D4M2D6M1D5M1D5M2I7M	*	0	0	CCAGCCCAAAATCTGTTTTAATGGTGGATTTGTGT	*	AS:i:37	NM:i:11
+3:153409880:F:224;None;3,153410143,G,A/1	0	chr1	523	4	2M1D32M1D3M1D6M1D8M	*	0	0	GAAGAGTTAATTTAAGTCACTTCAAACAGATTACGTATCTTTTTTTTCCCT	*	AS:i:42	NM:i:16
+Y:26750420:R:-132;None;None/1	0	chr1	120	4	2M1I4M3D3M1I7M2I9M2D6M1I8M	*	0	0	AACAACAGAAGTTAATTAGCTTCAAAAATACTTTATATTTGCAA	*	AS:i:32	NM:i:16
+13:91170622:R:-276;None;None/1	0	chr1	302	4	8M1D8M1D3M2D6M1D4M2I2M1D2M3D5M1I4M	*	0	0	CATTTATTGTTGTTTTTAAAGATTAAATGATTAAATGTTTCAAAA	*	AS:i:32	NM:i:18
+15:37079528:R:-240;None;None/1	0	chr1	4	5	4M2D4M1D9M1I3M4I16M1I3M1D4M2D5M	*	0	0	ACAGTGATGCCAAGCCAGTGGGTTTTAGCTTGTGGAGTTCCATAGGAGCGATGC	*	AS:i:30	NM:i:22
+9:92308501:R:-176;None;None/1	0	chr1	142	4	4M3I5M4D10M2D4M1I2M2I6M5D1M1D6M2D3M	*	0	0	AATAACCATAAAAATGGGCAAAGCAGCCTTCAGGGCTGCTGTTTCTA	*	AS:i:26	NM:i:25
 ...
-read_name: 1:57651555:R:-316;None;None/1
-read_seq: AGACTTGAAAGTCAGAATTACTCCTTGATCCATGGGCTGCAGAGTAGATGTTTT
-max score: 41, end_ref: 530
-max2 score: 39, end_ref: 499
-read_name: X:91671697:R:-206;None;X,91671506,G,A/1
-read_seq: ACTTCTTTGGTTCAAAGGTTTCTTTTCTTTTCATCAGAGTATTTTGAATCACTT
-max score: 54, end_ref: 523
-max2 score: 40, end_ref: 494
+2) An example of the BLAST like output:
+target_name: chr1
+query_name: 6:163296599:F:198;None;None/1
+optimal_alignment_score: 37	sub-optimal_alignment_score: 28	strand: +	target_begin: 453	target_end: 492	query_begin: 17	query_end: 51
+
+Target:      453    CCAATGCCACAAAACATCTGTCTCTAACTGGTG--TGTGTGT    492
+                    |||**|||*||||**||||||*|*|||*|||||**|*|||||
+Query:        17    CCA--GCC-CAAA--ATCTGT-TTTAA-TGGTGGATTTGTGT    51
+
+target_name: chr1
+query_name: 3:153409880:F:224;None;3,153410143,G,A/1
+optimal_alignment_score: 42	sub-optimal_alignment_score: 41	strand: +	target_begin: 523	target_end: 577	query_begin: 3	query_end: 53
+
+Target:      523    GAGAGAGAAAATTTCACTCCCTCCATAAATCTCACAGTATTCTTTTCTTTTTCCT    577
+                    ||*||||**|||||*|*||*||*||*|*|**|*||*|||*||||||*||||*|||
+Query:         3    GA-AGAGTTAATTTAAGTCACTTCAAACAGATTAC-GTA-TCTTTT-TTTTCCCT    53
 ...
 
-3. Software information
-SSW was developed in the pure C programming language. It is distributed for the Microsoft Windows, Mac OS X and Linux operating systems.
-
-4. Usage
-Linux: ./ssw_test <references.fasta> <reads.fasta>/<reads.fastq>
-
-useful structures and functions:
-
-/*! @typedef	struct of the alignment results
- *  @field score	the alignment score
- *	@field	ref	1-based position in the reference
- */
-typedef struct {
-	char score;
-	int32_t ref;	/* 1-based position */
-} alignment_end;
-
-/*! @function	Generate query profile rearrange query sequence & calculate the weight of match/mismatch. 
- *  @parameter	read	sequence
- *  @parameter	weight_match	score for a pair of matched reference and read bases
- *  @parameter	weight_mismatch	score (absolute value) for a pair of mismached reference and read bases
- *	@parameter	bias	a number used to expend the max capacity of the values in the scoreing matrix; suggest to set to 4
- *  @return		pointer to the query profile 
- */
-__m128i* queryProfile_constructor (const char* read,
-								   unsigned char weight_match,    /* will be used as + */
-								   unsigned char weight_mismatch, /* will be used as - */
-								   unsigned char bias);
-
-/*! @function	Transform the reference sequence to a number sequence. 
- *	@parameter	ref	reference sequence
- *	@parameter	refLen	reference length
- *	@return		reference sequence represented by numbers
- */
-int32_t* ref_nt2num (const char* ref, int32_t refLen);
-
-/*! @function	striped Smith-Waterman
- *  			Record the highest score of each reference position. 
- *  			Find the ending position of the optimal and sub-optimal alignment.
- *  @parameter	ref	reference sequence represented by numbers; can be generated using funceion ref_nt2num
- *  @parameter	refLen	reference length
- *  @parameter	readLen	read length
- *  @parameter	weight_insertB	score (absolute value) for opening a insertion 
- *  @parameter	weight_insertE	score (absolute value) for extending a insertion 
- *  @parameter	weight_deletB	score (absolute value) for opening a deletion 
- *  @parameter	weight_deletE	score (absolute value) for extending a deletion 
- *  @parameter	vProfile	pointer to the query profile
- *  @parameter	end_seg	a return value of 0-based segment number of alignment ending position in read; suggest to set to 0
- *	@parameter	bias	a number used to expend the max capacity of the values in the scoreing matrix; suggest to set to 4
- *  @return		a pointer to the array of structure alignment_end; the optimal (1st member of the array) and 
- *				sub-optimal (2nd member of the array) alignment score and ending positions
- */
-alignment_end* smith_waterman_sse2 (const int32_t* ref,
-									int32_t refLen,
-								    int32_t readLen, 
-								    unsigned char weight_insertB, /* will be used as - */
-								    unsigned char weight_insertE, /* will be used as - */
-								    unsigned char weight_deletB,  /* will be used as - */
-								    unsigned char weight_deletE,  /* will be used as - */
-								    __m128i* vProfile,
-								    int32_t* end_seg,        /* 0-based segment number of ending   
-																	 alignment; The return value is  
-																	 meaningful only when  
-																     the return value != 0.
-																   */	
-	 							    unsigned char bias);	
+5. How to use the API
 
 example of using the functions: main.c
 

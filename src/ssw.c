@@ -723,7 +723,7 @@ s_align* ssw_align (const s_profile* prof,
 		bests = sw_sse2_word(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_word, -1);
 		word = 1;
 	}else {
-		fprintf(stderr, "The score_size variable of the init_param structure is not correctly assigned.\n");
+		fprintf(stderr, "Please set 2 to the score_size parameter of the function ssw_init, otherwise the alignment results will be incorrect.\n");
 		return 0;
 	}
 	r->score1 = bests[0].score;
