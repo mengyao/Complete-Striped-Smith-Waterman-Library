@@ -2,7 +2,7 @@ SSW C Lib: A Genetic Striped Smith-Waterman Sequence Alignment Library Written i
 
 Author: Mengyao Zhao, Ph.D. student of Boston College
 Contact: zhangmp@bc.edu
-Last revision: 03/29/2012
+Last revision: 03/30/2012
 
 1. Overview
 SSW is a fast implementation of the Smith-Waterman algorithm, which uses the Single-Instruction Multiple-Data (SIMD) instructions 
@@ -32,7 +32,7 @@ Options:
 	-h	Include header in SAM output.
 
 4. Software output
-The software can output in SAM format or BLAST like format. 
+The software can output SAM format or BLAST like format results. 
 1) An example of the SAM format output:
 @HD	VN:1.4	SO:queryname
 @SQ	SN:chr1	LN:1001
@@ -62,28 +62,15 @@ Query:         3    GA-AGAGTTAATTTAAGTCACTTCAAACAGATTAC-GTA-TCTTTT-TTTTCCCT    5
 ...
 
 5. How to use the API
+The API files include ssw.h and ssw.c, which can be directly used by any C and C++ programs. To use the API, please: 
+1) Download the two files and put them in the same folder of your own program files.
+2) Write #include "ssw.h" into your file that will call the API functions.
+3) The API files are ready to be compiled together with your own files.
 
-example of using the functions: main.c
+The API function descriptions are in the file ssw.h. One example of the API usage is main.c.
 
-5. Speed and memory usage
-The time complexity of SSW is Omn. Where m is the reference length, n is the read length. SSW implementation divides the 128-bit
-wide register into 16 8-bit elements for parallel processing. Therefore, the runtime of SSW is theoretically 1/16 of original
-Smith-Waterman algorithm, thus 1/16mn. Due to the advantage of Intel's SIMD SSE2 instuctions, the actual runtime of SSW is 
-even shorter, about 90 times faster than original Smith-Waterman algorithm.
+6. Speed and memory usage
 
-Speed test result of ssw_v0.1.4 on 100 Illumina 54 bp reads:
-Reference length	CPU time (s)
-1K	0.008719			
-10K	0.060667
-100K	0.571767	
-1M	5.677395
-10M	55.117683		
-
-The space complexity of SSW is On. The runtime maximum RAM usage is n bytes. Where n is the read length.
-
-References
-1. Farrar, M. Striped Smith-Waterman speeds database searches six times over other SIMD implementations. Bioinformatics 23, 156-161. (2007).
-2. Hinton, G. et al. The microarchitecture of the Pentium 4 Processor. Intel Technology Journal Q1 (2001). 
 
 
 
