@@ -447,7 +447,7 @@ int main (int argc, char * const argv[]) {
 			}else if (result && result->score1 >= filter){
 				if (sam) ssw_write(result, ref_seq, read_seq, read_seq->seq.s, table, 0, 1);
 				else ssw_write(result, ref_seq, read_seq, read_seq->seq.s, table, 0, 0);
-			} else return 1;
+			} else if (! result) return 1;
 			if (result_rc) align_destroy(result_rc);
 			align_destroy(result);
 		}
@@ -465,10 +465,10 @@ int main (int argc, char * const argv[]) {
 		free(num_rc);
 		free(read_rc);
 	}
+	kseq_destroy(read_seq);
+	gzclose(read_fp);
 	free(num);
 	free(ref_num);
  	free(mata);
-	kseq_destroy(read_seq);
-	gzclose(read_fp);
 	return 0;
 }
