@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 04/02/12.
+ *  Last revision by Mengyao Zhao on 04/03/12.
  */
 
 #include <stdlib.h>
@@ -232,7 +232,7 @@ int main (int argc, char * const argv[]) {
 	float cpu_time;
 	gzFile read_fp, ref_fp;
 	kseq_t *read_seq, *ref_seq;
-	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0, header = 0, s1 = 67108864, s2 = 128;
+	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0, header = 0, s1 = 67108864, s2 = 128, filter = 0;
 	int8_t* mata = (int8_t*)calloc(25, sizeof(int8_t)), *mat = mata;
 	char mat_name[16];
 	mat_name[0] = '\0';
@@ -302,13 +302,14 @@ int main (int argc, char * const argv[]) {
 	for (m = 0; LIKELY(m < 5); ++m) mata[k++] = 0;
 
 	// Parse command line.
-	while ((l = getopt(argc, argv, "m:x:o:e:a:pcrsh")) >= 0) {
+	while ((l = getopt(argc, argv, "m:x:o:e:a:f:pcrsh")) >= 0) {
 		switch (l) {
 			case 'm': match = atoi(optarg); break;
 			case 'x': mismatch = atoi(optarg); break;
 			case 'o': gap_open = atoi(optarg); break;
 			case 'e': gap_extension = atoi(optarg); break;
 			case 'a': strcpy(mat_name, optarg); break;
+			case 'f': filter = atoi(optarg); break;
 			case 'p': protein = 1; break;
 			case 'c': path = 1; break;
 			case 'r': reverse = 1; break;
@@ -326,10 +327,11 @@ int main (int argc, char * const argv[]) {
 		fprintf(stderr, "\t-e N\tN is a positive integer. -N will be used as the weight for the gap extension. [default: 1]\n");
 		fprintf(stderr, "\t-p\tDo protein sequence alignment. Without this option, the ssw_test will do genome sequence alignment.\n");
 		fprintf(stderr, "\t-a FILE\tFILE is either the Blosum or Pam weight matrix. [default: Blosum50]\n"); 
-		fprintf(stderr, "\t-c\tReturn the alignment in cigar format.\n");
+		fprintf(stderr, "\t-c\tReturn the alignment path.\n");
+		fprintf(stderr, "\t-f N\tN is a positive integer. Only output the alignments with the Smith-Waterman score >= N.\n");
 		fprintf(stderr, "\t-r\tThe best alignment will be picked between the original read alignment and the reverse complement read alignment.\n");
 		fprintf(stderr, "\t-s\tOutput in SAM format. [default: no header]\n");
-		fprintf(stderr, "\t-h\tInclude header in SAM output.\n\n");
+		fprintf(stderr, "\t-h\tIf -s is used, include header in SAM output.\n\n");
 		return 1;
 	}
 
@@ -436,13 +438,13 @@ int main (int argc, char * const argv[]) {
 				ref_num = (int8_t*)realloc(ref_num, s1);
 			}
 			for (m = 0; m < refLen; ++m) ref_num[m] = table[(int)ref_seq->seq.s[m]];
-			if (path == 1) flag = 1;
-			result = ssw_align (p, ref_num, refLen, gap_open, gap_extension, flag, 0);
-			if (reverse == 1 && protein == 0) result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, 0);
-			if (result_rc && result_rc->score1 > result->score1) {
+			if (path == 1) flag = 2;
+			result = ssw_align (p, ref_num, refLen, gap_open, gap_extension, flag, filter);
+			if (reverse == 1 && protein == 0) result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, filter);
+			if (result_rc && result_rc->score1 > result->score1 && result_rc->score1 >= filter) {
 				if (sam) ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 1);
 				else ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 0);
-			}else if (result){
+			}else if (result && result->score1 >= filter){
 				if (sam) ssw_write(result, ref_seq, read_seq, read_seq->seq.s, table, 0, 1);
 				else ssw_write(result, ref_seq, read_seq, read_seq->seq.s, table, 0, 0);
 			} else return 1;
