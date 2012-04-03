@@ -1,8 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 03/27/12.
- *	New features: make weight as options 
+ *  Last revision by Mengyao Zhao on 04/02/12.
  */
 
 #include <stdlib.h>
@@ -237,6 +236,9 @@ int main (int argc, char * const argv[]) {
 	int8_t* mata = (int8_t*)calloc(25, sizeof(int8_t)), *mat = mata;
 	char mat_name[16];
 	mat_name[0] = '\0';
+	int8_t* ref_num = (int8_t*)malloc(s1);
+	int8_t* num = (int8_t*)malloc(s2), *num_rc = 0;
+	char* read_rc = 0;
 
 	int8_t mat50[] = {
 	//  A   R   N   D   C   Q   E   G   H   I   L   K   M   F   P   S   T   W   Y   V   B   Z   X   *   
@@ -339,6 +341,7 @@ int main (int argc, char * const argv[]) {
 	// Parse score matrix.
 		FILE *f_mat = fopen(mat_name, "r");
 		char line[128];
+		free(mata);
 		mata = (int8_t*)realloc(mata, 1024 * sizeof(int8_t));
 		k = 0;
 		m = 0;
@@ -377,22 +380,21 @@ int main (int argc, char * const argv[]) {
 		mat = mata;
 	}
 
-	ref_fp = gzopen(argv[optind], "r");
-	ref_seq = kseq_init(ref_fp);
 	read_fp = gzopen(argv[optind + 1], "r");
 	read_seq = kseq_init(read_fp);
 	if (sam && header && path) {
 		fprintf(stdout, "@HD\tVN:1.4\tSO:queryname\n");
+		ref_fp = gzopen(argv[optind], "r");
+		ref_seq = kseq_init(ref_fp);
 		while ((l = kseq_read(ref_seq)) >= 0) fprintf(stdout, "@SQ\tSN:%s\tLN:%d\n", ref_seq->name.s, (int32_t)ref_seq->seq.l);
+		kseq_destroy(ref_seq);
+		gzclose(ref_fp);
 	} else if (sam && !path) {
 		fprintf(stderr, "SAM format output is only available together with option -c.\n");
 		sam = 0;
 	}
 
 	// alignment
-	int8_t* ref_num = (int8_t*)malloc(s1);
-	int8_t* num = (int8_t*)malloc(s2), *num_rc = 0;
-	char* read_rc = 0;
 	if (reverse == 1 && n == 5) {
 		read_rc = (char*)malloc(s2);
 		num_rc = (int8_t*)malloc(s2);
@@ -463,7 +465,7 @@ int main (int argc, char * const argv[]) {
 	}
 	free(num);
 	free(ref_num);
-	if (mat == mata) free(mat);
+ 	free(mata);
 	kseq_destroy(read_seq);
 	gzclose(read_fp);
 	return 0;
