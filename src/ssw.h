@@ -90,7 +90,9 @@ void init_destroy (s_profile* p);
 					the function will return the best alignment beginning position and cigar; bit 8: when setted as 1, (whatever 
 					bit 6 or 7 is setted) the function will always return the best alignment beginning position and cigar
 	@param	filter	when bit 7 of flag is setted as 1 and bit 8 is setted as 0, filter will be used
-	@return	pointer to the alignment result structure  	
+	@return	pointer to the alignment result structure 
+	@note	Whatever the parameter flag is setted, this function will at least return the optimal and sub-optimal alignment score,
+			and the optimal alignment ending position on target and query sequences. All returned positions are 1-based coordinate.  	
 */
 s_align* ssw_align (const s_profile* prof, 
 					const int8_t* ref, 

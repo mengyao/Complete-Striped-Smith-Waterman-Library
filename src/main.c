@@ -143,7 +143,7 @@ step3:
 							fprintf(stdout, "-");
 							++ count;
 							if (count == 60) {
-								left = length - i - 1;
+								left = l - i - 1;
 								e = (left == 0) ? (c + 1) : c;
 								goto end;
 							}
@@ -155,7 +155,7 @@ step3:
 							++ count;
 							if (count == 60) {
 								pb = p;
-								left = length - i - 1;
+								left = l - i - 1;
 								e = (left == 0) ? (c + 1) : c;
 								goto end;
 							}
