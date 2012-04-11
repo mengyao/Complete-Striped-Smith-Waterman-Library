@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 04/02/12.
+ *	Last revision by Mengyao Zhao on 04/11/12.
  *
  */
 
@@ -491,19 +491,35 @@ cigar* banded_sw (const int8_t* ref,
 				 const int8_t* mat,	/* pointer to the weight matrix */
 				 int32_t n) {	
 
-	uint32_t *c = (uint32_t*)calloc(16, sizeof(uint32_t)), *c1;
-	int32_t i, j, e, f, temp1, temp2, s = 16, l, max = 0;
+	uint32_t *c = (uint32_t*)malloc(16 * sizeof(uint32_t)), *c1;
+	int32_t i, j, e, f, temp1, temp2, s = 16, s1 = 8, s2 = 1024, l, max = 0;
 	int32_t width, width_d, *h_b, *e_b, *h_c;
 	int8_t *direction, *direction_line;
-	cigar* result = (cigar*)calloc(1, sizeof(cigar));
+	cigar* result = (cigar*)malloc(sizeof(cigar));
+	h_b = (int32_t*)malloc(s1 * sizeof(int32_t)); 
+	e_b = (int32_t*)malloc(s1 * sizeof(int32_t)); 
+	h_c = (int32_t*)malloc(s1 * sizeof(int32_t)); 
+	direction = (int8_t*)malloc(s2 * sizeof(int8_t));
 
 	do {
 		width = band_width * 2 + 3, width_d = band_width * 2 + 1;
-		h_b = (int32_t*)calloc(width, sizeof(int32_t)); 
+/*		h_b = (int32_t*)calloc(width, sizeof(int32_t)); 
 		e_b = (int32_t*)calloc(width, sizeof(int32_t)); 
 		h_c = (int32_t*)calloc(width, sizeof(int32_t)); 
 
-		direction = (int8_t*)calloc(width_d * readLen * 3, sizeof(int8_t));
+		direction = (int8_t*)calloc(width_d * readLen * 3, sizeof(int8_t));*/
+		while (width >= s1) {
+			++s1;
+			kroundup32(s1);
+			h_b = (int32_t*)realloc(h_b, s1 * sizeof(int32_t)); 
+			e_b = (int32_t*)realloc(e_b, s1 * sizeof(int32_t)); 
+			h_c = (int32_t*)realloc(h_c, s1 * sizeof(int32_t)); 
+		}
+		while (width_d * readLen * 3 >= s2) {
+			++s2;
+			kroundup32(s2);
+			direction = (int8_t*)realloc(direction, s2 * sizeof(int8_t)); 
+		}
 		direction_line = direction;
 		for (j = 1; LIKELY(j < width - 1); j ++) h_b[j] = 0;
 		for (i = 0; LIKELY(i < readLen); i ++) {
@@ -625,7 +641,7 @@ cigar* banded_sw (const int8_t* ref,
 	}
 
 	// reverse cigar
-	c1 = (uint32_t*)calloc(l, sizeof(uint32_t));
+	c1 = (uint32_t*)malloc(l * sizeof(uint32_t));
 	s = 0;
 	e = l - 1;
 	while (LIKELY(s <= e)) {			
