@@ -690,13 +690,13 @@ s_align* ssw_align (const s_profile* prof,
 				  	int32_t refLen, 
 				  	const uint8_t weight_gapO, 
 				  	const uint8_t weight_gapE, 
-					const uint8_t flag,	//  (from high to low) bit 6: return the best alignment beginning position; 7: if max score >= filter, return cigar; 8: always return cigar
-					const uint16_t filter) {
+					const uint8_t flag,	//  (from high to low) bit 5: return the best alignment beginning position; 6: if (ref_end1 - ref_begin1 <= filterd) && (read_end1 - read_begin1 <= filterd), return cigar; 7: if max score >= filters, return cigar; 8: always return cigar; if 6 & 7 are both setted, only return cigar when both filter fulfilled
+					const uint16_t filters,
+					const int32_t filterd) {
 
 	alignment_end* bests = 0, *bests_reverse = 0;
 	__m128i* vP = 0;
-	int32_t readLen = prof->readLen, word = 0;
-	int32_t n = prof->n, band_width = 0;
+	int32_t word = 0, band_width = 0, readLen = prof->readLen;
 	int8_t* read_reverse = 0;
 	cigar* path;
 	s_align* r = (s_align*)calloc(1, sizeof(s_align));
@@ -717,12 +717,15 @@ s_align* ssw_align (const s_profile* prof,
 			free(bests);
 			bests = sw_sse2_word(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_word, -1);
 			word = 1;
+		} else if (bests[0].score == 255) {
+			fprintf(stderr, "Please set 2 to the score_size parameter of the function ssw_init, otherwise the alignment results will be incorrect.\n");
+			return 0;
 		}
 	}else if (prof->profile_word) {
 		bests = sw_sse2_word(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_word, -1);
 		word = 1;
 	}else {
-		fprintf(stderr, "Please set 2 to the score_size parameter of the function ssw_init, otherwise the alignment results will be incorrect.\n");
+		fprintf(stderr, "Please call the function ssw_init before ssw_align.\n");
 		return 0;
 	}
 	r->score1 = bests[0].score;
@@ -731,15 +734,15 @@ s_align* ssw_align (const s_profile* prof,
 	r->read_end1 = bests[0].read + 1;
 	r->ref_end2 = bests[1].ref + 1;
 	free(bests);
-	if (flag == 0 || r->score1 == 255 || (flag == 2 && r->score1 < filter)) goto end;
+	if (flag == 0 || (flag == 2 && r->score1 < filters)) goto end;
 
 	// Find the beginning position of the best alignment.
 	read_reverse = seq_reverse(prof->read, r->read_end1 - 1);
 	if (word == 0) {
-		vP = qP_byte(read_reverse, prof->mat, r->read_end1, n, 4);
+		vP = qP_byte(read_reverse, prof->mat, r->read_end1, prof->n, 4);
 		bests_reverse = sw_sse2_byte(ref, 1, r->ref_end1, r->read_end1, weight_gapO, weight_gapE, vP, r->score1, 4);
 	} else {
-		vP = qP_word(read_reverse, prof->mat, r->read_end1, n);
+		vP = qP_word(read_reverse, prof->mat, r->read_end1, prof->n);
 		bests_reverse = sw_sse2_word(ref, 1, r->ref_end1, r->read_end1, weight_gapO, weight_gapE, vP, r->score1);
 	}
 	free(vP);
@@ -747,13 +750,13 @@ s_align* ssw_align (const s_profile* prof,
 	r->ref_begin1 = bests_reverse[0].ref + 1;
 	r->read_begin1 = r->read_end1 - bests_reverse[0].read;
 	free(bests_reverse);
-	if ((3&flag) == 0 || (flag == 6 && r->score1 < filter)) goto end;
+	if ((7&flag) == 0 || ((2&flag) != 0 && r->score1 < filters) || ((4&flag) != 0 && (r->ref_end1 - r->ref_begin1 > filterd || r->read_end1 - r->read_begin1 > filterd))) goto end;
 
 	// Generate cigar.
 	refLen = r->ref_end1 - r->ref_begin1 + 1;
 	readLen = r->read_end1 - r->read_begin1 + 1;
 	band_width = abs(refLen - readLen) + 1;
-	path = banded_sw(ref + r->ref_begin1 - 1, prof->read + r->read_begin1 - 1, refLen, readLen, r->score1, weight_gapO, weight_gapE, band_width, prof->mat, n);
+	path = banded_sw(ref + r->ref_begin1 - 1, prof->read + r->read_begin1 - 1, refLen, readLen, r->score1, weight_gapO, weight_gapE, band_width, prof->mat, prof->n);
 	if (path == 0) r = 0;
 	else {
 		r->cigar = path->seq;

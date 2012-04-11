@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 04/03/12.
+ *  Last revision by Mengyao Zhao on 04/11/12.
  */
 
 #include <stdlib.h>
@@ -82,20 +82,15 @@ void ssw_write (s_align* a,
 					int32_t letter = 0xf&*(a->cigar + c);
 					int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
 					int32_t l = (count == 0 && left > 0) ? left: length;
-					if (letter == 1) {
-						for (i = 0; i < l; ++i) {
-							fprintf(stdout, "-");
-							++ count;
-							if (count == 60) goto step2;
-						}
-					}else {
-						for (i = 0; i < l; ++i) {	
+					for (i = 0; i < l; ++i) {
+						if (letter == 1) fprintf(stdout, "-");
+						else {
 							fprintf(stdout, "%c", *(ref_seq->seq.s + q));
 							++ q;
-							++ count;
-							if (count == 60) goto step2;
 						}
-					}	
+						++ count;
+						if (count == 60) goto step2;
+					}
 				}
 step2:
 				fprintf(stdout, "    %d\n                    ", q);
@@ -105,28 +100,21 @@ step2:
 					int32_t letter = 0xf&*(a->cigar + c);
 					int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
 					int32_t l = (count == 0 && left > 0) ? left: length;
-					if (letter == 0) {
-						for (i = 0; i < l; ++i){ 
+					for (i = 0; i < l; ++i){ 
+						if (letter == 0) {
 							if (table[(int)*(ref_seq->seq.s + q)] == table[(int)*(read_seq + p)])fprintf(stdout, "|");
 							else fprintf(stdout, "*");
 							++q;
 							++p;
-							++ count;
-							if (count == 60) {
-								qb = q;
-								goto step3;
-							}
-						}
-					}else { 
-						for (i = 0; i < l; ++i) {
+						} else {
 							fprintf(stdout, "*");
 							if (letter == 1) ++p;
 							else ++q;
-							++ count;
-							if (count == 60) {
-								qb = q;
-								goto step3;
-							}
+						}
+						++ count;
+						if (count == 60) {
+							qb = q;
+							goto step3;
 						}
 					}
 				}
@@ -138,27 +126,18 @@ step3:
 					int32_t letter = 0xf&*(a->cigar + c);
 					int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
 					int32_t l = (count == 0 && left > 0) ? left: length;
-					if (letter == 2){ 
-						for (i = 0; i < l; ++i) { 
-							fprintf(stdout, "-");
-							++ count;
-							if (count == 60) {
-								left = l - i - 1;
-								e = (left == 0) ? (c + 1) : c;
-								goto end;
-							}
-						}
-					}else {
-						for (i = 0; i < l; ++i) {
+					for (i = 0; i < l; ++i) { 
+						if (letter == 2) fprintf(stdout, "-");
+						else {
 							fprintf(stdout, "%c", *(read_seq + p));
 							++p;
-							++ count;
-							if (count == 60) {
-								pb = p;
-								left = l - i - 1;
-								e = (left == 0) ? (c + 1) : c;
-								goto end;
-							}
+						}
+						++ count;
+						if (count == 60) {
+							pb = p;
+							left = l - i - 1;
+							e = (left == 0) ? (c + 1) : c;
+							goto end;
 						}
 					}
 				}
@@ -439,8 +418,8 @@ int main (int argc, char * const argv[]) {
 			}
 			for (m = 0; m < refLen; ++m) ref_num[m] = table[(int)ref_seq->seq.s[m]];
 			if (path == 1) flag = 2;
-			result = ssw_align (p, ref_num, refLen, gap_open, gap_extension, flag, filter);
-			if (reverse == 1 && protein == 0) result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, filter);
+			result = ssw_align (p, ref_num, refLen, gap_open, gap_extension, flag, filter, 0);
+			if (reverse == 1 && protein == 0) result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, filter, 0);
 			if (result_rc && result_rc->score1 > result->score1 && result_rc->score1 >= filter) {
 				if (sam) ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 1);
 				else ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 0);

@@ -4,8 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 03/28/12.
- *	New features: This is the api file.
+ *	Last revision by Mengyao Zhao on 04/10/12.
  *
  */
 
@@ -56,7 +55,7 @@ extern "C" {
 	@param	read	pointer to the query sequence; the query sequence needs to be numbers
 	@param	readLen	length of the query sequence
 	@param	mat	pointer to the substitution matrix; mat needs to be corresponding to the read sequence
-	@param	n	the number of elements in mat is n*n
+	@param	n	the square root of the number of elements in mat (mat has n*n elements)
 	@param	score_size	estimated Smith-Waterman score; if your estimated best alignment score is surely < 255 please set 0; if 
 						your estimated best alignment score >= 255, please set 1; if you don't know, please set 2 
 	@return	pointer to the query profile structure
@@ -64,7 +63,7 @@ extern "C" {
 			If the query sequence is: ACGTATC, the sequence that read points to can be: 1234142
 			Then if the penalty for match is 2 and for mismatch is -2, the substitution matrix of parameter mat will be:
 			//A  C  G  T  
-			  2	-2 -2 -2 //A
+			  2 -2 -2 -2 //A
 			 -2  2 -2 -2 //C
 			 -2 -2  2 -2 //G
 			 -2 -2 -2  2 //T
@@ -85,14 +84,19 @@ void init_destroy (s_profile* p);
 	@param	refLen	length of the target sequence
 	@param	weight_gapO	the absolute value of gap open penalty  
 	@param	weight_gapE	the absolute value of gap extension penalty
-	@param	flag	bitwise FLAG; (from high to low) bit 6: when setted as 1, function ssw_align will return the best alignment 
-					beginning position; bit 7: when setted as 1, if the best alignment score >= filter, (whatever bit 6 is setted)
-					the function will return the best alignment beginning position and cigar; bit 8: when setted as 1, (whatever 
-					bit 6 or 7 is setted) the function will always return the best alignment beginning position and cigar
-	@param	filter	when bit 7 of flag is setted as 1 and bit 8 is setted as 0, filter will be used
+	@param	flag	bitwise FLAG; (from high to low) bit 5: when setted as 1, function ssw_align will return the best alignment 
+					beginning position; bit 6: when setted as 1, if (ref_end1 - ref_begin1 < filterd && read_end1 - read_begin1 
+					< filterd), (whatever bit 5 is setted) the function will return the best alignment beginning position and 
+					cigar; bit 7: when setted as 1, if the best alignment score >= filters, (whatever bit 5 is setted) the function
+  					will return the best alignment beginning position and cigar; bit 8: when setted as 1, (whatever bit 5, 6 or 7 is
+ 					setted) the function will always return the best alignment beginning position and cigar
+	@param	filters	when bit 7 of flag is setted as 1 and bit 8 is setted as 0, filters will be used
+	@param	filterd	when bit 6 of flag is setted as 1 and bit 8 is setted as 0, filterd will be used
 	@return	pointer to the alignment result structure 
 	@note	Whatever the parameter flag is setted, this function will at least return the optimal and sub-optimal alignment score,
-			and the optimal alignment ending position on target and query sequences. All returned positions are 1-based coordinate.  	
+			and the optimal alignment ending positions on target and query sequences. If both bit 6 and 7 of the flag are setted
+			while bit 8 is not, the function will return cigar only when both criteria are fulfilled. All returned positions are 
+			1-based coordinate.  	
 */
 s_align* ssw_align (const s_profile* prof, 
 					const int8_t* ref, 
@@ -100,7 +104,8 @@ s_align* ssw_align (const s_profile* prof,
 					const uint8_t weight_gapO, 
 					const uint8_t weight_gapE, 
 					const uint8_t flag,	
-					const uint16_t filter);
+					const uint16_t filters,
+					const int32_t filterd);
 
 /*!	@function	Release the memory allocated by function ssw_align.
 	@param	a	pointer to the alignment result structure
