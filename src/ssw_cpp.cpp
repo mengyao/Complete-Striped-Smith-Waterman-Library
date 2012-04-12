@@ -91,6 +91,11 @@ void ConvertAlignment(const s_align& s_al,
   al->cigar_string = cigar_string.str();
 }
 
+void SetFlag(const StripedSmithWaterman::Filter& filter, uint8_t* flag) {
+  if (filter.report_begin_position) *flag |= 0x10;
+  if (filter.report_cigar) *flag |= 0xf0;
+}
+
 } // namespace
 
 
@@ -151,8 +156,8 @@ Aligner::Aligner(const int8_t* score_matrix,
     , translated_reference_(NULL)
     , reference_length_(0)
 {
-  score_matrix_ = new int8_t[score_matrix_size_];
-  memcpy(score_matrix_, score_matrix, sizeof(int8_t) * score_matrix_size_);
+  score_matrix_ = new int8_t[score_matrix_size_ * score_matrix_size_];
+  memcpy(score_matrix_, score_matrix, sizeof(int8_t) * score_matrix_size_ * score_matrix_size_);
   translation_matrix_ = new int8_t[translation_matrix_size];
   memcpy(translation_matrix_, translation_matrix, sizeof(int8_t) * translation_matrix_size);
   matrix_built_ = true;
@@ -202,7 +207,8 @@ int Aligner::TranslateBase(const char* bases, const int& length,
 }
 
 
-bool Aligner::Align(const char* query, Alignment* alignment) const
+bool Aligner::Align(const char* query, const Filter& filter, 
+                    Alignment* alignment) const
 {
   if (!matrix_built_) return false;
   if (reference_length_ == 0) return false;
@@ -215,12 +221,12 @@ bool Aligner::Align(const char* query, Alignment* alignment) const
   s_profile* profile = ssw_init(translated_query, query_len, score_matrix_, 
                                 score_matrix_size_, score_size);
 
-  const uint8_t  flag = 255;
-  const uint16_t filter = 0;
+  uint8_t flag = 0;
+  SetFlag(filter, &flag);
   s_align* s_al = ssw_align(profile, translated_reference_, reference_length_,
                                  static_cast<int>(gap_opening_penalty_), 
 				 static_cast<int>(gap_extending_penalty_),
-				 flag, filter);
+				 flag, filter.score_filter, filter.distance_filter);
   
   ConvertAlignment(*s_al, query_len, alignment);
   align_destroy(s_al);
@@ -230,8 +236,8 @@ bool Aligner::Align(const char* query, Alignment* alignment) const
 }
 
 
-bool Aligner::Align(const char* query, const char* ref, const int& ref_len, 
-                    Alignment* alignment) const
+bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
+                    const Filter& filter, Alignment* alignment) const
 {
   if (!matrix_built_) return false;
   
@@ -249,12 +255,12 @@ bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
   s_profile* profile = ssw_init(translated_query, query_len, score_matrix_, 
                                 score_matrix_size_, score_size);
 
-  const uint8_t  flag = 255;
-  const uint16_t filter = 0;
+  uint8_t flag = 0;
+  SetFlag(filter, &flag);
   s_align* s_al = ssw_align(profile, translated_ref, valid_ref_len,
                                  static_cast<int>(gap_opening_penalty_), 
 				 static_cast<int>(gap_extending_penalty_),
-				 flag, filter);
+				 flag, filter.score_filter, filter.distance_filter);
   ConvertAlignment(*s_al, query_len, alignment);
   align_destroy(s_al);
   init_destroy(profile);
@@ -317,8 +323,8 @@ bool Aligner::ReBuild(
     const int8_t* translation_matrix,
     const int&    translation_matrix_size) {
 
-  score_matrix_ = new int8_t[score_matrix_size_];
-  memcpy(score_matrix_, score_matrix, sizeof(int8_t) * score_matrix_size_);
+  score_matrix_ = new int8_t[score_matrix_size_ * score_matrix_size_];
+  memcpy(score_matrix_, score_matrix, sizeof(int8_t) * score_matrix_size_ * score_matrix_size_);
   translation_matrix_ = new int8_t[translation_matrix_size];
   memcpy(translation_matrix_, translation_matrix, sizeof(int8_t) * translation_matrix_size);
   matrix_built_ = true;

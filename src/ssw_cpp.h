@@ -21,6 +21,28 @@ struct Alignment {
 			       //   low 4 bits: M/I/D/S/X (0/1/2/4/8);
 };
 
+struct Filter {
+  // NOTE: No matter the filter, those five fields will be given anyway.
+  //       sw_score; sw_score_next_best; ref_end; query_end; ref_end_next_best.
+  
+  bool report_begin_position;    // Give ref_begin and query_begin.
+  bool report_cigar;             // Give cigar_string and cigar.
+                                 //   report_begin_position is automatically TRUE.
+  
+  // When report_cigar is true and alignment passes these two filters,
+  //   cigar_string and cigar will be given.
+  uint16_t score_filter;         // score >= score_filter
+  uint16_t distance_filter;      // ((ref_end - ref_begin) < distance_filter) &&
+                                 // ((query_end - read_begin) < distance_filter)
+
+  Filter()
+    : report_begin_position(true)
+    , report_cigar(true)
+    , score_filter(0)
+    , distance_filter(32767)
+  {};
+};
+
 class Aligner {
  public:
   // =========
@@ -80,10 +102,11 @@ class Aligner {
   // @function Align the query againt the reference that is set by 
   //             SetReferenceSequence.
   // @param    query     The query sequence.
+  // @param    filter    The filter for the alignment.
   // @param    alignment The container contains the result.
   // @return   True: succeed; false: fail.
   // =========
-  bool Align(const char* query, Alignment* alignment) const;
+  bool Align(const char* query, const Filter& filter, Alignment* alignment) const;
 
   // =========
   // @function Align the query againt the reference.
@@ -93,11 +116,12 @@ class Aligner {
   // @param    ref       The reference sequence.
   //                     [NOTICE] It is not necessary null terminated.
   // @param    ref_len   The length of the reference sequence.
+  // @param    filter    The filter for the alignment.
   // @param    alignment The container contains the result.
   // @return   True: succeed; false: fail.
   // =========
   bool Align(const char* query, const char* ref, const int& ref_len, 
-             Alignment* alignment) const;
+             const Filter& filter, Alignment* alignment) const;
 
   // @function Clear up all containers and thus the aligner is disabled.
   //             To rebuild the aligner please use Build functions.
