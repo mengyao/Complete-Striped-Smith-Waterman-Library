@@ -19,6 +19,17 @@ struct Alignment {
   std::vector<uint32_t> cigar; // Cigar stored in the BAM format
                                //   high 28 bits: length
 			       //   low 4 bits: M/I/D/S/X (0/1/2/4/8);
+  void Clear() {
+    sw_score           = 0;
+    sw_score_next_best = 0;
+    ref_begin          = 0;
+    ref_end            = 0;
+    query_begin        = 0;
+    query_end          = 0;
+    ref_end_next_best  = 0;
+    cigar_string.clear();
+    cigar.clear();
+  };
 };
 
 struct Filter {
@@ -29,7 +40,7 @@ struct Filter {
   bool report_cigar;             // Give cigar_string and cigar.
                                  //   report_begin_position is automatically TRUE.
   
-  // When report_cigar is true and alignment passes these two filters,
+  // When *report_cigar* is true and alignment passes these two filters,
   //   cigar_string and cigar will be given.
   uint16_t score_filter;         // score >= score_filter
   uint16_t distance_filter;      // ((ref_end - ref_begin) < distance_filter) &&

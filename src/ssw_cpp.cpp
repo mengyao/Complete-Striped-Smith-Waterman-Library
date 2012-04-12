@@ -92,8 +92,8 @@ void ConvertAlignment(const s_align& s_al,
 }
 
 void SetFlag(const StripedSmithWaterman::Filter& filter, uint8_t* flag) {
-  if (filter.report_begin_position) *flag |= 0x10;
-  if (filter.report_cigar) *flag |= 0xf0;
+  if (filter.report_begin_position) *flag |= 0x08;
+  if (filter.report_cigar) *flag |= 0x0f;
 }
 
 } // namespace
@@ -228,6 +228,7 @@ bool Aligner::Align(const char* query, const Filter& filter,
 				 static_cast<int>(gap_extending_penalty_),
 				 flag, filter.score_filter, filter.distance_filter);
   
+  alignment->Clear();
   ConvertAlignment(*s_al, query_len, alignment);
   align_destroy(s_al);
   init_destroy(profile);
@@ -261,6 +262,8 @@ bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
                                  static_cast<int>(gap_opening_penalty_), 
 				 static_cast<int>(gap_extending_penalty_),
 				 flag, filter.score_filter, filter.distance_filter);
+  
+  alignment->Clear();
   ConvertAlignment(*s_al, query_len, alignment);
   align_destroy(s_al);
   init_destroy(profile);
