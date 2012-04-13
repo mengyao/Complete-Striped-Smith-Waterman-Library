@@ -176,8 +176,7 @@ int Aligner::SetReferenceSequence(const char* seq, const int& length) {
     // calculate the valid length
     int valid_length = (strlen(seq) > length) ? length : strlen(seq);
     // delete the current buffer
-    if (reference_length_ > 1) delete [] translated_reference_;
-    else delete translated_reference_;
+    CleanReferenceSequence();
     // allocate a new buffer
     translated_reference_ = new int8_t[valid_length];
   
