@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 04/11/12.
+ *	Last revision by Mengyao Zhao on 04/18/12.
  *
  */
 
@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include "ssw.h"
 
 #ifdef __GNUC__
@@ -54,6 +55,7 @@ struct _profile{
 	const int8_t* mat;
 	int32_t readLen;
 	int32_t n;
+	uint8_t bias;
 };
 
 /* Generate query profile rearrange query sequence & calculate the weight of match/mismatch. */
@@ -62,16 +64,18 @@ __m128i* qP_byte (const int8_t* read_num,
 				  const int32_t readLen,
 				  const int32_t n,	/* the edge length of the squre matrix mat */
 				  uint8_t bias) { 
-					
+				
 	int32_t
 	segLen = (readLen + 15) / 16; /* Split the 128 bit register into 16 pieces. 
 								     Each piece is 8 bit. Split the read into 16 segments. 
 								     Calculat 16 segments in parallel.
 								   */
-	__m128i* vProfile = (__m128i*)calloc(n * segLen, sizeof(__m128i));
+	__m128i* vProfile = (__m128i*)malloc(n * segLen * sizeof(__m128i));
 	int8_t* t = (int8_t*)vProfile;
-	int32_t nt, i, j;
-	int32_t segNum;
+	int32_t nt, i, j, segNum;
+	
+//for (i = 0; i < readLen; ++i) fprintf(stderr, "%d ", read_num[i]);
+//fprintf(stderr, "\nn: %d\tbias: %d\n", n, bias);
 
 	/* Generate query profile rearrange query sequence & calculate the weight of match/mismatch */
 	for (nt = 0; LIKELY(nt < n); nt ++) {
@@ -83,6 +87,10 @@ __m128i* qP_byte (const int8_t* read_num,
 			}
 		}
 	}
+
+//	t = (int8_t*)vProfile;
+//	for(i = 0; i < n * segLen * 16; ++i, ++t) fprintf(stderr, "%d ", *t);
+	
 
 	return vProfile;
 }
@@ -227,6 +235,7 @@ end:
 			
 			if (LIKELY(temp > max)) {
 				max = temp;
+//				fprintf(stderr, "max: %d\n", max);
 				if (max + bias >= 255) break;	//overflow
 				end_ref = i;
 			
@@ -288,7 +297,7 @@ __m128i* qP_word (const int8_t* read_num,
 				  const int32_t n) { 
 					
 	int32_t segLen = (readLen + 7) / 8; 
-	__m128i* vProfile = (__m128i*)calloc(n * segLen, sizeof(__m128i));
+	__m128i* vProfile = (__m128i*)malloc(n * segLen * sizeof(__m128i));
 	int16_t* t = (int16_t*)vProfile;
 	int32_t nt, i, j;
 	int32_t segNum;
@@ -503,11 +512,6 @@ cigar* banded_sw (const int8_t* ref,
 
 	do {
 		width = band_width * 2 + 3, width_d = band_width * 2 + 1;
-/*		h_b = (int32_t*)calloc(width, sizeof(int32_t)); 
-		e_b = (int32_t*)calloc(width, sizeof(int32_t)); 
-		h_c = (int32_t*)calloc(width, sizeof(int32_t)); 
-
-		direction = (int8_t*)calloc(width_d * readLen * 3, sizeof(int8_t));*/
 		while (width >= s1) {
 			++s1;
 			kroundup32(s1);
@@ -518,6 +522,10 @@ cigar* banded_sw (const int8_t* ref,
 		while (width_d * readLen * 3 >= s2) {
 			++s2;
 			kroundup32(s2);
+			if (s2 < 0) {
+				fprintf(stderr, "Alignment score and position are not consensus.\n");
+				exit(1);
+			}
 			direction = (int8_t*)realloc(direction, s2 * sizeof(int8_t)); 
 		}
 		direction_line = direction;
@@ -678,13 +686,16 @@ s_profile* ssw_init (const int8_t* read, const int32_t readLen, const int8_t* ma
 	s_profile* p = (s_profile*)calloc(1, sizeof(struct _profile));
 	p->profile_byte = 0;
 	p->profile_word = 0;
+	p->bias = 0;
 	
 	if (score_size == 0 || score_size == 2) {
 		/* Find the bias to use in the substitution matrix */
-		int32_t bias = 127, i;
+		int32_t bias = 0, i;
 		for (i = 0; i < n*n; i++) if (mat[i] < bias) bias = mat[i];
-		if (bias > 0) bias = 0;
+	//	if (bias > 0) bias = 0;
+		bias = abs(bias);
 
+		p->bias = bias;
 		p->profile_byte = qP_byte (read, mat, readLen, n, bias);
 	}
 	if (score_size == 1 || score_size == 2) p->profile_word = qP_word (read, mat, readLen, n);
@@ -728,7 +739,7 @@ s_align* ssw_align (const s_profile* prof,
 
 	// Find the alignment scores and ending positions
 	if (prof->profile_byte) {
-		bests = sw_sse2_byte(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_byte, -1, 4);
+		bests = sw_sse2_byte(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_byte, -1, prof->bias);
 		if (prof->profile_word && bests[0].score == 255) {
 			free(bests);
 			bests = sw_sse2_word(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_word, -1);
@@ -755,8 +766,8 @@ s_align* ssw_align (const s_profile* prof,
 	// Find the beginning position of the best alignment.
 	read_reverse = seq_reverse(prof->read, r->read_end1 - 1);
 	if (word == 0) {
-		vP = qP_byte(read_reverse, prof->mat, r->read_end1, prof->n, 4);
-		bests_reverse = sw_sse2_byte(ref, 1, r->ref_end1, r->read_end1, weight_gapO, weight_gapE, vP, r->score1, 4);
+		vP = qP_byte(read_reverse, prof->mat, r->read_end1, prof->n, prof->bias);
+		bests_reverse = sw_sse2_byte(ref, 1, r->ref_end1, r->read_end1, weight_gapO, weight_gapE, vP, r->score1, prof->bias);
 	} else {
 		vP = qP_word(read_reverse, prof->mat, r->read_end1, prof->n);
 		bests_reverse = sw_sse2_word(ref, 1, r->ref_end1, r->read_end1, weight_gapO, weight_gapE, vP, r->score1);
@@ -769,6 +780,7 @@ s_align* ssw_align (const s_profile* prof,
 	if ((7&flag) == 0 || ((2&flag) != 0 && r->score1 < filters) || ((4&flag) != 0 && (r->ref_end1 - r->ref_begin1 > filterd || r->read_end1 - r->read_begin1 > filterd))) goto end;
 
 	// Generate cigar.
+	fprintf(stderr, "score1: %d\tref_begin1: %d\tref_end1: %d\tread_begin1: %d\tread_end1: %d\n", r->score1, r->ref_begin1, r->ref_end1, r->read_begin1, r->read_end1);
 	refLen = r->ref_end1 - r->ref_begin1 + 1;
 	readLen = r->read_end1 - r->read_begin1 + 1;
 	band_width = abs(refLen - readLen) + 1;
