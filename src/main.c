@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 04/11/12.
+ *  Last revision by Mengyao Zhao on 04/18/12.
  */
 
 #include <stdlib.h>
@@ -201,7 +201,7 @@ end:
 					mapq += length;
 				}
 			}
-			fprintf(stdout,"\tNM:i:%d\n", mapq);
+			fprintf(stdout,"\tNM:i:%d\tZS:i:%d\n", mapq, a->score2);
 		}
 	}  
 }
