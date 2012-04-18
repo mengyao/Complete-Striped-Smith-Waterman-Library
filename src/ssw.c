@@ -74,9 +74,6 @@ __m128i* qP_byte (const int8_t* read_num,
 	int8_t* t = (int8_t*)vProfile;
 	int32_t nt, i, j, segNum;
 	
-//for (i = 0; i < readLen; ++i) fprintf(stderr, "%d ", read_num[i]);
-//fprintf(stderr, "\nn: %d\tbias: %d\n", n, bias);
-
 	/* Generate query profile rearrange query sequence & calculate the weight of match/mismatch */
 	for (nt = 0; LIKELY(nt < n); nt ++) {
 		for (i = 0; i < segLen; i ++) {
@@ -87,11 +84,6 @@ __m128i* qP_byte (const int8_t* read_num,
 			}
 		}
 	}
-
-//	t = (int8_t*)vProfile;
-//	for(i = 0; i < n * segLen * 16; ++i, ++t) fprintf(stderr, "%d ", *t);
-	
-
 	return vProfile;
 }
 
@@ -235,7 +227,6 @@ end:
 			
 			if (LIKELY(temp > max)) {
 				max = temp;
-//				fprintf(stderr, "max: %d\n", max);
 				if (max + bias >= 255) break;	//overflow
 				end_ref = i;
 			
@@ -727,13 +718,8 @@ s_align* ssw_align (const s_profile* prof,
 	int8_t* read_reverse = 0;
 	cigar* path;
 	s_align* r = (s_align*)calloc(1, sizeof(s_align));
-	r->score1 = 0;
-	r->score2 = 0;
-	r->ref_begin1 = 0;
-	r->ref_end1 = 0;
-	r->read_begin1 = 0;
-	r->read_end1 = 0;
-	r->ref_end2 = 0;
+	r->ref_begin1 = -1;
+	r->read_begin1 = -1;
 	r->cigar = 0;
 	r->cigarLen = 0;
 
@@ -757,34 +743,33 @@ s_align* ssw_align (const s_profile* prof,
 	}
 	r->score1 = bests[0].score;
 	r->score2 = bests[1].score;
-	r->ref_end1 = bests[0].ref + 1;
-	r->read_end1 = bests[0].read + 1;
-	r->ref_end2 = bests[1].ref + 1;
+	r->ref_end1 = bests[0].ref;
+	r->read_end1 = bests[0].read;
+	r->ref_end2 = bests[1].ref;
 	free(bests);
 	if (flag == 0 || (flag == 2 && r->score1 < filters)) goto end;
 
 	// Find the beginning position of the best alignment.
-	read_reverse = seq_reverse(prof->read, r->read_end1 - 1);
+	read_reverse = seq_reverse(prof->read, r->read_end1);
 	if (word == 0) {
-		vP = qP_byte(read_reverse, prof->mat, r->read_end1, prof->n, prof->bias);
-		bests_reverse = sw_sse2_byte(ref, 1, r->ref_end1, r->read_end1, weight_gapO, weight_gapE, vP, r->score1, prof->bias);
+		vP = qP_byte(read_reverse, prof->mat, r->read_end1 + 1, prof->n, prof->bias);
+		bests_reverse = sw_sse2_byte(ref, 1, r->ref_end1 + 1, r->read_end1 + 1, weight_gapO, weight_gapE, vP, r->score1, prof->bias);
 	} else {
-		vP = qP_word(read_reverse, prof->mat, r->read_end1, prof->n);
-		bests_reverse = sw_sse2_word(ref, 1, r->ref_end1, r->read_end1, weight_gapO, weight_gapE, vP, r->score1);
+		vP = qP_word(read_reverse, prof->mat, r->read_end1 + 1, prof->n);
+		bests_reverse = sw_sse2_word(ref, 1, r->ref_end1 + 1, r->read_end1 + 1, weight_gapO, weight_gapE, vP, r->score1);
 	}
 	free(vP);
 	free(read_reverse);
-	r->ref_begin1 = bests_reverse[0].ref + 1;
+	r->ref_begin1 = bests_reverse[0].ref;
 	r->read_begin1 = r->read_end1 - bests_reverse[0].read;
 	free(bests_reverse);
 	if ((7&flag) == 0 || ((2&flag) != 0 && r->score1 < filters) || ((4&flag) != 0 && (r->ref_end1 - r->ref_begin1 > filterd || r->read_end1 - r->read_begin1 > filterd))) goto end;
 
 	// Generate cigar.
-	fprintf(stderr, "score1: %d\tref_begin1: %d\tref_end1: %d\tread_begin1: %d\tread_end1: %d\n", r->score1, r->ref_begin1, r->ref_end1, r->read_begin1, r->read_end1);
 	refLen = r->ref_end1 - r->ref_begin1 + 1;
 	readLen = r->read_end1 - r->read_begin1 + 1;
 	band_width = abs(refLen - readLen) + 1;
-	path = banded_sw(ref + r->ref_begin1 - 1, prof->read + r->read_begin1 - 1, refLen, readLen, r->score1, weight_gapO, weight_gapE, band_width, prof->mat, prof->n);
+	path = banded_sw(ref + r->ref_begin1, prof->read + r->read_begin1, refLen, readLen, r->score1, weight_gapO, weight_gapE, band_width, prof->mat, prof->n);
 	if (path == 0) r = 0;
 	else {
 		r->cigar = path->seq;

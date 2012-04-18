@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 04/10/12.
+ *	Last revision by Mengyao Zhao on 04/18/12.
  *
  */
 
@@ -96,7 +96,7 @@ void init_destroy (s_profile* p);
 	@note	Whatever the parameter flag is setted, this function will at least return the optimal and sub-optimal alignment score,
 			and the optimal alignment ending positions on target and query sequences. If both bit 6 and 7 of the flag are setted
 			while bit 8 is not, the function will return cigar only when both criteria are fulfilled. All returned positions are 
-			1-based coordinate.  	
+			0-based coordinate.  	
 */
 s_align* ssw_align (const s_profile* prof, 
 					const int8_t* ref, 

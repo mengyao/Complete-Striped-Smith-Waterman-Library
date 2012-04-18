@@ -67,12 +67,12 @@ void ssw_write (s_align* a,
 		fprintf(stdout, "target_name: %s\nquery_name: %s\noptimal_alignment_score: %d\tsub-optimal_alignment_score: %d\t", ref_seq->name.s, read->name.s, a->score1, a->score2);
 		if (strand == 0) fprintf(stdout, "strand: +\t");
 		else fprintf(stdout, "strand: -\t");
-		if (a->ref_begin1) fprintf(stdout, "target_begin: %d\t", a->ref_begin1);
-		fprintf(stdout, "target_end: %d\t", a->ref_end1);
-		if (a->read_begin1) fprintf(stdout, "query_begin: %d\t", a->read_begin1);
-		fprintf(stdout, "query_end: %d\n\n", a->read_end1);
+		if (a->ref_begin1 + 1) fprintf(stdout, "target_begin: %d\t", a->ref_begin1 + 1);
+		fprintf(stdout, "target_end: %d\t", a->ref_end1 + 1);
+		if (a->read_begin1 + 1) fprintf(stdout, "query_begin: %d\t", a->read_begin1 + 1);
+		fprintf(stdout, "query_end: %d\n\n", a->read_end1 + 1);
 		if (a->cigar) {
-			int32_t i, c = 0, left = 0, e = 0, qb = a->ref_begin1 - 1, pb = a->read_begin1 - 1;
+			int32_t i, c = 0, left = 0, e = 0, qb = a->ref_begin1, pb = a->read_begin1;
 			while (e < a->cigarLen || left > 0) {
 				int32_t count = 0;
 				int32_t q = qb;
@@ -151,13 +151,13 @@ end:
 		fprintf(stdout, "%s\t", read->name.s);
 		if (a->score1 == 0) fprintf(stdout, "4\t*\t0\t255\t*\t*\t0\t0\t*\t*\n");
 		else {
-			int32_t c, l = a->read_end1 - a->read_begin1 + 1, qb = a->ref_begin1 - 1, pb = a->read_begin1 - 1, p;
+			int32_t c, l = a->read_end1 - a->read_begin1 + 1, qb = a->ref_begin1, pb = a->read_begin1, p;
 			uint32_t mapq = -4.343 * log(1 - (double)abs(a->score1 - a->score2)/(double)a->score1);
 			mapq = (uint32_t) (mapq + 4.99);
 			mapq = mapq < 254 ? mapq : 254;
 			if (strand) fprintf(stdout, "16\t");
 			else fprintf(stdout, "0\t");
-			fprintf(stdout, "%s\t%d\t%d\t", ref_seq->name.s, a->ref_begin1, mapq);
+			fprintf(stdout, "%s\t%d\t%d\t", ref_seq->name.s, a->ref_begin1 + 1, mapq);
 			for (c = 0; c < a->cigarLen; ++c) {
 				int32_t letter = 0xf&*(a->cigar + c);
 				int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
@@ -167,16 +167,16 @@ end:
 				else fprintf(stdout, "D");
 			}
 			fprintf(stdout, "\t*\t0\t0\t");
-			for (c = (a->read_begin1 - 1); c < a->read_end1; ++c) fprintf(stdout, "%c", read_seq[c]);
+			for (c = a->read_begin1; c <= a->read_end1; ++c) fprintf(stdout, "%c", read_seq[c]);
 			fprintf(stdout, "\t");
 			if (read->qual.s && strand) {
-				p = a->read_end1 - 1;
+				p = a->read_end1;
 				for (c = 0; c < l; ++c) {
 					fprintf(stdout, "%c", read->qual.s[p]);
 					--p;
 				}
 			}else if (read->qual.s){
-				p = a->read_begin1 - 1;
+				p = a->read_begin1;
 				for (c = 0; c < l; ++c) {
 					fprintf(stdout, "%c", read->qual.s[p]);
 					++p;
