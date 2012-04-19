@@ -272,7 +272,7 @@ end:
 			bests[1].score = maxColumn[i];
 	}
 	edge = (end_ref + readLen / 2 + 1) > refLen ? refLen : (end_ref + readLen / 2 + 1);
-	for (i = edge; i < refLen; i ++) {
+	for (i = edge + 1; i < refLen; i ++) {
 		if (maxColumn[i] > bests[1].score) 
 			bests[1].score = maxColumn[i];
 	}

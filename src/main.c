@@ -273,13 +273,6 @@ int main (int argc, char * const argv[]) {
 	
 	int8_t* table = nt_table;
 
-	// initialize scoring matrix for genome sequences
-	for (l = k = 0; LIKELY(l < 4); ++l) {
-		for (m = 0; LIKELY(m < 4); ++m) mata[k++] = l == m ? match : -mismatch;	/* weight_match : -weight_mismatch */
-		mata[k++] = 0; // ambiguous base
-	}
-	for (m = 0; LIKELY(m < 5); ++m) mata[k++] = 0;
-
 	// Parse command line.
 	while ((l = getopt(argc, argv, "m:x:o:e:a:f:pcrsh")) >= 0) {
 		switch (l) {
@@ -314,11 +307,19 @@ int main (int argc, char * const argv[]) {
 		return 1;
 	}
 
+	// initialize scoring matrix for genome sequences
+	for (l = k = 0; LIKELY(l < 4); ++l) {
+		for (m = 0; LIKELY(m < 4); ++m) mata[k++] = l == m ? match : -mismatch;	/* weight_match : -weight_mismatch */
+		mata[k++] = 0; // ambiguous base
+	}
+	for (m = 0; LIKELY(m < 5); ++m) mata[k++] = 0;
+
 	if (protein == 1 && (! strcmp(mat_name, "\0"))) {
 		n = 24;
 		table = aa_table;
 		mat = mat50;
 	} else if (strcmp(mat_name, "\0")) {
+
 	// Parse score matrix.
 		FILE *f_mat = fopen(mat_name, "r");
 		char line[128];
