@@ -36,7 +36,8 @@ struct Filter {
   // NOTE: No matter the filter, those five fields will be given anyway.
   //       sw_score; sw_score_next_best; ref_end; query_end; ref_end_next_best.
   
-  bool report_begin_position;    // Give ref_begin and query_begin.
+  bool report_begin_position;    // Give ref_begin and query_begin. 
+                                 //   If it is not set, ref_begin and query_begin are -1.
   bool report_cigar;             // Give cigar_string and cigar.
                                  //   report_begin_position is automatically TRUE.
   
