@@ -188,6 +188,14 @@ fprintf(stderr, "terminate: %d\n", terminate);
 			
 			/* Update highest score encountered this far. */
 			vMaxColumn = _mm_max_epu8(vMaxColumn, vH);
+
+			if (i == 1) {
+				fprintf(stderr, "i: %d\tj: %d\n", i, j);
+				int8_t* t = (int8_t*)&vH;
+				int z;
+				for (z = 0; z < 16; ++z, ++t) fprintf(stderr, "%d ", *t);
+				fprintf(stderr, "\n");
+			}
 			
 			/* Save vH values. */
 			_mm_store_si128(pvHStore + j, vH);

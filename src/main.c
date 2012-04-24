@@ -323,7 +323,7 @@ int main (int argc, char * const argv[]) {
 	// Parse score matrix.
 		FILE *f_mat = fopen(mat_name, "r");
 		char line[128];
-		free(mata);
+//		free(mata);
 		mata = (int8_t*)realloc(mata, 1024 * sizeof(int8_t));
 		k = 0;
 		m = 0;
