@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 04/18/12.
+ *	Last revision by Mengyao Zhao on 04/19/12.
  *
  */
 
@@ -64,7 +64,7 @@ __m128i* qP_byte (const int8_t* read_num,
 				  const int32_t readLen,
 				  const int32_t n,	/* the edge length of the squre matrix mat */
 				  uint8_t bias) { 
-				
+	fprintf(stderr, "bias: %d\n", bias);			
 	int32_t
 	segLen = (readLen + 15) / 16; /* Split the 128 bit register into 16 pieces. 
 								     Each piece is 8 bit. Split the read into 16 segments. 
@@ -84,6 +84,10 @@ __m128i* qP_byte (const int8_t* read_num,
 			}
 		}
 	}
+	fprintf(stderr,"segLen: %d\n", segLen);
+	for(i = 0, t = (int8_t*)vProfile; i < n * segLen * 16; ++i, ++t) fprintf(stderr, "%d", *t);
+	fprintf(stderr, "\n");
+
 	return vProfile;
 }
 
@@ -112,10 +116,10 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
 					  (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 2)); \
 					  (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 1)); \
 					  (m) = _mm_extract_epi16((vm), 0)
-
+fprintf(stderr, "terminate: %d\n", terminate);
 	uint8_t max = 0;		                     /* the max alignment score */
 	int32_t end_read = readLen - 1;
-	int32_t end_ref = 0; /* 1_based best alignment ending point; Initialized as isn't aligned - 0. */
+	int32_t end_ref = -1; /* 0_based best alignment ending point; Initialized as isn't aligned -1. */
 	int32_t segLen = (readLen + 15) / 16; /* number of segment */
 	
 	/* array to record the largest score of each reference position */
@@ -237,6 +241,8 @@ end:
 		
 		/* Record the max score of current column. */	
 		max16(maxColumn[i], vMaxColumn);
+	//	fprintf(stderr, "%d", ref[i]);
+		fprintf(stderr, "ref: %d\tmaxColumn[%d]: %d\n", ref[i], i, maxColumn[i]);
 		if (maxColumn[i] == terminate) break;
 	}
 	
@@ -683,7 +689,6 @@ s_profile* ssw_init (const int8_t* read, const int32_t readLen, const int8_t* ma
 		/* Find the bias to use in the substitution matrix */
 		int32_t bias = 0, i;
 		for (i = 0; i < n*n; i++) if (mat[i] < bias) bias = mat[i];
-	//	if (bias > 0) bias = 0;
 		bias = abs(bias);
 
 		p->bias = bias;
@@ -751,6 +756,11 @@ s_align* ssw_align (const s_profile* prof,
 
 	// Find the beginning position of the best alignment.
 	read_reverse = seq_reverse(prof->read, r->read_end1);
+
+	int i;
+	for (i = 0; i < r->read_end1 + 1; ++i) fprintf(stderr, "%d", read_reverse[i]);
+	fprintf(stderr, "\n");
+
 	if (word == 0) {
 		vP = qP_byte(read_reverse, prof->mat, r->read_end1 + 1, prof->n, prof->bias);
 		bests_reverse = sw_sse2_byte(ref, 1, r->ref_end1 + 1, r->read_end1 + 1, weight_gapO, weight_gapE, vP, r->score1, prof->bias);
@@ -766,6 +776,7 @@ s_align* ssw_align (const s_profile* prof,
 	if ((7&flag) == 0 || ((2&flag) != 0 && r->score1 < filters) || ((4&flag) != 0 && (r->ref_end1 - r->ref_begin1 > filterd || r->read_end1 - r->read_begin1 > filterd))) goto end;
 
 	// Generate cigar.
+	fprintf(stderr, "score: %d\tref_begin: %d\tref_end: %d\tread_begin: %d\tread_end: %d\n", r->score1, r->ref_begin1, r->ref_end1, r->read_begin1, r->read_end1);
 	refLen = r->ref_end1 - r->ref_begin1 + 1;
 	readLen = r->read_end1 - r->read_begin1 + 1;
 	band_width = abs(refLen - readLen) + 1;
