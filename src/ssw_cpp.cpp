@@ -172,9 +172,9 @@ int Aligner::SetReferenceSequence(const char* seq, const int& length) {
   
   int len = 0;
   if (matrix_built_) {
-    char* ptr = (char*)seq;
     // calculate the valid length
-    int valid_length = (strlen(seq) > length) ? length : strlen(seq);
+    int valid_length = (static_cast<int>(strlen(seq)) > length) 
+                       ? length : strlen(seq);
     // delete the current buffer
     CleanReferenceSequence();
     // allocate a new buffer
@@ -246,7 +246,8 @@ bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
   TranslateBase(query, query_len, translated_query);
 
   // calculate the valid length
-  int valid_ref_len = (strlen(ref) > ref_len) ? ref_len : strlen(ref);
+  int valid_ref_len = (static_cast<int>(strlen(ref)) > ref_len) 
+                      ? ref_len : strlen(ref);
   int8_t* translated_ref = new int8_t[valid_ref_len];
   TranslateBase(ref, valid_ref_len, translated_ref);
 
@@ -300,6 +301,8 @@ bool Aligner::ReBuild(void) {
 
   SetAllDefault();
   BuildDefaultMatrix();
+
+  return true;
 }
 
 bool Aligner::ReBuild(
@@ -317,6 +320,8 @@ bool Aligner::ReBuild(
   gap_extending_penalty_ = gap_extending_penalty;
 
   BuildDefaultMatrix();
+
+  return true;
 }
 
 bool Aligner::ReBuild(
@@ -330,6 +335,8 @@ bool Aligner::ReBuild(
   translation_matrix_ = new int8_t[translation_matrix_size];
   memcpy(translation_matrix_, translation_matrix, sizeof(int8_t) * translation_matrix_size);
   matrix_built_ = true;
+
+  return true;
 }
 
 void Aligner::BuildDefaultMatrix(void) {
