@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 04/19/12.
+ *	Last revision by Mengyao Zhao on 04/24/12.
  *
  */
 
@@ -64,7 +64,7 @@ __m128i* qP_byte (const int8_t* read_num,
 				  const int32_t readLen,
 				  const int32_t n,	/* the edge length of the squre matrix mat */
 				  uint8_t bias) { 
-	fprintf(stderr, "bias: %d\n", bias);			
+//	fprintf(stderr, "bias: %d\n", bias);			
 	int32_t
 	segLen = (readLen + 15) / 16; /* Split the 128 bit register into 16 pieces. 
 								     Each piece is 8 bit. Split the read into 16 segments. 
@@ -79,15 +79,15 @@ __m128i* qP_byte (const int8_t* read_num,
 		for (i = 0; i < segLen; i ++) {
 			j = i; 
 			for (segNum = 0; LIKELY(segNum < 16) ; segNum ++) {
-				*t++ = j>= readLen ? 0 : mat[nt * n + read_num[j]] + bias;
+				*t++ = j>= readLen ? bias : mat[nt * n + read_num[j]] + bias;
 				j += segLen;
 			}
 		}
 	}
-	fprintf(stderr,"segLen: %d\n", segLen);
+/*	fprintf(stderr,"segLen: %d\n", segLen);
 	for(i = 0, t = (int8_t*)vProfile; i < n * segLen * 16; ++i, ++t) fprintf(stderr, "%d", *t);
 	fprintf(stderr, "\n");
-
+*/
 	return vProfile;
 }
 
@@ -116,7 +116,7 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
 					  (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 2)); \
 					  (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 1)); \
 					  (m) = _mm_extract_epi16((vm), 0)
-fprintf(stderr, "terminate: %d\n", terminate);
+//fprintf(stderr, "terminate: %d\n", terminate);
 	uint8_t max = 0;		                     /* the max alignment score */
 	int32_t end_read = readLen - 1;
 	int32_t end_ref = -1; /* 0_based best alignment ending point; Initialized as isn't aligned -1. */
@@ -159,43 +159,43 @@ fprintf(stderr, "terminate: %d\n", terminate);
 	}
 	for (i = begin; LIKELY(i != end); i += step) {
 		int32_t cmp;
-		__m128i e, vF = vZero; /* Initialize F value to 0. 
+		__m128i e = vZero, vF = vZero, vMaxColumn = vZero; /* Initialize F value to 0. 
 							   Any errors to vH values will be corrected in the Lazy_F loop. 
 							 */
 		__m128i vH = pvHStore[segLen - 1];
 		vH = _mm_slli_si128 (vH, 1); /* Shift the 128-bit value in vH left by 1 byte. */
 		
-		/* Swap the 2 H buffers. */
-		__m128i* pv = pvHLoad;
-		
-		__m128i vMaxColumn = vZero; /* vMaxColumn is used to record the max values of column i. */
+	//	__m128i vMaxColumn = vZero; /* vMaxColumn is used to record the max values of column i. */
 		
 		__m128i* vP = vProfile + ref[i] * segLen; /* Right part of the vProfile */
+		/* Swap the 2 H buffers. */
+		__m128i* pv = pvHLoad;
 
 		pvHLoad = pvHStore;
 		pvHStore = pv;
 		
 		/* inner loop to process the query sequence */
 		for (j = 0; LIKELY(j < segLen); ++j) {
-
-			vH = _mm_adds_epu8(vH, _mm_load_si128(vP + j));
-			vH = _mm_subs_epu8(vH, vBias); /* vH will be always > 0 */
-
-			/* Get max from vH, vE and vF. */
-			e = _mm_load_si128(pvE + j);
-			vH = _mm_max_epu8(vH, e);
-			vH = _mm_max_epu8(vH, vF);
-			
-			/* Update highest score encountered this far. */
-			vMaxColumn = _mm_max_epu8(vMaxColumn, vH);
-
-			if (i == 1) {
+		/*	if (i == 242) {
 				fprintf(stderr, "i: %d\tj: %d\n", i, j);
 				int8_t* t = (int8_t*)&vH;
 				int z;
 				for (z = 0; z < 16; ++z, ++t) fprintf(stderr, "%d ", *t);
 				fprintf(stderr, "\n");
 			}
+*/
+			vH = _mm_adds_epu8(vH, _mm_load_si128(vP + j));
+			vH = _mm_subs_epu8(vH, vBias); /* vH will be always > 0 */
+
+			/* Update highest score encountered this far. */
+		//	vMaxColumn = _mm_max_epu8(vMaxColumn, vH);
+
+			/* Get max from vH, vE and vF. */
+			e = _mm_load_si128(pvE + j);
+			vH = _mm_max_epu8(vH, e);
+			vH = _mm_max_epu8(vH, vF);
+			vMaxColumn = _mm_max_epu8(vMaxColumn, vH);
+
 			
 			/* Save vH values. */
 			_mm_store_si128(pvHStore + j, vH);
@@ -218,16 +218,34 @@ fprintf(stderr, "terminate: %d\n", terminate);
 		for (k = 0; LIKELY(k < 16); ++k) {
 			vF = _mm_slli_si128 (vF, 1);
 			for (j = 0; LIKELY(j < segLen); ++j) {
+
+           // e = _mm_load_si128 (pvE + j);
+
 				vH = _mm_load_si128(pvHStore + j);
 				vH = _mm_max_epu8(vH, vF);
 				_mm_store_si128(pvHStore + j, vH);
 				vH = _mm_subs_epu8(vH, vGapO);
+
+           // e = _mm_max_epi16 (e, vH);
+           // _mm_store_si128 (pvE + j, e);
+
 				vF = _mm_subs_epu8(vF, vGapE);
+				vF = _mm_max_epu8(vH, vF);
 				if (UNLIKELY(! _mm_movemask_epi8(_mm_cmpgt_epi8(vF, vH)))) goto end;
 			}
 		}
 
 end:		
+/*		for (j = 0; j < segLen; j ++) {
+			vH = _mm_load_si128 (pvHStore + j);
+			if (i == 241 && (j == 4 || j == 3)) {
+				fprintf(stderr, "i: %d\tj: %d\n", i, j);
+				int8_t* t = (int8_t*)&vH;
+				int z;
+				for (z = 0; z < 16; ++z, ++t) fprintf(stderr, "%d ", *t);
+				fprintf(stderr, "\n");
+			}
+		}*/
 		vMaxScore = _mm_max_epu8(vMaxScore, vMaxColumn);
 		vTemp = _mm_cmpeq_epi8(vMaxMark, vMaxScore);
 		cmp = _mm_movemask_epi8(vTemp);
@@ -250,7 +268,7 @@ end:
 		/* Record the max score of current column. */	
 		max16(maxColumn[i], vMaxColumn);
 	//	fprintf(stderr, "%d", ref[i]);
-		fprintf(stderr, "ref: %d\tmaxColumn[%d]: %d\n", ref[i], i, maxColumn[i]);
+//		fprintf(stderr, "ref: %d\tmaxColumn[%d]: %d\n", ref[i], i, maxColumn[i]);
 		if (maxColumn[i] == terminate) break;
 	}
 	
@@ -375,7 +393,7 @@ alignment_end* sw_sse2_word (const int8_t* ref,
 	}
 	for (i = begin; LIKELY(i != end); i += step) {
 		int32_t cmp;
-		__m128i e, vF = vZero; /* Initialize F value to 0. 
+		__m128i e = vZero, vF = vZero; /* Initialize F value to 0. 
 							   Any errors to vH values will be corrected in the Lazy_F loop. 
 							 */
 		__m128i vH = pvHStore[segLen - 1];
@@ -426,6 +444,7 @@ alignment_end* sw_sse2_word (const int8_t* ref,
 				_mm_store_si128(pvHStore + j, vH);
 				vH = _mm_subs_epu16(vH, vGapO);
 				vF = _mm_subs_epu16(vF, vGapE);
+				vF = _mm_max_epi16(vH, vF);
 				if (UNLIKELY(! _mm_movemask_epi8(_mm_cmpgt_epi16(vF, vH)))) goto end;
 			}
 		}
@@ -765,10 +784,10 @@ s_align* ssw_align (const s_profile* prof,
 	// Find the beginning position of the best alignment.
 	read_reverse = seq_reverse(prof->read, r->read_end1);
 
-	int i;
+	/*int i;
 	for (i = 0; i < r->read_end1 + 1; ++i) fprintf(stderr, "%d", read_reverse[i]);
 	fprintf(stderr, "\n");
-
+*/
 	if (word == 0) {
 		vP = qP_byte(read_reverse, prof->mat, r->read_end1 + 1, prof->n, prof->bias);
 		bests_reverse = sw_sse2_byte(ref, 1, r->ref_end1 + 1, r->read_end1 + 1, weight_gapO, weight_gapE, vP, r->score1, prof->bias);
