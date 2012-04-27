@@ -63,32 +63,35 @@ void ConvertAlignment(const s_align& s_al,
 
   al->cigar.clear();
   al->cigar_string.clear();
-  std::ostringstream cigar_string;
-  if (al->query_begin > 0) {
-    uint32_t cigar = (al->query_begin << 4) | 0x0004;
-    al->cigar.push_back(cigar);
-    cigar_string << al->query_begin << 'S';
-  }
-
-  for (int i = 0; i < s_al.cigarLen; ++i) {
-    al->cigar.push_back(s_al.cigar[i]);
-    cigar_string << (s_al.cigar[i] >> 4);
-    uint8_t op = s_al.cigar[i] & 0x000f;
-    switch(op) {
-      case 0: cigar_string << 'M'; break;
-      case 1: cigar_string << 'I'; break;
-      case 2: cigar_string << 'D'; break;
+  
+  if (s_al.cigarLen > 0) {
+    std::ostringstream cigar_string;
+    if (al->query_begin > 0) {
+      uint32_t cigar = (al->query_begin << 4) | 0x0004;
+      al->cigar.push_back(cigar);
+      cigar_string << al->query_begin << 'S';
     }
-  }
 
-  int end = query_len - al->query_end - 1;
-  if (end > 0) {
-    uint32_t cigar = (end << 4) | 0x0004;
-    al->cigar.push_back(cigar);
-    cigar_string << end << 'S';
-  }
+    for (int i = 0; i < s_al.cigarLen; ++i) {
+      al->cigar.push_back(s_al.cigar[i]);
+      cigar_string << (s_al.cigar[i] >> 4);
+      uint8_t op = s_al.cigar[i] & 0x000f;
+      switch(op) {
+        case 0: cigar_string << 'M'; break;
+        case 1: cigar_string << 'I'; break;
+        case 2: cigar_string << 'D'; break;
+      }
+    }
 
-  al->cigar_string = cigar_string.str();
+    int end = query_len - al->query_end - 1;
+    if (end > 0) {
+      uint32_t cigar = (end << 4) | 0x0004;
+      al->cigar.push_back(cigar);
+      cigar_string << end << 'S';
+    }
+
+    al->cigar_string = cigar_string.str();
+  } // end if
 }
 
 void SetFlag(const StripedSmithWaterman::Filter& filter, uint8_t* flag) {
