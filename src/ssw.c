@@ -759,7 +759,6 @@ s_align* ssw_align (const s_profile* prof,
 	if ((7&flag) == 0 || ((2&flag) != 0 && r->score1 < filters) || ((4&flag) != 0 && (r->ref_end1 - r->ref_begin1 > filterd || r->read_end1 - r->read_begin1 > filterd))) goto end;
 
 	// Generate cigar.
-	fprintf(stderr, "score: %d\tref_begin: %d\tref_end: %d\tread_begin: %d\tread_end: %d\n", r->score1, r->ref_begin1, r->ref_end1, r->read_begin1, r->read_end1);
 	refLen = r->ref_end1 - r->ref_begin1 + 1;
 	readLen = r->read_end1 - r->read_begin1 + 1;
 	band_width = abs(refLen - readLen) + 1;
