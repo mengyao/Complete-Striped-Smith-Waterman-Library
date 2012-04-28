@@ -131,7 +131,7 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
 	__m128i* pvE = (__m128i*) calloc(segLen, sizeof(__m128i));
 	__m128i* pvHmax = (__m128i*) calloc(segLen, sizeof(__m128i));
 
-	int32_t i, j, k;
+	int32_t i, j;
 	/* 16 byte insertion begin vector */
 	__m128i vGapO = _mm_set1_epi8(weight_gapO);
 	
@@ -195,7 +195,38 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
 		}
 
 		/* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3 */
-		for (k = 0; LIKELY(k < 16); ++k) {
+        /* reset pointers to the start of the saved data */
+        j = 0;
+        vH = _mm_load_si128 (pvHStore + j);
+
+        /*  the computed vF value is for the given column.  since */
+        /*  we are at the end, we need to shift the vF value over */
+        /*  to the next column. */
+        vF = _mm_slli_si128 (vF, 1);
+        vTemp = _mm_subs_epu8 (vH, vGapO);
+		vTemp = _mm_subs_epu8 (vF, vTemp);
+		vTemp = _mm_cmpeq_epi8 (vTemp, vZero);
+		cmp  = _mm_movemask_epi8 (vTemp);
+
+        while (cmp != 0xffff) 
+        {
+            vH = _mm_max_epu8 (vH, vF);
+            _mm_store_si128 (pvHStore + j, vH);
+            vF = _mm_subs_epu8 (vF, vGapE);
+            j++;
+            if (j >= segLen)
+            {
+                j = 0;
+                vF = _mm_slli_si128 (vF, 1);
+            }
+            vH = _mm_load_si128 (pvHStore + j);
+
+            vTemp = _mm_subs_epu8 (vH, vGapO);
+            vTemp = _mm_subs_epu8 (vF, vTemp);
+            vTemp = _mm_cmpeq_epi8 (vTemp, vZero);
+            cmp  = _mm_movemask_epi8 (vTemp);
+        }
+/*		for (k = 0; LIKELY(k < 16); ++k) {
 			vF = _mm_slli_si128 (vF, 1);
 			for (j = 0; LIKELY(j < segLen); ++j) {
 				vH = _mm_load_si128(pvHStore + j);
@@ -208,7 +239,7 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
 			}
 		}
 
-end:		
+end:	*/	
 		vMaxScore = _mm_max_epu8(vMaxScore, vMaxColumn);
 		vTemp = _mm_cmpeq_epi8(vMaxMark, vMaxScore);
 		cmp = _mm_movemask_epi8(vTemp);
@@ -397,6 +428,32 @@ alignment_end* sw_sse2_word (const int8_t* ref,
 		}
 
 		/* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3 */
+     /*   j = 0;
+        vH = _mm_load_si128 (pvHStore + j);
+
+        vF = _mm_slli_si128 (vF, 2);
+        vF = _mm_or_si128 (vF, vMin);
+        vTemp = _mm_subs_epi16 (vH, vGapO);
+        vTemp = _mm_cmpgt_epi16 (vF, vTemp);
+        cmp  = _mm_movemask_epi8 (vTemp);
+        while (cmp != 0x0000) 
+        {
+            vH = _mm_max_epi16 (vH, vF);
+            _mm_store_si128 (pvHStore + j, vH);
+            vF = _mm_subs_epi16 (vF, vGapE);
+            j++;
+            if (j >= segLen)
+            {
+                j = 0;
+                vF = _mm_slli_si128 (vF, 2);
+                vF = _mm_or_si128 (vF, vMin);
+            }
+            vH = _mm_load_si128 (pvHStore + j);
+
+            vTemp = _mm_subs_epi16 (vH, vGapO);
+            vTemp = _mm_cmpgt_epi16 (vF, vTemp);
+            cmp  = _mm_movemask_epi8 (vTemp);
+        }*/
 		for (k = 0; LIKELY(k < 8); ++k) {
 			vF = _mm_slli_si128 (vF, 2);
 			for (j = 0; LIKELY(j < segLen); ++j) {
@@ -405,7 +462,6 @@ alignment_end* sw_sse2_word (const int8_t* ref,
 				_mm_store_si128(pvHStore + j, vH);
 				vH = _mm_subs_epu16(vH, vGapO);
 				vF = _mm_subs_epu16(vF, vGapE);
-		//		vF = _mm_max_epi16(vH, vF);
 				if (UNLIKELY(! _mm_movemask_epi8(_mm_cmpgt_epi16(vF, vH)))) goto end;
 			}
 		}
