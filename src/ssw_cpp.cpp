@@ -216,6 +216,7 @@ bool Aligner::Align(const char* query, const Filter& filter,
   if (reference_length_ == 0) return false;
 
   int query_len = strlen(query);
+  if (query_len == 0) return false;
   int8_t* translated_query = new int8_t[query_len];
   TranslateBase(query, query_len, translated_query);
 
@@ -232,6 +233,10 @@ bool Aligner::Align(const char* query, const Filter& filter,
   
   alignment->Clear();
   ConvertAlignment(*s_al, query_len, alignment);
+
+  // Free memory
+  if (query_len > 1) delete [] translated_query;
+  else delete translated_query;
   align_destroy(s_al);
   init_destroy(profile);
 
@@ -245,6 +250,7 @@ bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
   if (!matrix_built_) return false;
   
   int query_len = strlen(query);
+  if (query_len == 0) return false;
   int8_t* translated_query = new int8_t[query_len];
   TranslateBase(query, query_len, translated_query);
 
@@ -268,6 +274,10 @@ bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
   
   alignment->Clear();
   ConvertAlignment(*s_al, query_len, alignment);
+
+  // Free memory
+  if (query_len > 1) delete [] translated_query;
+  else delete translated_query;
   align_destroy(s_al);
   init_destroy(profile);
 
