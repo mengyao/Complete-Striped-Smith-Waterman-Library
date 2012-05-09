@@ -95,7 +95,7 @@ CPU time:
 AMD CPU: default penalties: ~880 seconds; -m1 -x3 -o5 -e2: ~460 seconds
 Intel CPU: default penalties: ~960 seconds; -m1 -x3 -o5 -e2: ~500 seconds 
 
-Memory usage: ~40Mb 
+Memory usage: ~40MB 
 
 
 
