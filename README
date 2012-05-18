@@ -88,7 +88,7 @@ The API function descriptions are in the file ssw_cpp.h.
 
 6. Speed and memory usage of the API
 Test data set: 
-Target sequence: reference genome of E. coli strain 536 (4,938,920 nucleotides)
+Target sequence: reference genome of E. coli strain 536 (4,938,920 nucleotides) from NCBI
 Query sequences: 1000 reads of Ion Torrent sequenced E. coli strain DH10B (C23-140, 318 PGM Run, 11/2011), read length: ~25-540 bp, most reads are ~200 bp
 
 CPU time:
