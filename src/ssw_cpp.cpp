@@ -38,7 +38,7 @@ void BuildSwScoreMatrix(const uint8_t& match_score,
   int id = 0;
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
-      matrix[id] = ((i == j) ? match_score : -mismatch_penalty);
+      matrix[id] = ((i == j) ? match_score : static_cast<int8_t>(-mismatch_penalty));
       ++id;
     }
     matrix[id] = 0;
@@ -280,6 +280,8 @@ bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
   // Free memory
   if (query_len > 1) delete [] translated_query;
   else delete translated_query;
+  if (valid_ref_len > 1) delete [] translated_ref;
+  else delete translated_ref;
   align_destroy(s_al);
   init_destroy(profile);
 
