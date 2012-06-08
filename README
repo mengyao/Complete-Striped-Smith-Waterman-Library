@@ -77,7 +77,7 @@ To use the C style API, please:
 2) Write #include "ssw.h" into your file that will call the API functions.
 3) The API files are ready to be compiled together with your own C/C++ files.
 
-The API function descriptions are in the file ssw.h. One example of the API usage is main.c.
+The API function descriptions are in the file ssw.h. One example of the API usage is main.c. The Smith-Waterman penalties need to be integers. Small penalty numbers such as: match: 2, mismatch: -1, gap open: -3, gap extension: -1 are recommended, which will lead to shorter running time.  
 
 To use the C++ style API, please: 
 1) Download ssw.h, ssw.c, ssw_cpp.cpp and ssw_cpp.h and put them in the same folder of your own program files.
