@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 04/18/12.
+ *	Last revision by Mengyao Zhao on 07/03/12.
  *
  */
 
@@ -23,17 +23,16 @@ typedef struct _profile s_profile;
 /*!	@typedef	structure of the alignment result
 	@field	score1	the best alignment score
 	@field	score2	sub-optimal alignment score
-	@field	ref_begin1	best alignment beginning position on reference;	ref_begin1 = 0 when the best alignment beginning position 
-						is not available
-	@field	ref_end1	best alignment ending position on reference
-	@field	read_begin1	best alignment beginning position on read; read_begin1 = 0 when the best alignment beginning position is 
-						not available
-	@field	read_end1	best alignment ending position on read
-	@field	read_end2	sub-optimal alignment ending position on read
+	@field	ref_begin1	0-based best alignment beginning position on reference;	ref_begin1 = -1 when the best alignment beginning 
+						position is not available
+	@field	ref_end1	0-based best alignment ending position on reference
+	@field	read_begin1	0-based best alignment beginning position on read; read_begin1 = -1 when the best alignment beginning 
+						position is not available
+	@field	read_end1	0-based best alignment ending position on read
+	@field	read_end2	0-based sub-optimal alignment ending position on read
 	@field	cigar	best alignment cigar; stored the same as that in BAM format, high 28 bits: length, low 4 bits: M/I/D (0/1/2); 
 					cigar = 0 when the best alignment path is not available
 	@field	cigarLen	length of the cigar string; cigarLen = 0 when the best alignment path is not available
-	@note	The fields ref_begin1, ref_end1, read_begin1 read_end1 and read_end2 all have 1-based coordinates.
 */
 typedef struct {
 	uint16_t score1;	
@@ -90,8 +89,10 @@ void init_destroy (s_profile* p);
 					cigar; bit 7: when setted as 1, if the best alignment score >= filters, (whatever bit 5 is setted) the function
   					will return the best alignment beginning position and cigar; bit 8: when setted as 1, (whatever bit 5, 6 or 7 is
  					setted) the function will always return the best alignment beginning position and cigar
-	@param	filters	when bit 7 of flag is setted as 1 and bit 8 is setted as 0, filters will be used
-	@param	filterd	when bit 6 of flag is setted as 1 and bit 8 is setted as 0, filterd will be used
+	@param	filters	score filter: when bit 7 of flag is setted as 1 and bit 8 is setted as 0, filters will be used (Please check the
+ 					decription of the flag parameter for detailed usage.)
+	@param	filterd	distance filter: when bit 6 of flag is setted as 1 and bit 8 is setted as 0, filterd will be used (Please check 
+					the decription of the flag parameter for detailed usage.)
 	@return	pointer to the alignment result structure 
 	@note	Whatever the parameter flag is setted, this function will at least return the optimal and sub-optimal alignment score,
 			and the optimal alignment ending positions on target and query sequences. If both bit 6 and 7 of the flag are setted
