@@ -94,6 +94,36 @@ void ConvertAlignment(const s_align& s_al,
   } // end if
 }
 
+int CalculateNumberMismatch(
+    const StripedSmithWaterman::Alignment& al,
+    const int8_t* matrix,
+    int8_t const *ref,
+    int8_t const *query) {
+  
+  ref   += al.ref_begin;
+  query += al.query_begin;
+  int mismatch_length = 0;
+  for (unsigned int i = 0; i < al.cigar.size(); ++i) {
+    int32_t op = al.cigar[i] & 0x0000000f;
+    int32_t length = (al.cigar[i] >> 4) & 0x0fffffff;
+    if (op == 0) { // M
+      for (int j = 0; j < length; ++j) {
+        if (matrix[*ref] != matrix[*query]) ++mismatch_length;
+	++ref;
+	++query;
+      }
+    } else if (op == 1) { // I
+      query += length;
+      mismatch_length += length;
+    } else if (op == 2) { // D
+      ref += length;
+      mismatch_length += length;
+    }
+  }
+
+  return mismatch_length;
+}
+
 void SetFlag(const StripedSmithWaterman::Filter& filter, uint8_t* flag) {
   if (filter.report_begin_position) *flag |= 0x08;
   if (filter.report_cigar) *flag |= 0x0f;
@@ -234,6 +264,8 @@ bool Aligner::Align(const char* query, const Filter& filter,
   
   alignment->Clear();
   ConvertAlignment(*s_al, query_len, alignment);
+  alignment->mismatches = CalculateNumberMismatch(*alignment, score_matrix_, translated_reference_, translated_query);
+
 
   // Free memory
   if (query_len > 1) delete [] translated_query;
@@ -276,6 +308,7 @@ bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
   
   alignment->Clear();
   ConvertAlignment(*s_al, query_len, alignment);
+  alignment->mismatches = CalculateNumberMismatch(*alignment, score_matrix_, translated_ref, translated_query);
 
   // Free memory
   if (query_len > 1) delete [] translated_query;
