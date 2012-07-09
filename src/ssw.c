@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 04/26/12.
+ *	Last revision by Mengyao Zhao on 07/09/12.
  *
  */
 
@@ -104,8 +104,9 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
 												   the matrix calculation when locating the 
 												   alignment beginning point. If this score 
 												   is set to 0, it will not be used */
-	 						 uint8_t bias) {         /* Shift 0 point to a positive value. */
-
+	 						 uint8_t bias,  /* Shift 0 point to a positive value. */
+							 int32_t maskLen) {  
+      
 #define max16(m, vm) (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 8)); \
 					  (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 4)); \
 					  (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 2)); \
@@ -144,7 +145,10 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
 	__m128i vMaxScore = vZero; /* Trace the highest score of the whole SW matrix. */
 	__m128i vMaxMark = vZero; /* Trace the highest score till the previous column. */	
 	__m128i vTemp;
-	int32_t edge, begin = 0, end = refLen, step = 1;
+	int32_t edge, begin = 0, end = refLen, step = 1; 
+//	int32_t distance = readLen * 2 / 3;
+//	int32_t distance = readLen / 2;
+//	int32_t distance = readLen;
 
 	/* outer loop to process the reference sequence */
 	if (ref_dir == 1) {
@@ -226,20 +230,6 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
             vTemp = _mm_cmpeq_epi8 (vTemp, vZero);
             cmp  = _mm_movemask_epi8 (vTemp);
         }
-/*		for (k = 0; LIKELY(k < 16); ++k) {
-			vF = _mm_slli_si128 (vF, 1);
-			for (j = 0; LIKELY(j < segLen); ++j) {
-				vH = _mm_load_si128(pvHStore + j);
-				vH = _mm_max_epu8(vH, vF);
-				_mm_store_si128(pvHStore + j, vH);
-				vH = _mm_subs_epu8(vH, vGapO);
-				vF = _mm_subs_epu8(vF, vGapE);
-			//	vF = _mm_max_epu8(vH, vF);
-				if (UNLIKELY(! _mm_movemask_epi8(_mm_cmpgt_epi8(vF, vH)))) goto end;
-			}
-		}
-
-end:	*/	
 		vMaxScore = _mm_max_epu8(vMaxScore, vMaxColumn);
 		vTemp = _mm_cmpeq_epi8(vMaxMark, vMaxScore);
 		cmp = _mm_movemask_epi8(vTemp);
@@ -290,12 +280,12 @@ end:	*/
 	bests[1].ref = 0;
 	bests[1].read = 0;
 
-	edge = (end_ref - readLen / 2 - 1) > 0 ? (end_ref - readLen / 2 - 1) : 0;
+	edge = (end_ref - maskLen - 1) > 0 ? (end_ref - maskLen - 1) : 0;
 	for (i = 0; i < edge; i ++) {
 		if (maxColumn[i] > bests[1].score) 
 			bests[1].score = maxColumn[i];
 	}
-	edge = (end_ref + readLen / 2 + 1) > refLen ? refLen : (end_ref + readLen / 2 + 1);
+	edge = (end_ref + maskLen + 1) > refLen ? refLen : (end_ref + maskLen + 1);
 	for (i = edge + 1; i < refLen; i ++) {
 		if (maxColumn[i] > bests[1].score) 
 			bests[1].score = maxColumn[i];
@@ -338,7 +328,8 @@ alignment_end* sw_sse2_word (const int8_t* ref,
 							 const uint8_t weight_gapO, /* will be used as - */
 							 const uint8_t weight_gapE, /* will be used as - */
 						     __m128i* vProfile,
-							 uint16_t terminate) { 
+							 uint16_t terminate, 
+							 int32_t maskLen) { 
 
 #define max8(m, vm) (vm) = _mm_max_epi16((vm), _mm_srli_si128((vm), 8)); \
 					(vm) = _mm_max_epi16((vm), _mm_srli_si128((vm), 4)); \
@@ -376,6 +367,9 @@ alignment_end* sw_sse2_word (const int8_t* ref,
 	__m128i vMaxMark = vZero; /* Trace the highest score till the previous column. */	
 	__m128i vTemp;
 	int32_t edge, begin = 0, end = refLen, step = 1;
+//	int32_t distance = readLen * 2 / 3;
+//	int32_t distance = readLen / 2;
+//	int32_t distance = readLen;
 
 	/* outer loop to process the reference sequence */
 	if (ref_dir == 1) {
@@ -428,32 +422,6 @@ alignment_end* sw_sse2_word (const int8_t* ref,
 		}
 
 		/* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3 */
-     /*   j = 0;
-        vH = _mm_load_si128 (pvHStore + j);
-
-        vF = _mm_slli_si128 (vF, 2);
-        vF = _mm_or_si128 (vF, vMin);
-        vTemp = _mm_subs_epi16 (vH, vGapO);
-        vTemp = _mm_cmpgt_epi16 (vF, vTemp);
-        cmp  = _mm_movemask_epi8 (vTemp);
-        while (cmp != 0x0000) 
-        {
-            vH = _mm_max_epi16 (vH, vF);
-            _mm_store_si128 (pvHStore + j, vH);
-            vF = _mm_subs_epi16 (vF, vGapE);
-            j++;
-            if (j >= segLen)
-            {
-                j = 0;
-                vF = _mm_slli_si128 (vF, 2);
-                vF = _mm_or_si128 (vF, vMin);
-            }
-            vH = _mm_load_si128 (pvHStore + j);
-
-            vTemp = _mm_subs_epi16 (vH, vGapO);
-            vTemp = _mm_cmpgt_epi16 (vF, vTemp);
-            cmp  = _mm_movemask_epi8 (vTemp);
-        }*/
 		for (k = 0; LIKELY(k < 8); ++k) {
 			vF = _mm_slli_si128 (vF, 2);
 			for (j = 0; LIKELY(j < segLen); ++j) {
@@ -514,12 +482,12 @@ end:
 	bests[1].ref = 0;
 	bests[1].read = 0;
 
-	edge = (end_ref - readLen / 2 - 1) > 0 ? (end_ref - readLen / 2 - 1) : 0;
+	edge = (end_ref - maskLen - 1) > 0 ? (end_ref - maskLen - 1) : 0;
 	for (i = 0; i < edge; i ++) {
 		if (maxColumn[i] > bests[1].score) 
 			bests[1].score = maxColumn[i];
 	}
-	edge = (end_ref + readLen / 2 + 1) > refLen ? refLen : (end_ref + readLen / 2 + 1);
+	edge = (end_ref + maskLen + 1) > refLen ? refLen : (end_ref + maskLen + 1);
 	for (i = edge; i < refLen; i ++) {
 		if (maxColumn[i] > bests[1].score) 
 			bests[1].score = maxColumn[i];
@@ -759,7 +727,8 @@ s_align* ssw_align (const s_profile* prof,
 				  	const uint8_t weight_gapE, 
 					const uint8_t flag,	//  (from high to low) bit 5: return the best alignment beginning position; 6: if (ref_end1 - ref_begin1 <= filterd) && (read_end1 - read_begin1 <= filterd), return cigar; 7: if max score >= filters, return cigar; 8: always return cigar; if 6 & 7 are both setted, only return cigar when both filter fulfilled
 					const uint16_t filters,
-					const int32_t filterd) {
+					const int32_t filterd,
+					const int32_t maskLen) {
 
 	alignment_end* bests = 0, *bests_reverse = 0;
 	__m128i* vP = 0;
@@ -774,17 +743,17 @@ s_align* ssw_align (const s_profile* prof,
 
 	// Find the alignment scores and ending positions
 	if (prof->profile_byte) {
-		bests = sw_sse2_byte(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_byte, -1, prof->bias);
+		bests = sw_sse2_byte(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_byte, -1, prof->bias, maskLen);
 		if (prof->profile_word && bests[0].score == 255) {
 			free(bests);
-			bests = sw_sse2_word(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_word, -1);
+			bests = sw_sse2_word(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_word, -1, maskLen);
 			word = 1;
 		} else if (bests[0].score == 255) {
 			fprintf(stderr, "Please set 2 to the score_size parameter of the function ssw_init, otherwise the alignment results will be incorrect.\n");
 			return 0;
 		}
 	}else if (prof->profile_word) {
-		bests = sw_sse2_word(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_word, -1);
+		bests = sw_sse2_word(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_word, -1, maskLen);
 		word = 1;
 	}else {
 		fprintf(stderr, "Please call the function ssw_init before ssw_align.\n");
@@ -802,10 +771,10 @@ s_align* ssw_align (const s_profile* prof,
 	read_reverse = seq_reverse(prof->read, r->read_end1);
 	if (word == 0) {
 		vP = qP_byte(read_reverse, prof->mat, r->read_end1 + 1, prof->n, prof->bias);
-		bests_reverse = sw_sse2_byte(ref, 1, r->ref_end1 + 1, r->read_end1 + 1, weight_gapO, weight_gapE, vP, r->score1, prof->bias);
+		bests_reverse = sw_sse2_byte(ref, 1, r->ref_end1 + 1, r->read_end1 + 1, weight_gapO, weight_gapE, vP, r->score1, prof->bias, maskLen);
 	} else {
 		vP = qP_word(read_reverse, prof->mat, r->read_end1 + 1, prof->n);
-		bests_reverse = sw_sse2_word(ref, 1, r->ref_end1 + 1, r->read_end1 + 1, weight_gapO, weight_gapE, vP, r->score1);
+		bests_reverse = sw_sse2_word(ref, 1, r->ref_end1 + 1, r->read_end1 + 1, weight_gapO, weight_gapE, vP, r->score1, maskLen);
 	}
 	free(vP);
 	free(read_reverse);

@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 04/18/12.
+ *  Last revision by Mengyao Zhao on 07/09/12.
  */
 
 #include <stdlib.h>
@@ -211,7 +211,8 @@ int main (int argc, char * const argv[]) {
 	float cpu_time;
 	gzFile read_fp, ref_fp;
 	kseq_t *read_seq, *ref_seq;
-	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0, header = 0, s1 = 67108864, s2 = 128, filter = 0;
+	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0, 
+			header = 0, s1 = 67108864, s2 = 128, filter = 0;
 	int8_t* mata = (int8_t*)calloc(25, sizeof(int8_t)), *mat = mata;
 	char mat_name[16];
 	mat_name[0] = '\0';
@@ -384,6 +385,7 @@ int main (int argc, char * const argv[]) {
 	while (kseq_read(read_seq) >= 0) {
 		s_profile* p, *p_rc = 0;
 		int32_t readLen = read_seq->seq.l;	
+		int32_t maskLen = readLen / 2; 
 	
 		while (readLen >= s2) {
 			++s2;
@@ -418,8 +420,9 @@ int main (int argc, char * const argv[]) {
 			}
 			for (m = 0; m < refLen; ++m) ref_num[m] = table[(int)ref_seq->seq.s[m]];
 			if (path == 1) flag = 2;
-			result = ssw_align (p, ref_num, refLen, gap_open, gap_extension, flag, filter, 0);
-			if (reverse == 1 && protein == 0) result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, filter, 0);
+			result = ssw_align (p, ref_num, refLen, gap_open, gap_extension, flag, filter, 0, maskLen);
+			if (reverse == 1 && protein == 0) 
+				result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, filter, 0, maskLen);
 			if (result_rc && result_rc->score1 > result->score1 && result_rc->score1 >= filter) {
 				if (sam) ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 1);
 				else ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 0);

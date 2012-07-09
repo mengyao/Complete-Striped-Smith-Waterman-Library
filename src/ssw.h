@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 07/03/12.
+ *	Last revision by Mengyao Zhao on 07/09/12.
  *
  */
 
@@ -93,6 +93,13 @@ void init_destroy (s_profile* p);
  					decription of the flag parameter for detailed usage.)
 	@param	filterd	distance filter: when bit 6 of flag is setted as 1 and bit 8 is setted as 0, filterd will be used (Please check 
 					the decription of the flag parameter for detailed usage.)
+	@param	maskLen	The distance between the optimal and suboptimal alignment ending position >= maskLen. We suggest to use 
+					readLen/2, if you don't have special concerns. Detailed description of maskLen: After locating the optimal
+					alignment ending position, the suboptimal alignment score can be heuristically found by checking the second 
+					largest score in the array that contains the maximal score of each column of the SW matrix. In order to avoid 
+					picking the scores that belong to the alignments sharing the partial best alignment, SSW C library masks the 
+					reference loci nearby (mask length = maskLen) the best alignment ending position and locates the second largest 
+					score from the unmasked elements.
 	@return	pointer to the alignment result structure 
 	@note	Whatever the parameter flag is setted, this function will at least return the optimal and sub-optimal alignment score,
 			and the optimal alignment ending positions on target and query sequences. If both bit 6 and 7 of the flag are setted
@@ -106,7 +113,8 @@ s_align* ssw_align (const s_profile* prof,
 					const uint8_t weight_gapE, 
 					const uint8_t flag,	
 					const uint16_t filters,
-					const int32_t filterd);
+					const int32_t filterd,
+					const int32_t maskLen);
 
 /*!	@function	Release the memory allocated by function ssw_align.
 	@param	a	pointer to the alignment result structure
