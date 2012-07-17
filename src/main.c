@@ -310,10 +310,10 @@ int main (int argc, char * const argv[]) {
 
 	// initialize scoring matrix for genome sequences
 	for (l = k = 0; LIKELY(l < 4); ++l) {
-		for (m = 0; LIKELY(m < 4); ++m) mata[k++] = l == m ? match : -mismatch;	/* weight_match : -weight_mismatch */
+		for (m = 0; LIKELY(m < 4); ++m) mata[k++] = l == m ? match : 0;	/* weight_match : -weight_mismatch */
 		mata[k++] = 0; // ambiguous base
 	}
-	for (m = 0; LIKELY(m < 5); ++m) mata[k++] = 0;
+	for (m = 0; LIKELY(m < 5); ++m) mata[k++] = -mismatch;
 
 	if (protein == 1 && (! strcmp(mat_name, "\0"))) {
 		n = 24;
@@ -386,7 +386,8 @@ int main (int argc, char * const argv[]) {
 		s_profile* p, *p_rc = 0;
 		int32_t readLen = read_seq->seq.l;	
 		int32_t maskLen = readLen / 2; 
-	
+	//	int32_t maskLen = 2*readLen;	
+
 		while (readLen >= s2) {
 			++s2;
 			kroundup32(s2);

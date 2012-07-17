@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 07/09/12.
+ *	Last revision by Mengyao Zhao on 07/17/12.
  *
  */
 
@@ -282,13 +282,17 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
 
 	edge = (end_ref - maskLen - 1) > 0 ? (end_ref - maskLen - 1) : 0;
 	for (i = 0; i < edge; i ++) {
-		if (maxColumn[i] > bests[1].score) 
+		if (maxColumn[i] > bests[1].score) { 
 			bests[1].score = maxColumn[i];
+			bests[1].ref = i;
+		}
 	}
 	edge = (end_ref + maskLen + 1) > refLen ? refLen : (end_ref + maskLen + 1);
 	for (i = edge + 1; i < refLen; i ++) {
-		if (maxColumn[i] > bests[1].score) 
+		if (maxColumn[i] > bests[1].score) {
 			bests[1].score = maxColumn[i];
+			bests[1].ref = i;
+		}
 	}
 	
 	free(maxColumn);
@@ -484,13 +488,17 @@ end:
 
 	edge = (end_ref - maskLen - 1) > 0 ? (end_ref - maskLen - 1) : 0;
 	for (i = 0; i < edge; i ++) {
-		if (maxColumn[i] > bests[1].score) 
+		if (maxColumn[i] > bests[1].score) { 
 			bests[1].score = maxColumn[i];
+			bests[1].ref = i;
+		}
 	}
 	edge = (end_ref + maskLen + 1) > refLen ? refLen : (end_ref + maskLen + 1);
 	for (i = edge; i < refLen; i ++) {
-		if (maxColumn[i] > bests[1].score) 
+		if (maxColumn[i] > bests[1].score) {
 			bests[1].score = maxColumn[i];
+			bests[1].ref = i;
+		}
 	}
 	
 	free(maxColumn);
@@ -764,6 +772,7 @@ s_align* ssw_align (const s_profile* prof,
 	r->ref_end1 = bests[0].ref;
 	r->read_end1 = bests[0].read;
 	r->ref_end2 = bests[1].ref;
+	fprintf(stderr, "maskLen: %d\t2nd_ref: %d\t2nd_read: %d\n", maskLen, bests[1].ref, bests[1].read);
 	free(bests);
 	if (flag == 0 || (flag == 2 && r->score1 < filters)) goto end;
 
