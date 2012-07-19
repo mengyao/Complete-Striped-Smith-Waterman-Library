@@ -772,7 +772,6 @@ s_align* ssw_align (const s_profile* prof,
 	r->ref_end1 = bests[0].ref;
 	r->read_end1 = bests[0].read;
 	r->ref_end2 = bests[1].ref;
-	fprintf(stderr, "maskLen: %d\t2nd_ref: %d\t2nd_read: %d\n", maskLen, bests[1].ref, bests[1].read);
 	free(bests);
 	if (flag == 0 || (flag == 2 && r->score1 < filters)) goto end;
 
