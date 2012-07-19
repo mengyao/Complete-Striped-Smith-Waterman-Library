@@ -313,7 +313,7 @@ int main (int argc, char * const argv[]) {
 		for (m = 0; LIKELY(m < 4); ++m) mata[k++] = l == m ? match : 0;	/* weight_match : -weight_mismatch */
 		mata[k++] = 0; // ambiguous base
 	}
-	for (m = 0; LIKELY(m < 5); ++m) mata[k++] = -mismatch;
+	for (m = 0; LIKELY(m < 5); ++m) mata[k++] = 0;
 
 	if (protein == 1 && (! strcmp(mat_name, "\0"))) {
 		n = 24;
