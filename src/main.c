@@ -211,8 +211,7 @@ int main (int argc, char * const argv[]) {
 	float cpu_time;
 	gzFile read_fp, ref_fp;
 	kseq_t *read_seq, *ref_seq;
-	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0, 
-			header = 0, s1 = 67108864, s2 = 128, filter = 0;
+	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0, header = 0, s1 = 67108864, s2 = 128, filter = 0;
 	int8_t* mata = (int8_t*)calloc(25, sizeof(int8_t)), *mat = mata;
 	char mat_name[16];
 	mat_name[0] = '\0';
