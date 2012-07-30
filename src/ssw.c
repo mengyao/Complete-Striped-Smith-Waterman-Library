@@ -81,8 +81,10 @@ __m128i* qP_byte (const int8_t* read_num,
 				*t++ = j>= readLen ? bias : mat[nt * n + read_num[j]] + bias;
 				j += segLen;
 			}
+			
 		}
 	}
+
 	return vProfile;
 }
 
@@ -161,6 +163,9 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
 		__m128i e = vZero, vF = vZero, vMaxColumn = vZero; /* Initialize F value to 0. 
 							   Any errors to vH values will be corrected in the Lazy_F loop. 
 							 */
+		max16(maxColumn[i], vMaxColumn);
+		fprintf(stderr, "middle[%d]: %d\n", i, maxColumn[i]);
+
 		__m128i vH = pvHStore[segLen - 1];
 		vH = _mm_slli_si128 (vH, 1); /* Shift the 128-bit value in vH left by 1 byte. */
 		__m128i* vP = vProfile + ref[i] * segLen; /* Right part of the vProfile */
@@ -174,6 +179,11 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
 		for (j = 0; LIKELY(j < segLen); ++j) {
 			vH = _mm_adds_epu8(vH, _mm_load_si128(vP + j));
 			vH = _mm_subs_epu8(vH, vBias); /* vH will be always > 0 */
+	//	max16(maxColumn[i], vH);
+	//	fprintf(stderr, "H[%d]: %d\n", i, maxColumn[i]);
+	int8_t* t;
+	int32_t ti;
+//for (t = (int8_t*)&vH, ti = 0; ti < 16; ++ti) fprintf(stderr, "%d\t", *t++);
 
 			/* Get max from vH, vE and vF. */
 			e = _mm_load_si128(pvE + j);
@@ -181,6 +191,10 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
 			vH = _mm_max_epu8(vH, vF);
 			vMaxColumn = _mm_max_epu8(vMaxColumn, vH);
 			
+	//	max16(maxColumn[i], vMaxColumn);
+	//	fprintf(stderr, "middle[%d]: %d\n", i, maxColumn[i]);
+	for (t = (int8_t*)&vMaxColumn, ti = 0; ti < 16; ++ti) fprintf(stderr, "%d\t", *t++);
+
 			/* Save vH values. */
 			_mm_store_si128(pvHStore + j, vH);
 
@@ -215,6 +229,7 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
         while (cmp != 0xffff) 
         {
             vH = _mm_max_epu8 (vH, vF);
+			vMaxColumn = _mm_max_epu8(vMaxColumn, vH);
             _mm_store_si128 (pvHStore + j, vH);
             vF = _mm_subs_epu8 (vF, vGapE);
             j++;
@@ -230,6 +245,7 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
             vTemp = _mm_cmpeq_epi8 (vTemp, vZero);
             cmp  = _mm_movemask_epi8 (vTemp);
         }
+
 		vMaxScore = _mm_max_epu8(vMaxScore, vMaxColumn);
 		vTemp = _mm_cmpeq_epi8(vMaxMark, vMaxScore);
 		cmp = _mm_movemask_epi8(vTemp);
@@ -248,9 +264,10 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
 				for (j = 0; LIKELY(j < segLen); ++j) pvHmax[j] = pvHStore[j];
 			}
 		}
-		
+
 		/* Record the max score of current column. */	
 		max16(maxColumn[i], vMaxColumn);
+		fprintf(stderr, "maxColumn[%d]: %d\n", i, maxColumn[i]);
 		if (maxColumn[i] == terminate) break;
 	}
 	
@@ -282,13 +299,15 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
 
 	edge = (end_ref - maskLen - 1) > 0 ? (end_ref - maskLen - 1) : 0;
 	for (i = 0; i < edge; i ++) {
-		if (maxColumn[i] > bests[1].score) { 
+			fprintf (stderr, "maxColumn[%d]: %d\n", i, maxColumn[i]); 
+		if (maxColumn[i] > bests[1].score) {
 			bests[1].score = maxColumn[i];
 			bests[1].ref = i;
 		}
 	}
 	edge = (end_ref + maskLen + 1) > refLen ? refLen : (end_ref + maskLen + 1);
 	for (i = edge + 1; i < refLen; i ++) {
+			fprintf (stderr, "refLen: %d\tmaxColumn[%d]: %d\n", refLen, i, maxColumn[i]); 
 		if (maxColumn[i] > bests[1].score) {
 			bests[1].score = maxColumn[i];
 			bests[1].ref = i;
