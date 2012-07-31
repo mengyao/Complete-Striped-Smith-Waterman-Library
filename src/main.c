@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 07/09/12.
+ *  Last revision by Mengyao Zhao on 07/31/12.
  */
 
 #include <stdlib.h>
@@ -64,7 +64,8 @@ void ssw_write (s_align* a,
 			int8_t sam) {	// 0: Blast like output; 1: Sam format output
 
 	if (sam == 0) {	// Blast like output
-		fprintf(stdout, "target_name: %s\nquery_name: %s\noptimal_alignment_score: %d\tsub-optimal_alignment_score: %d\t", ref_seq->name.s, read->name.s, a->score1, a->score2);
+		fprintf(stdout, "target_name: %s\nquery_name: %s\noptimal_alignment_score: %d\t", ref_seq->name.s, read->name.s, a->score1);
+		if (a->score2 > 0) fprintf(stdout, "suboptimal_alignment_score: %d\t", a->score2);		
 		if (strand == 0) fprintf(stdout, "strand: +\t");
 		else fprintf(stdout, "strand: -\t");
 		if (a->ref_begin1 + 1) fprintf(stdout, "target_begin: %d\t", a->ref_begin1 + 1);
@@ -201,7 +202,9 @@ end:
 					mapq += length;
 				}
 			}
-			fprintf(stdout,"\tNM:i:%d\tZS:i:%d\n", mapq, a->score2);
+			fprintf(stdout,"\tNM:i:%d\t", mapq);
+			if (a->score2 > 0) fprintf(stdout, "ZS:i:%d\n", a->score2);
+			else fprintf(stdout, "\n");
 		}
 	}  
 }
