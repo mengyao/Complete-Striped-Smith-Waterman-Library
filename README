@@ -2,7 +2,7 @@ SSW C Lib: A Genetic Striped Smith-Waterman Sequence Alignment Library Written i
 
 Author: Mengyao Zhao, Ph.D. student of Boston College
 Contact: zhangmp@bc.edu
-Last revision: 05/03/2012
+Last revision: 07/31/2012
 
 1. Overview
 SSW is a fast implementation of the Smith-Waterman algorithm, which uses the Single-Instruction Multiple-Data (SIMD) instructions 
@@ -11,13 +11,41 @@ C, C++ and other languages. We also provide a software that can do protein and g
 implementation is ~50 times faster than an ordinary Smith-Waterman. It can return the Smith-Waterman score, alignment location and 
 traceback path (cigar) of the optimal alignment accurately; and return the sub-optimal alignment score and location heuristically.
 
-2. Install the software
+2. How to use the API
+The API files include ssw.h and ssw.c, which can be directly used by any C or C++ program. For the C++ users who are more comfortable to use a C++ style interface, an additional C++ wrapper is provided with the file ssw_cpp.cpp and ssw_cpp.h. 
+
+To use the C style API, please: 
+1) Download ssw.h and ssw.c, and put them in the same folder of your own program files.
+2) Write #include "ssw.h" into your file that will call the API functions.
+3) The API files are ready to be compiled together with your own C/C++ files.
+
+The API function descriptions are in the file ssw.h. One simple example of the API usage is example.c. The Smith-Waterman penalties need to be integers. Small penalty numbers such as: match: 2, mismatch: -1, gap open: -3, gap extension: -1 are recommended, which will lead to shorter running time.  
+
+To use the C++ style API, please: 
+1) Download ssw.h, ssw.c, ssw_cpp.cpp and ssw_cpp.h and put them in the same folder of your own program files.
+2) Write #include "ssw_cpp.h" into your file that will call the API functions.
+3) The API files are ready to be compiled together with your own C/C++ files.
+
+The API function descriptions are in the file ssw_cpp.h.
+
+2. Speed and memory usage of the API
+Test data set: 
+Target sequence: reference genome of E. coli strain 536 (4,938,920 nucleotides) from NCBI
+Query sequences: 1000 reads of Ion Torrent sequenced E. coli strain DH10B (C23-140, 318 PGM Run, 11/2011), read length: ~25-540 bp, most reads are ~200 bp
+
+CPU time:
+AMD CPU: default penalties: ~880 seconds; -m1 -x3 -o5 -e2: ~460 seconds
+Intel CPU: default penalties: ~960 seconds; -m1 -x3 -o5 -e2: ~500 seconds 
+
+Memory usage: ~40MB
+ 
+3. Install the software
 1) Download the software from https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library.
 2) cd src
 3) make
 4) the executable file will be ssw_test
 
-3. Run the software
+4. Run the software
 Usage: ssw_test [options] ... <target.fasta> <query.fasta>(or <query.fastq>)
 Options:
 	-m N	N is a positive integer for weight match in genome sequence alignment. [default: 2]
@@ -32,7 +60,7 @@ Options:
 	-s	Output in SAM format. [default: no header]
 	-h	If -s is used, include header in SAM output.
 
-4. Software output
+5. Software output
 The software can output SAM format or BLAST like format results. 
 1) SAM format output:
 Example:
@@ -69,33 +97,6 @@ Target:      523    GAGAGAGAAAATTTCACTCCCTCCATAAATCTCACAGTATTCTTTTCTTTTTCCT    5
 Query:         3    GA-AGAGTTAATTTAAGTCACTTCAAACAGATTAC-GTA-TCTTTT-TTTTCCCT    53
 ...
 
-5. How to use the API
-The API files include ssw.h and ssw.c, which can be directly used by any C or C++ program. For the C++ users who are more comfortable to use a C++ style interface, an additional C++ wrapper is provided with the file ssw_cpp.cpp and ssw_cpp.h. 
-
-To use the C style API, please: 
-1) Download ssw.h and ssw.c, and put them in the same folder of your own program files.
-2) Write #include "ssw.h" into your file that will call the API functions.
-3) The API files are ready to be compiled together with your own C/C++ files.
-
-The API function descriptions are in the file ssw.h. One example of the API usage is main.c. The Smith-Waterman penalties need to be integers. Small penalty numbers such as: match: 2, mismatch: -1, gap open: -3, gap extension: -1 are recommended, which will lead to shorter running time.  
-
-To use the C++ style API, please: 
-1) Download ssw.h, ssw.c, ssw_cpp.cpp and ssw_cpp.h and put them in the same folder of your own program files.
-2) Write #include "ssw_cpp.h" into your file that will call the API functions.
-3) The API files are ready to be compiled together with your own C/C++ files.
-
-The API function descriptions are in the file ssw_cpp.h.
-
-6. Speed and memory usage of the API
-Test data set: 
-Target sequence: reference genome of E. coli strain 536 (4,938,920 nucleotides) from NCBI
-Query sequences: 1000 reads of Ion Torrent sequenced E. coli strain DH10B (C23-140, 318 PGM Run, 11/2011), read length: ~25-540 bp, most reads are ~200 bp
-
-CPU time:
-AMD CPU: default penalties: ~880 seconds; -m1 -x3 -o5 -e2: ~460 seconds
-Intel CPU: default penalties: ~960 seconds; -m1 -x3 -o5 -e2: ~500 seconds 
-
-Memory usage: ~40MB 
 
 
 
