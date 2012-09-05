@@ -260,7 +260,7 @@ bool Aligner::Align(const char* query, const Filter& filter,
   s_align* s_al = ssw_align(profile, translated_reference_, reference_length_,
                                  static_cast<int>(gap_opening_penalty_), 
 				 static_cast<int>(gap_extending_penalty_),
-				 flag, filter.score_filter, filter.distance_filter);
+				 flag, filter.score_filter, filter.distance_filter, query_len);
   
   alignment->Clear();
   ConvertAlignment(*s_al, query_len, alignment);
@@ -304,7 +304,7 @@ bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
   s_align* s_al = ssw_align(profile, translated_ref, valid_ref_len,
                                  static_cast<int>(gap_opening_penalty_), 
 				 static_cast<int>(gap_extending_penalty_),
-				 flag, filter.score_filter, filter.distance_filter);
+				 flag, filter.score_filter, filter.distance_filter, query_len);
   
   alignment->Clear();
   ConvertAlignment(*s_al, query_len, alignment);
