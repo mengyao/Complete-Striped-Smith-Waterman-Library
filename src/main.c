@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 07/31/12.
+ *  Last revision by Mengyao Zhao on 11/28/12.
  */
 
 #include <stdlib.h>
@@ -12,6 +12,7 @@
 #include <time.h>
 #include <string.h>
 #include <math.h>
+#include <unistd.h>
 #include "ssw.h"
 #include "kseq.h"
 
