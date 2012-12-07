@@ -206,9 +206,10 @@ int Aligner::SetReferenceSequence(const char* seq, const int& length) {
   int len = 0;
   if (matrix_built_) {
     // calculate the valid length
-    int calculated_ref_length = static_cast<int>(strlen(seq));
-    int valid_length = (calculated_ref_length > length) 
-                       ? length : calculated_ref_length;
+    //int calculated_ref_length = static_cast<int>(strlen(seq));
+    //int valid_length = (calculated_ref_length > length) 
+    //                   ? length : calculated_ref_length;
+    int valid_length = length;
     // delete the current buffer
     CleanReferenceSequence();
     // allocate a new buffer
@@ -288,9 +289,10 @@ bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
   TranslateBase(query, query_len, translated_query);
 
   // calculate the valid length
-  int calculated_ref_length = static_cast<int>(strlen(ref));
-  int valid_ref_len = (calculated_ref_length > ref_len) 
-                      ? ref_len : calculated_ref_length;
+  //int calculated_ref_length = static_cast<int>(strlen(ref));
+  //int valid_ref_len = (calculated_ref_length > ref_len) 
+  //                    ? ref_len : calculated_ref_length;
+  int valid_ref_len = ref_len;
   int8_t* translated_ref = new int8_t[valid_ref_len];
   TranslateBase(ref, valid_ref_len, translated_ref);
 
