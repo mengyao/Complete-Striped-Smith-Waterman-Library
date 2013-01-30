@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 07/31/12.
+ *	Last revision by Mengyao Zhao on 01/30/13.
  *
  */
 
@@ -88,7 +88,8 @@ void init_destroy (s_profile* p);
 					< filterd), (whatever bit 5 is setted) the function will return the best alignment beginning position and 
 					cigar; bit 7: when setted as 1, if the best alignment score >= filters, (whatever bit 5 is setted) the function
   					will return the best alignment beginning position and cigar; bit 8: when setted as 1, (whatever bit 5, 6 or 7 is
- 					setted) the function will always return the best alignment beginning position and cigar
+ 					setted) the function will always return the best alignment beginning position and cigar. When flag == 0, only 
+					the optimal and sub-optimal scores and the optimal alignment ending position will be returned.
 	@param	filters	score filter: when bit 7 of flag is setted as 1 and bit 8 is setted as 0, filters will be used (Please check the
  					decription of the flag parameter for detailed usage.)
 	@param	filterd	distance filter: when bit 6 of flag is setted as 1 and bit 8 is setted as 0, filterd will be used (Please check 
