@@ -35,8 +35,10 @@ struct Alignment {
 };
 
 struct Filter {
-  // NOTE: No matter the filter, those five fields will be given anyway.
+  // NOTE: No matter the filter, those five fields of Alignment will be given anyway.
   //       sw_score; sw_score_next_best; ref_end; query_end; ref_end_next_best.
+  // NOTE: Only need score of alignments, please set 'report_begin_position'
+  //       and 'report_cigar' false.
   
   bool report_begin_position;    // Give ref_begin and query_begin. 
                                  //   If it is not set, ref_begin and query_begin are -1.
