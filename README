@@ -12,7 +12,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 Author: Mengyao Zhao & Wan-Ping Lee
 Contact: Mengyao Zhao <zhangmp@bc.edu>
-Last revision: 09/12/2012
+Last revision: 04/10/2013
 
 1. Overview
 SSW is a fast implementation of the Smith-Waterman algorithm, which uses the Single-Instruction Multiple-Data (SIMD) instructions 
@@ -38,7 +38,7 @@ To use the C++ style API, please:
 
 The API function descriptions are in the file ssw_cpp.h. A simple example of using the C++ API is example.cpp.
 
-2. Speed and memory usage of the API
+3. Speed and memory usage of the API
 Test data set: 
 Target sequence: reference genome of E. coli strain 536 (4,938,920 nucleotides) from NCBI
 Query sequences: 1000 reads of Ion Torrent sequenced E. coli strain DH10B (C23-140, 318 PGM Run, 11/2011), read length: ~25-540 bp, most reads are ~200 bp
@@ -49,13 +49,13 @@ Intel CPU: default penalties: ~960 seconds; -m1 -x3 -o5 -e2: ~500 seconds
 
 Memory usage: ~40MB
  
-3. Install the software
+4. Install the software
 1) Download the software from https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library.
 2) cd src
 3) make
 4) the executable file will be ssw_test
 
-4. Run the software
+5. Run the software
 Usage: ssw_test [options] ... <target.fasta> <query.fasta>(or <query.fastq>)
 Options:
 	-m N	N is a positive integer for weight match in genome sequence alignment. [default: 2]
@@ -70,7 +70,7 @@ Options:
 	-s	Output in SAM format. [default: no header]
 	-h	If -s is used, include header in SAM output.
 
-5. Software output
+6. Software output
 The software can output SAM format or BLAST like format results. 
 1) SAM format output:
 Example:
@@ -107,6 +107,8 @@ Target:      523    GAGAGAGAAAATTTCACTCCCTCCATAAATCTCACAGTATTCTTTTCTTTTTCCT    5
 Query:         3    GA-AGAGTTAATTTAAGTCACTTCAAACAGATTAC-GTA-TCTTTT-TTTTCCCT    53
 ...
 
+7. Publication:
+http://arxiv.org/abs/1208.6350
 
 
 
