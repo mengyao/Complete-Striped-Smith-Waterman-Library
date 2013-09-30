@@ -21,6 +21,8 @@ void PrintAlignment(const StripedSmithWaterman::Alignment& alignment);
 int main() {
   const string ref   = "CAGCCTTTCTGACCCGGAAATCAAAATAGGCACAACAAA";
   const string query = "CTGAGCCGGTAAATC";
+  //const string ref   = "CCGTTTATCGCA";
+  //const string query = "CCTTTTATCGCA";
 
   // Declares a default Aligner
   StripedSmithWaterman::Aligner aligner;
