@@ -53,7 +53,7 @@ Memory usage: ~40MB
 1) Download the software from https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library.
 2) cd src
 3) make
-4) the executable file will be ssw_test
+4) The executable file will be ssw_test.
 
 5. Run the software
 Usage: ssw_test [options] ... <target.fasta> <query.fasta>(or <query.fastq>)
