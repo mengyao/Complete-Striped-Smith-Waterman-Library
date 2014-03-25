@@ -53,7 +53,7 @@ Memory usage: ~40MB
 1) Download the software from https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library.
 2) cd src
 3) make
-4) the executable file will be ssw_test
+4) The executable file will be ssw_test.
 
 5. Run the software
 Usage: ssw_test [options] ... <target.fasta> <query.fasta>(or <query.fastq>)
@@ -107,8 +107,5 @@ Target:      523    GAGAGAGAAAATTTCACTCCCTCCATAAATCTCACAGTATTCTTTTCTTTTTCCT    5
 Query:         3    GA-AGAGTTAATTTAAGTCACTTCAAACAGATTAC-GTA-TCTTTT-TTTTCCCT    53
 ...
 
-7. Publication:
+7. Please cite this paper, if you need:
 http://dx.plos.org/10.1371/journal.pone.0082138
-
-
-
