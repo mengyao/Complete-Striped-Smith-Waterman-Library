@@ -7,6 +7,11 @@ extern "C" {
 }
 
 namespace {
+static const uint32_t bam_M_operator = 0;
+static const uint32_t bam_I_operator = 1;
+static const uint32_t bam_D_operator = 2;
+static const uint32_t bam_S_operator = 4;
+static const uint32_t bam_X_operator = 8;
 
 static int8_t kBaseTranslation[128] = {
     4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
@@ -94,32 +99,110 @@ void ConvertAlignment(const s_align& s_al,
   } // end if
 }
 
+// @Function:
+//     Calculate the previous cigar operator
+//     and store it in new_cigar and new_cigar_string.
+//     Clean up in_M (false), in_X (false), length_M (0), and length_X(0)
+void CleanPreviousMOperator(
+    bool* in_M,
+    bool* in_X,
+    int* length_M,
+    int* length_X,
+    std::vector<uint32_t>* new_cigar,
+    std::ostringstream* new_cigar_string) {
+  if (*in_M) {
+    uint32_t match = ((*length_M << 4) & 0xfffffff0) || (bam_M_operator & 0x0000000f);
+    new_cigar->push_back(match);
+    (*new_cigar_string) << *length_M << 'M'; 
+  } else if (*in_X){ //in_X
+    uint32_t match = ((*length_X << 4) & 0xfffffff0) || (bam_X_operator & 0x0000000f);
+    new_cigar->push_back(match);
+    (*new_cigar_string) << *length_X << 'X';
+  }
+
+  // Clean up
+  *in_M = false;
+  *in_X = false;
+  *length_M = 0;
+  *length_X = 0;
+}
+
+// @Function:
+//     1. Calculate the number of mismatches.
+//     2. Modify the cigar string: 
+//         differentiate matches (M) and mismatches(X).
+//         Note that SSW does not differentiate matches and mismatches.
+// @Return:
+//     The number of mismatches.
 int CalculateNumberMismatch(
-    const StripedSmithWaterman::Alignment& al,
+    StripedSmithWaterman::Alignment* al,
     //const int8_t* matrix,
     int8_t const *ref,
     int8_t const *query) {
   
-  ref   += al.ref_begin;
-  query += al.query_begin;
+  ref   += al->ref_begin;
+  query += al->query_begin;
   int mismatch_length = 0;
-  for (unsigned int i = 0; i < al.cigar.size(); ++i) {
-    int32_t op = al.cigar[i] & 0x0000000f;
-    int32_t length = (al.cigar[i] >> 4) & 0x0fffffff;
-    if (op == 0) { // M
+
+  std::vector<uint32_t> new_cigar;
+  std::ostringstream new_cigar_string;
+
+  bool in_M = false; // the previous is match
+  bool in_X = false; // the previous is mismatch
+  int length_M = 0;
+  int length_X = 0;
+
+  for (unsigned int i = 0; i < al->cigar.size(); ++i) {
+    int32_t op = al->cigar[i] & 0x0000000f;
+    int32_t length = (al->cigar[i] >> 4) & 0x0fffffff;
+    if (op == bam_M_operator) { // M
       for (int j = 0; j < length; ++j) {
-	if (*ref != *query) ++mismatch_length;
+	if (*ref != *query) {
+	  ++mismatch_length;
+          if (in_M) { // the previous is match; however the current one is mismatche
+	    uint32_t match = ((length_M << 4) & 0xfffffff0) || (bam_M_operator & 0x0000000f);
+	    new_cigar.push_back(match);
+	    new_cigar_string << length_M << 'M';
+	  }
+	  length_M = 0;
+	  ++length_X;
+	  in_M = false;
+	  in_X = true;
+	} else { // *ref == *query
+	  if (in_X) { // the previous is mismatch; however the current one is matche
+	    uint32_t match = ((length_X << 4) & 0xfffffff0) || (bam_X_operator & 0x0000000f);
+	    new_cigar.push_back(match);
+	    new_cigar_string << length_X << 'X';
+	  }
+	  ++length_M;
+	  length_X = 0;
+	  in_M = true;
+	  in_X = false;
+	} // end of if (*ref != *query)
 	++ref;
 	++query;
       }
-    } else if (op == 1) { // I
+    } else if (op == bam_I_operator) { // I
       query += length;
       mismatch_length += length;
-    } else if (op == 2) { // D
+      CleanPreviousMOperator(&in_M, &in_X, &length_M, &length_X, &new_cigar, &new_cigar_string);
+      new_cigar.push_back(al->cigar[i]);
+      new_cigar_string << length << 'I';
+    } else if (op == bam_D_operator) { // D
       ref += length;
       mismatch_length += length;
+      CleanPreviousMOperator(&in_M, &in_X, &length_M, &length_X, &new_cigar, &new_cigar_string);
+      new_cigar.push_back(al->cigar[i]);
+      new_cigar_string << length << 'D';
     }
   }
+
+  CleanPreviousMOperator(&in_M, &in_X, &length_M, &length_X, &new_cigar, &new_cigar_string);
+ 
+  al->cigar_string.clear();
+  al->cigar.clear();
+  al->cigar_string = new_cigar_string.str();
+  al->cigar = new_cigar;
 
   return mismatch_length;
 }
@@ -265,7 +348,7 @@ bool Aligner::Align(const char* query, const Filter& filter,
   
   alignment->Clear();
   ConvertAlignment(*s_al, query_len, alignment);
-  alignment->mismatches = CalculateNumberMismatch(*alignment, translated_reference_, translated_query);
+  alignment->mismatches = CalculateNumberMismatch(&*alignment, translated_reference_, translated_query);
 
 
   // Free memory
@@ -310,7 +393,7 @@ bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
   
   alignment->Clear();
   ConvertAlignment(*s_al, query_len, alignment);
-  alignment->mismatches = CalculateNumberMismatch(*alignment, translated_ref, translated_query);
+  alignment->mismatches = CalculateNumberMismatch(&*alignment, translated_ref, translated_query);
 
   // Free memory
   if (query_len > 1) delete [] translated_query;
