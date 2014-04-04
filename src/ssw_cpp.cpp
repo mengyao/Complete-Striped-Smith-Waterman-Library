@@ -11,6 +11,7 @@ static const uint32_t bam_M_operator = 0;
 static const uint32_t bam_I_operator = 1;
 static const uint32_t bam_D_operator = 2;
 static const uint32_t bam_S_operator = 4;
+static const uint32_t bam_EQUAL_operator = 7;
 static const uint32_t bam_X_operator = 8;
 
 static int8_t kBaseTranslation[128] = {
@@ -100,9 +101,9 @@ void ConvertAlignment(const s_align& s_al,
 }
 
 // @Function:
-//     Calculate the previous cigar operator
+//     Calculate the length of the previous cigar operator
 //     and store it in new_cigar and new_cigar_string.
-//     Clean up in_M (false), in_X (false), length_M (0), and length_X(0)
+//     Clean up in_M (false), in_X (false), length_M (0), and length_X(0).
 void CleanPreviousMOperator(
     bool* in_M,
     bool* in_X,
@@ -111,9 +112,9 @@ void CleanPreviousMOperator(
     std::vector<uint32_t>* new_cigar,
     std::ostringstream* new_cigar_string) {
   if (*in_M) {
-    uint32_t match = ((*length_M << 4) & 0xfffffff0) || (bam_M_operator & 0x0000000f);
+    uint32_t match = ((*length_M << 4) & 0xfffffff0) || (bam_EQUAL_operator & 0x0000000f);
     new_cigar->push_back(match);
-    (*new_cigar_string) << *length_M << 'M'; 
+    (*new_cigar_string) << *length_M << '='; 
   } else if (*in_X){ //in_X
     uint32_t match = ((*length_X << 4) & 0xfffffff0) || (bam_X_operator & 0x0000000f);
     new_cigar->push_back(match);
@@ -160,9 +161,9 @@ int CalculateNumberMismatch(
 	if (*ref != *query) {
 	  ++mismatch_length;
           if (in_M) { // the previous is match; however the current one is mismatche
-	    uint32_t match = ((length_M << 4) & 0xfffffff0) || (bam_M_operator & 0x0000000f);
+	    uint32_t match = ((length_M << 4) & 0xfffffff0) || (bam_EQUAL_operator & 0x0000000f);
 	    new_cigar.push_back(match);
-	    new_cigar_string << length_M << 'M';
+	    new_cigar_string << length_M << '=';
 	  }
 	  length_M = 0;
 	  ++length_X;
