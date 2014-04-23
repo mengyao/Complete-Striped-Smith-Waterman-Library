@@ -57,6 +57,13 @@ struct Filter {
     , score_filter(0)
     , distance_filter(32767)
   {};
+
+  Filter(const bool& pos, const bool& cigar, const uint16_t& score, const uint16_t& dis)
+    : report_begin_position(pos)
+    , report_cigar(cigar)
+    , score_filter(score)
+    , distance_filter(dis)
+    {};
 };
 
 class Aligner {
