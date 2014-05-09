@@ -8,12 +8,12 @@ EXAMPLE = example
 
 all: $(PROG) $(EXAMPLE)
 
-$(PROG): main.c
+$(PROG): main.c kseq.h
 
 $(EXAMPLE): example.c
 
 $(PROG) $(EXAMPLE): $(LOBJS)
-	$(CC) -o $@ $^ $(CFLAGS) -lm -lz
+	$(CC) -o $@ $(filter-out %.h,$^) $(CFLAGS) -lm -lz
 
 ssw.o: ssw.c ssw.h
 	$(CC) -c -o $@ $< $(CFLAGS)
