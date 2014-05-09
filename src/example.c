@@ -1,8 +1,8 @@
 /*	example.c
- *	This is a simple example to show you how to use the SSW C library. 
+ *	This is a simple example to show you how to use the SSW C library.
  *	To run this example:
  *	1) gcc -Wall -lz ssw.c example.c
- *	2) ./a.out 
+ *	2) ./a.out
  *	Created by Mengyao Zhao on 07/31/12.
  */
 
@@ -51,7 +51,7 @@ step2:
 				int32_t letter = 0xf&*(a->cigar + c);
 				int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
 				int32_t l = (count == 0 && left > 0) ? left: length;
-				for (i = 0; i < l; ++i){ 
+				for (i = 0; i < l; ++i){
 					if (letter == 0) {
 						if (table[(int)*(ref_seq + q)] == table[(int)*(read_seq + p)])fprintf(stdout, "|");
 						else fprintf(stdout, "*");
@@ -77,7 +77,7 @@ step3:
 				int32_t letter = 0xf&*(a->cigar + c);
 				int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
 				int32_t l = (count == 0 && left > 0) ? left: length;
-				for (i = 0; i < l; ++i) { 
+				for (i = 0; i < l; ++i) {
 					if (letter == 2) fprintf(stdout, "-");
 					else {
 						fprintf(stdout, "%c", *(read_seq + p));
@@ -105,7 +105,7 @@ int main (int argc, char * const argv[]) {
 	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1;	// default parameters for genome sequence alignment
 	// reference sequence
 	static const char ref_seq[40] = {'C', 'A', 'G', 'C', 'C', 'T', 'T', 'T', 'C', 'T', 'G', 'A', 'C', 'C', 'C', 'G', 'G', 'A', 'A', 'A', 'T',
-						'C', 'A', 'A', 'A', 'A', 'T', 'A', 'G', 'G', 'C', 'A', 'C', 'A', 'A', 'C', 'A', 'A', 'A', '\0'};	
+						'C', 'A', 'A', 'A', 'A', 'T', 'A', 'G', 'G', 'C', 'A', 'C', 'A', 'A', 'C', 'A', 'A', 'A', '\0'};
 	static const char read_seq[16] = {'C', 'T', 'G', 'A', 'G', 'C', 'C', 'G', 'G', 'T', 'A', 'A', 'A', 'T', 'C', '\0'};	// read sequence
 	s_profile* profile;
 	int8_t* num = (int8_t*)malloc(16);	// the read sequence represented in numbers
@@ -114,23 +114,23 @@ int main (int argc, char * const argv[]) {
 
 	/* This table is used to transform nucleotide letters into numbers. */
 	static const int8_t nt_table[128] = {
-		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
 		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4, 4, 4,  3, 0, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4, 4, 4,  3, 0, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4 
+		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+		4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4,
+		4, 4, 4, 4,  3, 0, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+		4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4,
+		4, 4, 4, 4,  3, 0, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4
 	};
-	
+
 	// initialize scoring matrix for genome sequences
-	//  A  C  G  T	N (or other ambiguous code) 
+	//  A  C  G  T	N (or other ambiguous code)
 	//  2 -2 -2 -2 	0	A
 	// -2  2 -2 -2 	0	C
 	// -2 -2  2 -2 	0	G
 	// -2 -2 -2  2 	0	T
-	//	0  0  0  0  0	N (or other ambiguous code)	
+	//	0  0  0  0  0	N (or other ambiguous code)
 	int8_t* mat = (int8_t*)calloc(25, sizeof(int8_t));
 	for (l = k = 0; l < 4; ++l) {
 		for (m = 0; m < 4; ++m) mat[k++] = l == m ? match : - mismatch;	/* weight_match : -weight_mismatch */
@@ -143,7 +143,7 @@ int main (int argc, char * const argv[]) {
 	for (m = 0; m < 39; ++m) ref_num[m] = nt_table[(int)ref_seq[m]];
 
 	// Only the 8 bit of the flag is setted. ssw_align will always return the best alignment beginning position and cigar.
-	result = ssw_align (profile, ref_num, 39, gap_open, gap_extension, 1, 0, 0, 15);	
+	result = ssw_align (profile, ref_num, 39, gap_open, gap_extension, 1, 0, 0, 15);
 	ssw_write(result, ref_seq, read_seq, nt_table);
 
 	free(mat);

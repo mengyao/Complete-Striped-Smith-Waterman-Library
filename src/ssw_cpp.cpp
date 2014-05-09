@@ -12,21 +12,21 @@ static const uint32_t bam_EQUAL_operator = 7;
 static const uint32_t bam_X_operator = 8;
 
 static int8_t kBaseTranslation[128] = {
-    4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-    4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
     4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-    4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+    4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+    4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+    4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
   //   A     C            G
-    4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
+    4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4,
   //             T
-    4, 4, 4, 4,  3, 0, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
+    4, 4, 4, 4,  3, 0, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
   //   a     c            g
-    4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
+    4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4,
   //             t
-    4, 4, 4, 4,  3, 0, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4 
+    4, 4, 4, 4,  3, 0, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4
 };
 
-void BuildSwScoreMatrix(const uint8_t& match_score, 
+void BuildSwScoreMatrix(const uint8_t& match_score,
                         const uint8_t& mismatch_penalty,
 			int8_t* matrix) {
 
@@ -50,11 +50,11 @@ void BuildSwScoreMatrix(const uint8_t& match_score,
 
   for (int i = 0; i < 5; ++i)
     matrix[id++] = 0;
-    
+
 }
 
-void ConvertAlignment(const s_align& s_al, 
-                      const int& query_len, 
+void ConvertAlignment(const s_align& s_al,
+                      const int& query_len,
                       StripedSmithWaterman::Alignment* al) {
   al->sw_score           = s_al.score1;
   al->sw_score_next_best = s_al.score2;
@@ -66,7 +66,7 @@ void ConvertAlignment(const s_align& s_al,
 
   al->cigar.clear();
   al->cigar_string.clear();
-  
+
   if (s_al.cigarLen > 0) {
     std::ostringstream cigar_string;
     if (al->query_begin > 0) {
@@ -111,7 +111,7 @@ void CleanPreviousMOperator(
   if (*in_M) {
     uint32_t match = ((*length_M << 4) & 0xfffffff0) || (bam_EQUAL_operator & 0x0000000f);
     new_cigar->push_back(match);
-    (*new_cigar_string) << *length_M << '='; 
+    (*new_cigar_string) << *length_M << '=';
   } else if (*in_X){ //in_X
     uint32_t match = ((*length_X << 4) & 0xfffffff0) || (bam_X_operator & 0x0000000f);
     new_cigar->push_back(match);
@@ -127,7 +127,7 @@ void CleanPreviousMOperator(
 
 // @Function:
 //     1. Calculate the number of mismatches.
-//     2. Modify the cigar string: 
+//     2. Modify the cigar string:
 //         differentiate matches (M) and mismatches(X).
 //         Note that SSW does not differentiate matches and mismatches.
 // @Return:
@@ -137,7 +137,7 @@ int CalculateNumberMismatch(
     //const int8_t* matrix,
     int8_t const *ref,
     int8_t const *query) {
-  
+
   ref   += al->ref_begin;
   query += al->query_begin;
   int mismatch_length = 0;
@@ -196,7 +196,7 @@ int CalculateNumberMismatch(
   }
 
   CleanPreviousMOperator(&in_M, &in_X, &length_M, &length_X, &new_cigar, &new_cigar_string);
- 
+
   al->cigar_string.clear();
   al->cigar.clear();
   al->cigar_string = new_cigar_string.str();
@@ -257,7 +257,7 @@ Aligner::Aligner(const int8_t* score_matrix,
                  const int&    score_matrix_size,
 	         const int8_t* translation_matrix,
 		 const int&    translation_matrix_size)
-    
+
     : score_matrix_(NULL)
     , score_matrix_size_(score_matrix_size)
     , translation_matrix_(NULL)
@@ -283,19 +283,19 @@ Aligner::~Aligner(void){
 }
 
 int Aligner::SetReferenceSequence(const char* seq, const int& length) {
-  
+
   int len = 0;
   if (matrix_built_) {
     // calculate the valid length
     //int calculated_ref_length = static_cast<int>(strlen(seq));
-    //int valid_length = (calculated_ref_length > length) 
+    //int valid_length = (calculated_ref_length > length)
     //                   ? length : calculated_ref_length;
     int valid_length = length;
     // delete the current buffer
     CleanReferenceSequence();
     // allocate a new buffer
     translated_reference_ = new int8_t[valid_length];
-  
+
     len = TranslateBase(seq, valid_length, translated_reference_);
   } else {
     // nothing
@@ -307,7 +307,7 @@ int Aligner::SetReferenceSequence(const char* seq, const int& length) {
 
 }
 
-int Aligner::TranslateBase(const char* bases, const int& length, 
+int Aligner::TranslateBase(const char* bases, const int& length,
     int8_t* translated) const {
 
   const char* ptr = bases;
@@ -322,7 +322,7 @@ int Aligner::TranslateBase(const char* bases, const int& length,
 }
 
 
-bool Aligner::Align(const char* query, const Filter& filter, 
+bool Aligner::Align(const char* query, const Filter& filter,
                     Alignment* alignment) const
 {
   if (!matrix_built_) return false;
@@ -334,16 +334,16 @@ bool Aligner::Align(const char* query, const Filter& filter,
   TranslateBase(query, query_len, translated_query);
 
   const int8_t score_size = 2;
-  s_profile* profile = ssw_init(translated_query, query_len, score_matrix_, 
+  s_profile* profile = ssw_init(translated_query, query_len, score_matrix_,
                                 score_matrix_size_, score_size);
 
   uint8_t flag = 0;
   SetFlag(filter, &flag);
   s_align* s_al = ssw_align(profile, translated_reference_, reference_length_,
-                                 static_cast<int>(gap_opening_penalty_), 
+                                 static_cast<int>(gap_opening_penalty_),
 				 static_cast<int>(gap_extending_penalty_),
 				 flag, filter.score_filter, filter.distance_filter, query_len);
-  
+
   alignment->Clear();
   ConvertAlignment(*s_al, query_len, alignment);
   alignment->mismatches = CalculateNumberMismatch(&*alignment, translated_reference_, translated_query);
@@ -363,7 +363,7 @@ bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
                     const Filter& filter, Alignment* alignment) const
 {
   if (!matrix_built_) return false;
-  
+
   int query_len = strlen(query);
   if (query_len == 0) return false;
   int8_t* translated_query = new int8_t[query_len];
@@ -371,7 +371,7 @@ bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
 
   // calculate the valid length
   //int calculated_ref_length = static_cast<int>(strlen(ref));
-  //int valid_ref_len = (calculated_ref_length > ref_len) 
+  //int valid_ref_len = (calculated_ref_length > ref_len)
   //                    ? ref_len : calculated_ref_length;
   int valid_ref_len = ref_len;
   int8_t* translated_ref = new int8_t[valid_ref_len];
@@ -379,16 +379,16 @@ bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
 
 
   const int8_t score_size = 2;
-  s_profile* profile = ssw_init(translated_query, query_len, score_matrix_, 
+  s_profile* profile = ssw_init(translated_query, query_len, score_matrix_,
                                 score_matrix_size_, score_size);
 
   uint8_t flag = 0;
   SetFlag(filter, &flag);
   s_align* s_al = ssw_align(profile, translated_ref, valid_ref_len,
-                                 static_cast<int>(gap_opening_penalty_), 
+                                 static_cast<int>(gap_opening_penalty_),
 				 static_cast<int>(gap_extending_penalty_),
 				 flag, filter.score_filter, filter.distance_filter, query_len);
-  
+
   alignment->Clear();
   ConvertAlignment(*s_al, query_len, alignment);
   alignment->mismatches = CalculateNumberMismatch(&*alignment, translated_ref, translated_query);
@@ -408,7 +408,7 @@ void Aligner::Clear(void) {
   if (score_matrix_) delete [] score_matrix_;
   score_matrix_ = NULL;
 
-  if (!default_matrix_ && translation_matrix_) 
+  if (!default_matrix_ && translation_matrix_)
     delete [] translation_matrix_;
   translation_matrix_ = NULL;
 
