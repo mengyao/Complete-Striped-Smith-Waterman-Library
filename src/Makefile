@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -O3 -pipe #-pg
+CFLAGS := -Wall -Werror -O3 -pipe #-pg
 LOBJS = ssw.o
 PROG = ssw_test
 EXAMPLE = example
