@@ -409,7 +409,6 @@ alignment_end* sw_sse2_word (const int8_t* ref,
 	/* 16 byte insertion extension vector */
 	__m128i vGapE = _mm_set1_epi16(weight_gapE);	
 
-	/* 16 byte bias vector */
 	__m128i vMaxScore = vZero; /* Trace the highest score of the whole SW matrix. */
 	__m128i vMaxMark = vZero; /* Trace the highest score till the previous column. */	
 	__m128i vTemp;
