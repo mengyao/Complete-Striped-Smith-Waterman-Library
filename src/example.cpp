@@ -16,7 +16,7 @@ using std::string;
 using std::cout;
 using std::endl;
 
-void PrintAlignment(const StripedSmithWaterman::Alignment& alignment);
+static void PrintAlignment(const StripedSmithWaterman::Alignment& alignment);
 
 int main() {
   const string ref   = "CAGCCTTTCTGACCCGGAAATCAAAATAGGCACAACAAA";
@@ -38,7 +38,7 @@ int main() {
   return 0;
 }
 
-void PrintAlignment(const StripedSmithWaterman::Alignment& alignment){
+static void PrintAlignment(const StripedSmithWaterman::Alignment& alignment){
   cout << "===== SSW result =====" << endl;
   cout << "Best Smith-Waterman score:\t" << alignment.sw_score << endl
        << "Next-best Smith-Waterman score:\t" << alignment.sw_score_next_best << endl

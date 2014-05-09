@@ -86,7 +86,7 @@ struct _profile{
 };
 
 /* Generate query profile rearrange query sequence & calculate the weight of match/mismatch. */
-__m128i* qP_byte (const int8_t* read_num,
+static __m128i* qP_byte (const int8_t* read_num,
 				  const int8_t* mat,
 				  const int32_t readLen,
 				  const int32_t n,	/* the edge length of the squre matrix mat */
@@ -120,7 +120,7 @@ __m128i* qP_byte (const int8_t* read_num,
    wight_match > 0, all other weights < 0.
    The returned positions are 0-based.
  */ 
-alignment_end* sw_sse2_byte (const int8_t* ref,
+static alignment_end* sw_sse2_byte (const int8_t* ref,
 							 int8_t ref_dir,	// 0: forward ref; 1: reverse ref
 							 int32_t refLen,
 							 int32_t readLen, 
@@ -344,7 +344,7 @@ alignment_end* sw_sse2_byte (const int8_t* ref,
 	return bests;
 }
 
-__m128i* qP_word (const int8_t* read_num,
+static __m128i* qP_word (const int8_t* read_num,
 				  const int8_t* mat,
 				  const int32_t readLen,
 				  const int32_t n) { 
@@ -368,7 +368,7 @@ __m128i* qP_word (const int8_t* read_num,
 	return vProfile;
 }
 
-alignment_end* sw_sse2_word (const int8_t* ref, 
+static alignment_end* sw_sse2_word (const int8_t* ref,
 							 int8_t ref_dir,	// 0: forward ref; 1: reverse ref
 							 int32_t refLen,
 							 int32_t readLen, 
@@ -546,7 +546,7 @@ end:
 	return bests;
 }
 
-cigar* banded_sw (const int8_t* ref,
+static cigar* banded_sw (const int8_t* ref,
 				 const int8_t* read, 
 				 int32_t refLen, 
 				 int32_t readLen,
@@ -726,7 +726,7 @@ cigar* banded_sw (const int8_t* ref,
 	return result;
 }
 
-int8_t* seq_reverse(const int8_t* seq, int32_t end)	/* end is 0-based alignment ending position */	
+static int8_t* seq_reverse(const int8_t* seq, int32_t end)	/* end is 0-based alignment ending position */
 {									
 	int8_t* reverse = (int8_t*)calloc(end + 1, sizeof(int8_t));	
 	int32_t start = 0;
