@@ -33,9 +33,9 @@
 
 KSEQ_INIT(gzFile, gzread)
 
-void reverse_comple(const char* seq, char* rc) {
+static void reverse_comple(const char* seq, char* rc) {
 	int32_t end = strlen(seq), start = 0;
-	int8_t rc_table[128] = {
+	static const int8_t rc_table[128] = {
 		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
 		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
 		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
@@ -56,11 +56,11 @@ void reverse_comple(const char* seq, char* rc) {
 	if (start == end) rc[start] = (char)rc_table[(int8_t)seq[start]];			
 }							
 
-void ssw_write (s_align* a, 
-			kseq_t* ref_seq,
-			kseq_t* read,
-			char* read_seq,	// strand == 0: original read; strand == 1: reverse complement read
-			int8_t* table, 
+static void ssw_write (const s_align* a,
+			const kseq_t* ref_seq,
+			const kseq_t* read,
+			const char* read_seq,	// strand == 0: original read; strand == 1: reverse complement read
+			const int8_t* table,
 			int8_t strand,	// 0: forward aligned ; 1: reverse complement aligned 
 			int8_t sam) {	// 0: Blast like output; 1: Sam format output
 
@@ -216,14 +216,15 @@ int main (int argc, char * const argv[]) {
 	gzFile read_fp, ref_fp;
 	kseq_t *read_seq, *ref_seq;
 	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0, header = 0, s1 = 67108864, s2 = 128, filter = 0;
-	int8_t* mata = (int8_t*)calloc(25, sizeof(int8_t)), *mat = mata;
+	int8_t* mata = (int8_t*)calloc(25, sizeof(int8_t));
+	const int8_t* mat = mata;
 	char mat_name[16];
 	mat_name[0] = '\0';
 	int8_t* ref_num = (int8_t*)malloc(s1);
 	int8_t* num = (int8_t*)malloc(s2), *num_rc = 0;
 	char* read_rc = 0;
 
-	int8_t mat50[] = {
+	static const int8_t mat50[] = {
 	//  A   R   N   D   C   Q   E   G   H   I   L   K   M   F   P   S   T   W   Y   V   B   Z   X   *   
      	5, -2, -1, -2, -1, -1, -1,  0, -2, -1, -2, -1, -1, -3, -1,  1,  0, -3, -2,  0, -2, -1, -1, -5,	// A
        -2,  7, -1, -2, -4,  1,  0, -3,  0, -4, -3,  3, -2, -3, -3, -1, -1, -3, -1, -3, -1,  0, -1, -5,	// R

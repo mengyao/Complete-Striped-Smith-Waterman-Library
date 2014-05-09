@@ -16,6 +16,11 @@
 #include <string.h>
 #include <emmintrin.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif	// __cplusplus
+
+
 /*!	@typedef	structure of the query profile	*/
 struct _profile;
 typedef struct _profile s_profile;
@@ -45,10 +50,6 @@ typedef struct {
 	uint32_t* cigar;	
 	int32_t cigarLen;	
 } s_align;
-
-#ifdef __cplusplus
-extern "C" {
-#endif	// __cplusplus
 
 /*!	@function	Create the query profile using the query sequence.
 	@param	read	pointer to the query sequence; the query sequence needs to be numbers

@@ -12,10 +12,10 @@
 #include "ssw.h"
 
 //	Print the BLAST like output.
-void ssw_write (s_align* a, 
-			char* ref_seq,
-			char* read_seq,
-			int8_t* table) { 
+static void ssw_write (const s_align* a,
+			const char* ref_seq,
+			const char* read_seq,
+			const int8_t* table) {
 
 	fprintf(stdout, "optimal_alignment_score: %d\tsub-optimal_alignment_score: %d\t", a->score1, a->score2);
 	if (a->ref_begin1 + 1) fprintf(stdout, "target_begin: %d\t", a->ref_begin1 + 1);
@@ -104,16 +104,16 @@ end:
 int main (int argc, char * const argv[]) {
 	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1;	// default parameters for genome sequence alignment
 	// reference sequence
-	char ref_seq[40] = {'C', 'A', 'G', 'C', 'C', 'T', 'T', 'T', 'C', 'T', 'G', 'A', 'C', 'C', 'C', 'G', 'G', 'A', 'A', 'A', 'T', 
+	static const char ref_seq[40] = {'C', 'A', 'G', 'C', 'C', 'T', 'T', 'T', 'C', 'T', 'G', 'A', 'C', 'C', 'C', 'G', 'G', 'A', 'A', 'A', 'T',
 						'C', 'A', 'A', 'A', 'A', 'T', 'A', 'G', 'G', 'C', 'A', 'C', 'A', 'A', 'C', 'A', 'A', 'A', '\0'};	
-	char read_seq[16] = {'C', 'T', 'G', 'A', 'G', 'C', 'C', 'G', 'G', 'T', 'A', 'A', 'A', 'T', 'C', '\0'};	// read sequence
+	static const char read_seq[16] = {'C', 'T', 'G', 'A', 'G', 'C', 'C', 'G', 'G', 'T', 'A', 'A', 'A', 'T', 'C', '\0'};	// read sequence
 	s_profile* profile;
 	int8_t* num = (int8_t*)malloc(16);	// the read sequence represented in numbers
 	int8_t* ref_num = (int8_t*)malloc(64);	// the read sequence represented in numbers
 	s_align* result;
 
 	/* This table is used to transform nucleotide letters into numbers. */
-	int8_t nt_table[128] = {
+	static const int8_t nt_table[128] = {
 		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
 		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
 		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,

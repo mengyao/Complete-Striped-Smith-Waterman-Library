@@ -1,10 +1,7 @@
 #include "ssw_cpp.h"
+#include "ssw.h"
 
 #include <sstream>
-
-extern "C" {
-#include "ssw.h"
-}
 
 namespace {
 static const uint32_t bam_M_operator = 0;
@@ -313,7 +310,7 @@ int Aligner::SetReferenceSequence(const char* seq, const int& length) {
 int Aligner::TranslateBase(const char* bases, const int& length, 
     int8_t* translated) const {
 
-  char* ptr = (char*)bases;
+  const char* ptr = bases;
   int len = 0;
   for (int i = 0; i < length; ++i) {
     translated[i] = translation_matrix_[(int) *ptr];
