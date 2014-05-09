@@ -1,10 +1,7 @@
 #include "ssw_cpp.h"
+#include "ssw.h"
 
 #include <sstream>
-
-extern "C" {
-#include "ssw.h"
-}
 
 namespace {
 static const uint32_t bam_M_operator = 0;
