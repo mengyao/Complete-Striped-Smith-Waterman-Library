@@ -151,10 +151,10 @@ int CalculateNumberMismatch(
   int length_X = 0;
 
   for (unsigned int i = 0; i < al->cigar.size(); ++i) {
-    int32_t op = al->cigar[i] & 0x0000000f;
-    int32_t length = (al->cigar[i] >> 4) & 0x0fffffff;
+    uint32_t op = al->cigar[i] & 0x0000000f;
+    uint32_t length = (al->cigar[i] >> 4) & 0x0fffffff;
     if (op == bam_M_operator) { // M
-      for (int j = 0; j < length; ++j) {
+      for (uint32_t j = 0; j < length; ++j) {
 	if (*ref != *query) {
 	  ++mismatch_length;
           if (in_M) { // the previous is match; however the current one is mismatche
