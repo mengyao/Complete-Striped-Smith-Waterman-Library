@@ -134,9 +134,9 @@ void CleanPreviousMOperator(
 //     The number of mismatches.
 int CalculateNumberMismatch(
     StripedSmithWaterman::Alignment* al,
-    //const int8_t* matrix,
     int8_t const *ref,
-    int8_t const *query) {
+    int8_t const *query,
+    const int& query_len) {
 
   ref   += al->ref_begin;
   query += al->query_begin;
@@ -144,6 +144,12 @@ int CalculateNumberMismatch(
 
   std::vector<uint32_t> new_cigar;
   std::ostringstream new_cigar_string;
+
+  if (al->query_begin > 0) {
+    uint32_t cigar = (al->query_begin << 4) | 0x0004;
+    new_cigar.push_back(cigar);
+    new_cigar_string << al->query_begin << 'S';
+  }
 
   bool in_M = false; // the previous is match
   bool in_X = false; // the previous is mismatch
@@ -196,6 +202,13 @@ int CalculateNumberMismatch(
   }
 
   CleanPreviousMOperator(&in_M, &in_X, &length_M, &length_X, &new_cigar, &new_cigar_string);
+
+  int end = query_len - al->query_end - 1;
+  if (end > 0) {
+    uint32_t cigar = (end << 4) | 0x0004;
+    new_cigar.push_back(cigar);
+    new_cigar_string << end << 'S';
+  }
 
   al->cigar_string.clear();
   al->cigar.clear();
@@ -346,7 +359,7 @@ bool Aligner::Align(const char* query, const Filter& filter,
 
   alignment->Clear();
   ConvertAlignment(*s_al, query_len, alignment);
-  alignment->mismatches = CalculateNumberMismatch(&*alignment, translated_reference_, translated_query);
+  alignment->mismatches = CalculateNumberMismatch(&*alignment, translated_reference_, translated_query, query_len);
 
 
   // Free memory
@@ -391,7 +404,7 @@ bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
 
   alignment->Clear();
   ConvertAlignment(*s_al, query_len, alignment);
-  alignment->mismatches = CalculateNumberMismatch(&*alignment, translated_ref, translated_query);
+  alignment->mismatches = CalculateNumberMismatch(&*alignment, translated_ref, translated_query, query_len);
 
   // Free memory
   if (query_len > 1) delete [] translated_query;
