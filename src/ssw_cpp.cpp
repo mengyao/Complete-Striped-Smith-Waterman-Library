@@ -11,7 +11,7 @@ static const uint32_t bam_S_operator = 4;
 static const uint32_t bam_EQUAL_operator = 7;
 static const uint32_t bam_X_operator = 8;
 
-static int8_t kBaseTranslation[128] = {
+static const int8_t kBaseTranslation[128] = {
     4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
     4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
     4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
@@ -223,6 +223,13 @@ void SetFlag(const StripedSmithWaterman::Filter& filter, uint8_t* flag) {
   if (filter.report_cigar) *flag |= 0x0f;
 }
 
+// http://www.cplusplus.com/faq/sequences/arrays/sizeof-array/#cpp
+template <typename T, size_t N>
+inline size_t SizeOfArray( const T(&)[ N ] )
+{
+  return N;
+}
+
 } // namespace
 
 
@@ -233,8 +240,6 @@ Aligner::Aligner(void)
     : score_matrix_(NULL)
     , score_matrix_size_(5)
     , translation_matrix_(NULL)
-    , default_matrix_(false)
-    , matrix_built_(false)
     , match_score_(2)
     , mismatch_penalty_(2)
     , gap_opening_penalty_(3)
@@ -254,8 +259,6 @@ Aligner::Aligner(
     : score_matrix_(NULL)
     , score_matrix_size_(5)
     , translation_matrix_(NULL)
-    , default_matrix_(false)
-    , matrix_built_(false)
     , match_score_(match_score)
     , mismatch_penalty_(mismatch_penalty)
     , gap_opening_penalty_(gap_opening_penalty)
@@ -274,8 +277,6 @@ Aligner::Aligner(const int8_t* score_matrix,
     : score_matrix_(NULL)
     , score_matrix_size_(score_matrix_size)
     , translation_matrix_(NULL)
-    , default_matrix_(true)
-    , matrix_built_(false)
     , match_score_(2)
     , mismatch_penalty_(2)
     , gap_opening_penalty_(3)
@@ -287,7 +288,6 @@ Aligner::Aligner(const int8_t* score_matrix,
   memcpy(score_matrix_, score_matrix, sizeof(int8_t) * score_matrix_size_ * score_matrix_size_);
   translation_matrix_ = new int8_t[translation_matrix_size];
   memcpy(translation_matrix_, translation_matrix, sizeof(int8_t) * translation_matrix_size);
-  matrix_built_ = true;
 }
 
 
@@ -298,7 +298,7 @@ Aligner::~Aligner(void){
 int Aligner::SetReferenceSequence(const char* seq, const int& length) {
 
   int len = 0;
-  if (matrix_built_) {
+  if (translation_matrix_) {
     // calculate the valid length
     //int calculated_ref_length = static_cast<int>(strlen(seq));
     //int valid_length = (calculated_ref_length > length)
@@ -338,7 +338,7 @@ int Aligner::TranslateBase(const char* bases, const int& length,
 bool Aligner::Align(const char* query, const Filter& filter,
                     Alignment* alignment) const
 {
-  if (!matrix_built_) return false;
+  if (!translation_matrix_) return false;
   if (reference_length_ == 0) return false;
 
   int query_len = strlen(query);
@@ -375,7 +375,7 @@ bool Aligner::Align(const char* query, const Filter& filter,
 bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
                     const Filter& filter, Alignment* alignment) const
 {
-  if (!matrix_built_) return false;
+  if (!translation_matrix_) return false;
 
   int query_len = strlen(query);
   if (query_len == 0) return false;
@@ -418,23 +418,12 @@ bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
 }
 
 void Aligner::Clear(void) {
-  if (score_matrix_) delete [] score_matrix_;
-  score_matrix_ = NULL;
-
-  if (!default_matrix_ && translation_matrix_)
-    delete [] translation_matrix_;
-  translation_matrix_ = NULL;
-
+  ClearMatrices();
   CleanReferenceSequence();
-
-  default_matrix_ = false;
-  matrix_built_   = false;
 }
 
 void Aligner::SetAllDefault(void) {
   score_matrix_size_     = 5;
-  default_matrix_        = false;
-  matrix_built_          = false;
   match_score_           = 2;
   mismatch_penalty_      = 2;
   gap_opening_penalty_   = 3;
@@ -443,7 +432,7 @@ void Aligner::SetAllDefault(void) {
 }
 
 bool Aligner::ReBuild(void) {
-  if (matrix_built_) return false;
+  if (translation_matrix_) return false;
 
   SetAllDefault();
   BuildDefaultMatrix();
@@ -456,7 +445,7 @@ bool Aligner::ReBuild(
     const uint8_t& mismatch_penalty,
     const uint8_t& gap_opening_penalty,
     const uint8_t& gap_extending_penalty) {
-  if (matrix_built_) return false;
+  if (translation_matrix_) return false;
 
   SetAllDefault();
 
@@ -476,20 +465,28 @@ bool Aligner::ReBuild(
     const int8_t* translation_matrix,
     const int&    translation_matrix_size) {
 
+  ClearMatrices();
   score_matrix_ = new int8_t[score_matrix_size_ * score_matrix_size_];
   memcpy(score_matrix_, score_matrix, sizeof(int8_t) * score_matrix_size_ * score_matrix_size_);
   translation_matrix_ = new int8_t[translation_matrix_size];
   memcpy(translation_matrix_, translation_matrix, sizeof(int8_t) * translation_matrix_size);
-  matrix_built_ = true;
 
   return true;
 }
 
 void Aligner::BuildDefaultMatrix(void) {
+  ClearMatrices();
   score_matrix_ = new int8_t[score_matrix_size_ * score_matrix_size_];
   BuildSwScoreMatrix(match_score_, mismatch_penalty_, score_matrix_);
-  translation_matrix_ = kBaseTranslation;
-  matrix_built_   = true;
-  default_matrix_ = true;
+  translation_matrix_ = new int8_t[SizeOfArray(kBaseTranslation)];
+  memcpy(translation_matrix_, kBaseTranslation, sizeof(int8_t) * SizeOfArray(kBaseTranslation));
+}
+
+void Aligner::ClearMatrices(void) {
+  delete [] score_matrix_;
+  score_matrix_ = NULL;
+
+  delete [] translation_matrix_;
+  translation_matrix_ = NULL;
 }
 } // namespace StripedSmithWaterman
