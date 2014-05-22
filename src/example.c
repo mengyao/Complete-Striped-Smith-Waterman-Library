@@ -146,6 +146,8 @@ int main (int argc, char * const argv[]) {
 	result = ssw_align (profile, ref_num, 39, gap_open, gap_extension, 1, 0, 0, 15);
 	ssw_write(result, ref_seq, read_seq, nt_table);
 
+	align_destroy(result);
+	init_destroy(profile);
 	free(mat);
 	free(ref_num);
 	free(num);
