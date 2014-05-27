@@ -126,7 +126,7 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 							 int32_t readLen,
 							 const uint8_t weight_gapO, /* will be used as - */
 							 const uint8_t weight_gapE, /* will be used as - */
-							 __m128i* vProfile,
+							 const __m128i* vProfile,
 							 uint8_t terminate,	/* the best alignment score: used to terminate
 												   the matrix calculation when locating the
 												   alignment beginning point. If this score
@@ -193,7 +193,7 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 
 		__m128i vH = pvHStore[segLen - 1];
 		vH = _mm_slli_si128 (vH, 1); /* Shift the 128-bit value in vH left by 1 byte. */
-		__m128i* vP = vProfile + ref[i] * segLen; /* Right part of the vProfile */
+		const __m128i* vP = vProfile + ref[i] * segLen; /* Right part of the vProfile */
 
 		/* Swap the 2 H buffers. */
 		__m128i* pv = pvHLoad;
@@ -374,7 +374,7 @@ static alignment_end* sw_sse2_word (const int8_t* ref,
 							 int32_t readLen,
 							 const uint8_t weight_gapO, /* will be used as - */
 							 const uint8_t weight_gapE, /* will be used as - */
-						     __m128i* vProfile,
+							 const __m128i* vProfile,
 							 uint16_t terminate,
 							 int32_t maskLen) {
 
@@ -433,7 +433,7 @@ static alignment_end* sw_sse2_word (const int8_t* ref,
 
 		__m128i vMaxColumn = vZero; /* vMaxColumn is used to record the max values of column i. */
 
-		__m128i* vP = vProfile + ref[i] * segLen; /* Right part of the vProfile */
+		const __m128i* vP = vProfile + ref[i] * segLen; /* Right part of the vProfile */
 		pvHLoad = pvHStore;
 		pvHStore = pv;
 
