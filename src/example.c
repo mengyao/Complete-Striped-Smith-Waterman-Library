@@ -23,18 +23,19 @@ static void ssw_write (const s_align* a,
 	if (a->read_begin1 + 1) fprintf(stdout, "query_begin: %d\t", a->read_begin1 + 1);
 	fprintf(stdout, "query_end: %d\n\n", a->read_end1 + 1);
 	if (a->cigar) {
-		int32_t i, c = 0, left = 0, e = 0, qb = a->ref_begin1, pb = a->read_begin1;
+		int32_t c = 0, left = 0, e = 0, qb = a->ref_begin1, pb = a->read_begin1;
+		uint32_t i;
 		while (e < a->cigarLen || left > 0) {
 			int32_t count = 0;
 			int32_t q = qb;
 			int32_t p = pb;
 			fprintf(stdout, "Target: %8d    ", q + 1);
 			for (c = e; c < a->cigarLen; ++c) {
-				int32_t letter = 0xf&*(a->cigar + c);
-				int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
-				int32_t l = (count == 0 && left > 0) ? left: length;
+				char letter = cigar_int_to_op(a->cigar[c]);
+				uint32_t length = cigar_int_to_len(a->cigar[c]);
+				uint32_t l = (count == 0 && left > 0) ? left: length;
 				for (i = 0; i < l; ++i) {
-					if (letter == 1) fprintf(stdout, "-");
+					if (letter == 'I') fprintf(stdout, "-");
 					else {
 						fprintf(stdout, "%c", *(ref_seq + q));
 						++ q;
@@ -48,18 +49,18 @@ step2:
 			q = qb;
 			count = 0;
 			for (c = e; c < a->cigarLen; ++c) {
-				int32_t letter = 0xf&*(a->cigar + c);
-				int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
-				int32_t l = (count == 0 && left > 0) ? left: length;
+				char letter = cigar_int_to_op(a->cigar[c]);
+				uint32_t length = cigar_int_to_len(a->cigar[c]);
+				uint32_t l = (count == 0 && left > 0) ? left: length;
 				for (i = 0; i < l; ++i){
-					if (letter == 0) {
+					if (letter == 'M') {
 						if (table[(int)*(ref_seq + q)] == table[(int)*(read_seq + p)])fprintf(stdout, "|");
 						else fprintf(stdout, "*");
 						++q;
 						++p;
 					} else {
 						fprintf(stdout, "*");
-						if (letter == 1) ++p;
+						if (letter == 'I') ++p;
 						else ++q;
 					}
 					++ count;
@@ -74,11 +75,11 @@ step3:
 			fprintf(stdout, "\nQuery:  %8d    ", p + 1);
 			count = 0;
 			for (c = e; c < a->cigarLen; ++c) {
-				int32_t letter = 0xf&*(a->cigar + c);
-				int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
-				int32_t l = (count == 0 && left > 0) ? left: length;
+				char letter = cigar_int_to_op(a->cigar[c]);
+				uint32_t length = cigar_int_to_len(a->cigar[c]);
+				uint32_t l = (count == 0 && left > 0) ? left: length;
 				for (i = 0; i < l; ++i) {
-					if (letter == 2) fprintf(stdout, "-");
+					if (letter == 'D') fprintf(stdout, "-");
 					else {
 						fprintf(stdout, "%c", *(read_seq + p));
 						++p;

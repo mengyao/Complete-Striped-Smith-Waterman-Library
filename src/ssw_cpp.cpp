@@ -4,12 +4,6 @@
 #include <sstream>
 
 namespace {
-static const uint32_t bam_M_operator = 0;
-static const uint32_t bam_I_operator = 1;
-static const uint32_t bam_D_operator = 2;
-static const uint32_t bam_S_operator = 4;
-static const uint32_t bam_EQUAL_operator = 7;
-static const uint32_t bam_X_operator = 8;
 
 static const int8_t kBaseTranslation[128] = {
     4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
@@ -70,25 +64,19 @@ void ConvertAlignment(const s_align& s_al,
   if (s_al.cigarLen > 0) {
     std::ostringstream cigar_string;
     if (al->query_begin > 0) {
-      uint32_t cigar = (al->query_begin << 4) | 0x0004;
+      uint32_t cigar = to_cigar_int(al->query_begin, 'S');
       al->cigar.push_back(cigar);
       cigar_string << al->query_begin << 'S';
     }
 
     for (int i = 0; i < s_al.cigarLen; ++i) {
       al->cigar.push_back(s_al.cigar[i]);
-      cigar_string << (s_al.cigar[i] >> 4);
-      uint8_t op = s_al.cigar[i] & 0x000f;
-      switch(op) {
-        case 0: cigar_string << 'M'; break;
-        case 1: cigar_string << 'I'; break;
-        case 2: cigar_string << 'D'; break;
-      }
+      cigar_string << cigar_int_to_len(s_al.cigar[i]) << cigar_int_to_op(s_al.cigar[i]);
     }
 
     int end = query_len - al->query_end - 1;
     if (end > 0) {
-      uint32_t cigar = (end << 4) | 0x0004;
+      uint32_t cigar = to_cigar_int(end, 'S');
       al->cigar.push_back(cigar);
       cigar_string << end << 'S';
     }
@@ -104,16 +92,16 @@ void ConvertAlignment(const s_align& s_al,
 void CleanPreviousMOperator(
     bool* in_M,
     bool* in_X,
-    int* length_M,
-    int* length_X,
+    uint32_t* length_M,
+    uint32_t* length_X,
     std::vector<uint32_t>* new_cigar,
     std::ostringstream* new_cigar_string) {
   if (*in_M) {
-    uint32_t match = ((*length_M << 4) & 0xfffffff0) || (bam_EQUAL_operator & 0x0000000f);
+    uint32_t match = to_cigar_int(*length_M, '=');
     new_cigar->push_back(match);
     (*new_cigar_string) << *length_M << '=';
   } else if (*in_X){ //in_X
-    uint32_t match = ((*length_X << 4) & 0xfffffff0) || (bam_X_operator & 0x0000000f);
+    uint32_t match = to_cigar_int(*length_X, 'X');
     new_cigar->push_back(match);
     (*new_cigar_string) << *length_X << 'X';
   }
@@ -146,25 +134,25 @@ int CalculateNumberMismatch(
   std::ostringstream new_cigar_string;
 
   if (al->query_begin > 0) {
-    uint32_t cigar = (al->query_begin << 4) | 0x0004;
+    uint32_t cigar = to_cigar_int(al->query_begin, 'S');
     new_cigar.push_back(cigar);
     new_cigar_string << al->query_begin << 'S';
   }
 
   bool in_M = false; // the previous is match
   bool in_X = false; // the previous is mismatch
-  int length_M = 0;
-  int length_X = 0;
+  uint32_t length_M = 0;
+  uint32_t length_X = 0;
 
   for (unsigned int i = 0; i < al->cigar.size(); ++i) {
-    uint32_t op = al->cigar[i] & 0x0000000f;
-    uint32_t length = (al->cigar[i] >> 4) & 0x0fffffff;
-    if (op == bam_M_operator) { // M
+    char op = cigar_int_to_op(al->cigar[i]);
+    uint32_t length = cigar_int_to_len(al->cigar[i]);
+    if (op == 'M') {
       for (uint32_t j = 0; j < length; ++j) {
 	if (*ref != *query) {
 	  ++mismatch_length;
           if (in_M) { // the previous is match; however the current one is mismatche
-	    uint32_t match = ((length_M << 4) & 0xfffffff0) || (bam_EQUAL_operator & 0x0000000f);
+	    uint32_t match = to_cigar_int(length_M, '=');
 	    new_cigar.push_back(match);
 	    new_cigar_string << length_M << '=';
 	  }
@@ -174,7 +162,7 @@ int CalculateNumberMismatch(
 	  in_X = true;
 	} else { // *ref == *query
 	  if (in_X) { // the previous is mismatch; however the current one is matche
-	    uint32_t match = ((length_X << 4) & 0xfffffff0) || (bam_X_operator & 0x0000000f);
+	    uint32_t match = to_cigar_int(length_X, 'X');
 	    new_cigar.push_back(match);
 	    new_cigar_string << length_X << 'X';
 	  }
@@ -186,13 +174,13 @@ int CalculateNumberMismatch(
 	++ref;
 	++query;
       }
-    } else if (op == bam_I_operator) { // I
+    } else if (op == 'I') {
       query += length;
       mismatch_length += length;
       CleanPreviousMOperator(&in_M, &in_X, &length_M, &length_X, &new_cigar, &new_cigar_string);
       new_cigar.push_back(al->cigar[i]);
       new_cigar_string << length << 'I';
-    } else if (op == bam_D_operator) { // D
+    } else if (op == 'D') {
       ref += length;
       mismatch_length += length;
       CleanPreviousMOperator(&in_M, &in_X, &length_M, &length_X, &new_cigar, &new_cigar_string);
@@ -205,7 +193,7 @@ int CalculateNumberMismatch(
 
   int end = query_len - al->query_end - 1;
   if (end > 0) {
-    uint32_t cigar = (end << 4) | 0x0004;
+    uint32_t cigar = to_cigar_int(end, 'S');
     new_cigar.push_back(cigar);
     new_cigar_string << end << 'S';
   }

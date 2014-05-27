@@ -558,6 +558,7 @@ static cigar* banded_sw (const int8_t* ref,
 
 	uint32_t *c = (uint32_t*)malloc(16 * sizeof(uint32_t)), *c1;
 	int32_t i, j, e, f, temp1, temp2, s = 16, s1 = 8, s2 = 1024, l, max = 0;
+	char op, prev_op;
 	int32_t width, width_d, *h_b, *e_b, *h_c;
 	int8_t *direction, *direction_line;
 	cigar* result = (cigar*)malloc(sizeof(cigar));
@@ -634,7 +635,7 @@ static cigar* banded_sw (const int8_t* ref,
 	j = refLen - 1;
 	e = 0;	// Count the number of M, D or I.
 	l = 0;	// record length of current cigar
-	f = max = 0; // M
+	op = prev_op = 'M';
 	temp2 = 2;	// h
 	while (LIKELY(i > 0)) {
 		set_d(temp1, band_width, i, j, temp2);
@@ -644,35 +645,35 @@ static cigar* banded_sw (const int8_t* ref,
 				--j;
 				temp2 = 2;
 				direction_line -= width_d * 3;
-				f = 0;	// M
+				op = 'M';
 				break;
 			case 2:
 			 	--i;
 				temp2 = 0;	// e
 				direction_line -= width_d * 3;
-				f = 1;	// I
+				op = 'I';
 				break;
 			case 3:
 				--i;
 				temp2 = 2;
 				direction_line -= width_d * 3;
-				f = 1;	// I
+				op = 'I';
 				break;
 			case 4:
 				--j;
 				temp2 = 1;
-				f = 2;	// D
+				op = 'D';
 				break;
 			case 5:
 				--j;
 				temp2 = 2;
-				f = 2;	// D
+				op = 'D';
 				break;
 			default:
 				fprintf(stderr, "Trace back error: %d.\n", direction_line[temp1 - 1]);
 				return 0;
 		}
-		if (f == max) ++e;
+		if (op == prev_op) ++e;
 		else {
 			++l;
 			while (l >= s) {
@@ -680,19 +681,19 @@ static cigar* banded_sw (const int8_t* ref,
 				kroundup32(s);
 				c = (uint32_t*)realloc(c, s * sizeof(uint32_t));
 			}
-			c[l - 1] = e<<4|max;
-			max = f;
+			c[l - 1] = to_cigar_int(e, prev_op);
+			prev_op = op;
 			e = 1;
 		}
 	}
-	if (f == 0) {
+	if (op == 'M') {
 		++l;
 		while (l >= s) {
 			++s;
 			kroundup32(s);
 			c = (uint32_t*)realloc(c, s * sizeof(uint32_t));
 		}
-		c[l - 1] = (e+1)<<4;
+		c[l - 1] = to_cigar_int(e + 1, op);
 	}else {
 		l += 2;
 		while (l >= s) {
@@ -700,8 +701,8 @@ static cigar* banded_sw (const int8_t* ref,
 			kroundup32(s);
 			c = (uint32_t*)realloc(c, s * sizeof(uint32_t));
 		}
-		c[l - 2] = e<<4|f;
-		c[l - 1] = 16;	// 1M
+		c[l - 2] = to_cigar_int(e, op);
+		c[l - 1] = to_cigar_int(1, 'M');
 	}
 
 	// reverse cigar
