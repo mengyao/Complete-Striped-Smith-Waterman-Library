@@ -185,7 +185,7 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 	}
 	for (i = begin; LIKELY(i != end); i += step) {
 		int32_t cmp;
-		__m128i e = vZero, vF = vZero, vMaxColumn = vZero; /* Initialize F value to 0.
+		__m128i e, vF = vZero, vMaxColumn = vZero; /* Initialize F value to 0.
 							   Any errors to vH values will be corrected in the Lazy_F loop.
 							 */
 //		max16(maxColumn[i], vMaxColumn);
@@ -422,7 +422,7 @@ static alignment_end* sw_sse2_word (const int8_t* ref,
 	}
 	for (i = begin; LIKELY(i != end); i += step) {
 		int32_t cmp;
-		__m128i e = vZero, vF = vZero; /* Initialize F value to 0.
+		__m128i e, vF = vZero; /* Initialize F value to 0.
 							   Any errors to vH values will be corrected in the Lazy_F loop.
 							 */
 		__m128i vH = pvHStore[segLen - 1];
@@ -671,6 +671,12 @@ static cigar* banded_sw (const int8_t* ref,
 				break;
 			default:
 				fprintf(stderr, "Trace back error: %d.\n", direction_line[temp1 - 1]);
+				free(direction);
+				free(h_c);
+				free(e_b);
+				free(h_b);
+				free(c);
+				free(result);
 				return 0;
 		}
 		if (op == prev_op) ++e;
@@ -801,14 +807,16 @@ s_align* ssw_align (const s_profile* prof,
 			word = 1;
 		} else if (bests[0].score == 255) {
 			fprintf(stderr, "Please set 2 to the score_size parameter of the function ssw_init, otherwise the alignment results will be incorrect.\n");
-			return 0;
+			free(r);
+			return NULL;
 		}
 	}else if (prof->profile_word) {
 		bests = sw_sse2_word(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_word, -1, maskLen);
 		word = 1;
 	}else {
 		fprintf(stderr, "Please call the function ssw_init before ssw_align.\n");
-		return 0;
+		free(r);
+		return NULL;
 	}
 	r->score1 = bests[0].score;
 	r->ref_end1 = bests[0].ref;
@@ -844,7 +852,10 @@ s_align* ssw_align (const s_profile* prof,
 	readLen = r->read_end1 - r->read_begin1 + 1;
 	band_width = abs(refLen - readLen) + 1;
 	path = banded_sw(ref + r->ref_begin1, prof->read + r->read_begin1, refLen, readLen, r->score1, weight_gapO, weight_gapE, band_width, prof->mat, prof->n);
-	if (path == 0) r = 0;
+	if (path == 0) {
+		free(r);
+		r = NULL;
+	}
 	else {
 		r->cigar = path->seq;
 		r->cigarLen = path->length;
