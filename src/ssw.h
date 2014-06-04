@@ -177,15 +177,15 @@ static inline char cigar_int_to_op (uint32_t cigar_int)
 {
 	uint8_t letter_code = cigar_int & 0xfU;
 	static const char map[] = {
-		[0] = 'M',
-		[1] = 'I',
-		[2] = 'D',
-		[3] = 'N',
-		[4] = 'S',
-		[5] = 'H',
-		[6] = 'P',
-		[7] = '=',
-		[8] = 'X',
+		'M',
+		'I',
+		'D',
+		'N',
+		'S',
+		'H',
+		'P',
+		'=',
+		'X',
 	};
 
 	if (letter_code >= (sizeof(map)/sizeof(map[0]))) {
