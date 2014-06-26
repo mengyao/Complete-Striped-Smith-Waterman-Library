@@ -36,37 +36,37 @@ KSEQ_INIT(gzFile, gzread)
 static void reverse_comple(const char* seq, char* rc) {
 	int32_t end = strlen(seq), start = 0;
 	static const int8_t rc_table[128] = {
-		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
 		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 84, 4, 71, 4,  4,  4, 67, 4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4,  4, 4,  65, 65, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 84, 4, 71, 4,  4,  4, 67, 4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4,  4, 4,  65, 65, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4 
+		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+		4, 4,  4, 4,  4,  4,  4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+		4, 84, 4, 71, 4,  4,  4, 67, 4, 4, 4, 4,  4, 4, 4, 4,
+		4, 4,  4, 4,  65, 65, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+		4, 84, 4, 71, 4,  4,  4, 67, 4, 4, 4, 4,  4, 4, 4, 4,
+		4, 4,  4, 4,  65, 65, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4
 	};
 	rc[end] = '\0';
-	-- end;				
-	while (LIKELY(start < end)) {			
-		rc[start] = (char)rc_table[(int8_t)seq[end]];		
-		rc[end] = (char)rc_table[(int8_t)seq[start]];		
-		++ start;					
-		-- end;						
-	}					
-	if (start == end) rc[start] = (char)rc_table[(int8_t)seq[start]];			
-}							
+	-- end;
+	while (LIKELY(start < end)) {
+		rc[start] = (char)rc_table[(int8_t)seq[end]];
+		rc[end] = (char)rc_table[(int8_t)seq[start]];
+		++ start;
+		-- end;
+	}
+	if (start == end) rc[start] = (char)rc_table[(int8_t)seq[start]];
+}
 
 static void ssw_write (const s_align* a,
 			const kseq_t* ref_seq,
 			const kseq_t* read,
 			const char* read_seq,	// strand == 0: original read; strand == 1: reverse complement read
 			const int8_t* table,
-			int8_t strand,	// 0: forward aligned ; 1: reverse complement aligned 
+			int8_t strand,	// 0: forward aligned ; 1: reverse complement aligned
 			int8_t sam) {	// 0: Blast like output; 1: Sam format output
 
 	if (sam == 0) {	// Blast like output
 		fprintf(stdout, "target_name: %s\nquery_name: %s\noptimal_alignment_score: %d\t", ref_seq->name.s, read->name.s, a->score1);
-		if (a->score2 > 0) fprintf(stdout, "suboptimal_alignment_score: %d\t", a->score2);		
+		if (a->score2 > 0) fprintf(stdout, "suboptimal_alignment_score: %d\t", a->score2);
 		if (strand == 0) fprintf(stdout, "strand: +\t");
 		else fprintf(stdout, "strand: -\t");
 		if (a->ref_begin1 + 1) fprintf(stdout, "target_begin: %d\t", a->ref_begin1 + 1);
@@ -74,18 +74,19 @@ static void ssw_write (const s_align* a,
 		if (a->read_begin1 + 1) fprintf(stdout, "query_begin: %d\t", a->read_begin1 + 1);
 		fprintf(stdout, "query_end: %d\n\n", a->read_end1 + 1);
 		if (a->cigar) {
-			int32_t i, c = 0, left = 0, e = 0, qb = a->ref_begin1, pb = a->read_begin1;
+			int32_t c = 0, left = 0, e = 0, qb = a->ref_begin1, pb = a->read_begin1;
+			uint32_t i;
 			while (e < a->cigarLen || left > 0) {
 				int32_t count = 0;
 				int32_t q = qb;
 				int32_t p = pb;
 				fprintf(stdout, "Target: %8d    ", q + 1);
 				for (c = e; c < a->cigarLen; ++c) {
-					int32_t letter = 0xf&*(a->cigar + c);
-					int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
-					int32_t l = (count == 0 && left > 0) ? left: length;
+					char letter = cigar_int_to_op(a->cigar[c]);
+					uint32_t length = cigar_int_to_len(a->cigar[c]);
+					uint32_t l = (count == 0 && left > 0) ? left: length;
 					for (i = 0; i < l; ++i) {
-						if (letter == 1) fprintf(stdout, "-");
+						if (letter == 'I') fprintf(stdout, "-");
 						else {
 							fprintf(stdout, "%c", *(ref_seq->seq.s + q));
 							++ q;
@@ -99,18 +100,23 @@ step2:
 				q = qb;
 				count = 0;
 				for (c = e; c < a->cigarLen; ++c) {
-					int32_t letter = 0xf&*(a->cigar + c);
-					int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
-					int32_t l = (count == 0 && left > 0) ? left: length;
-					for (i = 0; i < l; ++i){ 
-						if (letter == 0) {
+					char letter = cigar_int_to_op(a->cigar[c]);
+					uint32_t length = cigar_int_to_len(a->cigar[c]);
+					uint32_t l = (count == 0 && left > 0) ? left: length;
+					for (i = 0; i < l; ++i){
+						if (letter == 'M') {
 							if (table[(int)*(ref_seq->seq.s + q)] == table[(int)*(read_seq + p)])fprintf(stdout, "|");
 							else fprintf(stdout, "*");
 							++q;
 							++p;
 						} else {
+<<<<<<< HEAD
 							fprintf(stdout, " ");
 							if (letter == 1) ++p;
+=======
+							fprintf(stdout, "*");
+							if (letter == 'I') ++p;
+>>>>>>> 20f72d156bfefb0c182673c0275bfe7e189a8f5d
 							else ++q;
 						}
 						++ count;
@@ -125,11 +131,11 @@ step3:
 				fprintf(stdout, "\nQuery:  %8d    ", p + 1);
 				count = 0;
 				for (c = e; c < a->cigarLen; ++c) {
-					int32_t letter = 0xf&*(a->cigar + c);
-					int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
-					int32_t l = (count == 0 && left > 0) ? left: length;
-					for (i = 0; i < l; ++i) { 
-						if (letter == 2) fprintf(stdout, "-");
+					char letter = cigar_int_to_op(a->cigar[c]);
+					uint32_t length = cigar_int_to_len(a->cigar[c]);
+					uint32_t l = (count == 0 && left > 0) ? left: length;
+					for (i = 0; i < l; ++i) {
+						if (letter == 'D') fprintf(stdout, "-");
 						else {
 							fprintf(stdout, "%c", *(read_seq + p));
 							++p;
@@ -161,12 +167,9 @@ end:
 			else fprintf(stdout, "0\t");
 			fprintf(stdout, "%s\t%d\t%d\t", ref_seq->name.s, a->ref_begin1 + 1, mapq);
 			for (c = 0; c < a->cigarLen; ++c) {
-				int32_t letter = 0xf&*(a->cigar + c);
-				int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
-				fprintf(stdout, "%d", length);
-				if (letter == 0) fprintf(stdout, "M");
-				else if (letter == 1) fprintf(stdout, "I");
-				else fprintf(stdout, "D");
+				char letter = cigar_int_to_op(a->cigar[c]);
+				uint32_t length = cigar_int_to_len(a->cigar[c]);
+				fprintf(stdout, "%lu%c", (unsigned long)length, letter);
 			}
 			fprintf(stdout, "\t*\t0\t0\t");
 			for (c = a->read_begin1; c <= a->read_end1; ++c) fprintf(stdout, "%c", read_seq[c]);
@@ -187,15 +190,15 @@ end:
 			fprintf(stdout, "\tAS:i:%d", a->score1);
 			mapq = 0;	// counter of difference
 			for (c = 0; c < a->cigarLen; ++c) {
-				int32_t letter = 0xf&*(a->cigar + c);
-				int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
-				if (letter == 0) {
-					for (p = 0; p < length; ++p){ 
+				char letter = cigar_int_to_op(a->cigar[c]);
+				uint32_t length = cigar_int_to_len(a->cigar[c]);
+				if (letter == 'M') {
+					for (p = 0; p < length; ++p){
 						if (table[(int)*(ref_seq->seq.s + qb)] != table[(int)*(read_seq + pb)]) ++mapq;
 						++qb;
 						++pb;
 					}
-				} else if (letter == 1) {
+				} else if (letter == 'I') {
 					pb += length;
 					mapq += length;
 				} else {
@@ -207,7 +210,7 @@ end:
 			if (a->score2 > 0) fprintf(stdout, "ZS:i:%d\n", a->score2);
 			else fprintf(stdout, "\n");
 		}
-	}  
+	}
 }
 
 int main (int argc, char * const argv[]) {
@@ -225,7 +228,7 @@ int main (int argc, char * const argv[]) {
 	char* read_rc = 0;
 
 	static const int8_t mat50[] = {
-	//  A   R   N   D   C   Q   E   G   H   I   L   K   M   F   P   S   T   W   Y   V   B   Z   X   *   
+	//  A   R   N   D   C   Q   E   G   H   I   L   K   M   F   P   S   T   W   Y   V   B   Z   X   *
      	5, -2, -1, -2, -1, -1, -1,  0, -2, -1, -2, -1, -1, -3, -1,  1,  0, -3, -2,  0, -2, -1, -1, -5,	// A
        -2,  7, -1, -2, -4,  1,  0, -3,  0, -4, -3,  3, -2, -3, -3, -1, -1, -3, -1, -3, -1,  0, -1, -5,	// R
        -1, -1,  7,  2, -2,  0,  0,  0,  1, -3, -4,  0, -2, -4, -2,  1,  0, -4, -2, -3,  5,  0, -1, -5,	// N
@@ -250,32 +253,32 @@ int main (int argc, char * const argv[]) {
        -1,  0,  0,  1, -3,  4,  5, -2,  0, -3, -3,  1, -1, -4, -1,  0, -1, -2, -2, -3,  1,  5, -1, -5, 	// Z
        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -5, 	// X
        -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5,  1 	// *
-	};	
-	
+	};
+
 	/* This table is used to transform amino acid letters into numbers. */
 	int8_t aa_table[128] = {
-		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 
-		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 
 		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
-		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 
-		23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23, 
-		14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23, 
-		23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23, 
-		14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23 
+		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+		23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23,
+		14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23,
+		23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23,
+		14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23
 	};
 
 	/* This table is used to transform nucleotide letters into numbers. */
 	int8_t nt_table[128] = {
-		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
 		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4, 4, 4,  3, 3, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4, 
-		4, 4, 4, 4,  3, 3, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4 
+		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+		4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4,
+		4, 4, 4, 4,  3, 3, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+		4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4,
+		4, 4, 4, 4,  3, 3, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4
 	};
-	
+
 	int8_t* table = nt_table;
 
 	// Parse command line.
@@ -296,14 +299,14 @@ int main (int argc, char * const argv[]) {
 	}
 	if (optind + 2 > argc) {
 		fprintf(stderr, "\n");
-		fprintf(stderr, "Usage: ssw_test [options] ... <target.fasta> <query.fasta>(or <query.fastq>)\n");	
+		fprintf(stderr, "Usage: ssw_test [options] ... <target.fasta> <query.fasta>(or <query.fastq>)\n");
 		fprintf(stderr, "Options:\n");
 		fprintf(stderr, "\t-m N\tN is a positive integer for weight match in genome sequence alignment. [default: 2]\n");
 		fprintf(stderr, "\t-x N\tN is a positive integer. -N will be used as weight mismatch in genome sequence alignment. [default: 2]\n");
 		fprintf(stderr, "\t-o N\tN is a positive integer. -N will be used as the weight for the gap opening. [default: 3]\n");
 		fprintf(stderr, "\t-e N\tN is a positive integer. -N will be used as the weight for the gap extension. [default: 1]\n");
 		fprintf(stderr, "\t-p\tDo protein sequence alignment. Without this option, the ssw_test will do genome sequence alignment.\n");
-		fprintf(stderr, "\t-a FILE\tFILE is either the Blosum or Pam weight matrix. [default: Blosum50]\n"); 
+		fprintf(stderr, "\t-a FILE\tFILE is either the Blosum or Pam weight matrix. [default: Blosum50]\n");
 		fprintf(stderr, "\t-c\tReturn the alignment path.\n");
 		fprintf(stderr, "\t-f N\tN is a positive integer. Only output the alignments with the Smith-Waterman score >= N.\n");
 		fprintf(stderr, "\t-r\tThe best alignment will be picked between the original read alignment and the reverse complement read alignment.\n");
@@ -338,12 +341,12 @@ int main (int argc, char * const argv[]) {
 				str[0] = '\0';
 				l = 1;
 				while (line[l]) {
-					if ((line[l] >= '0' && line[l] <= '9') || line[l] == '-') *s++ = line[l];	
-					else if (str[0] != '\0') {					
+					if ((line[l] >= '0' && line[l] <= '9') || line[l] == '-') *s++ = line[l];
+					else if (str[0] != '\0') {
 						*s = '\0';
 						mata[k++] = (int8_t)atoi(str);
 						s = str;
-						str[0] = '\0';			
+						str[0] = '\0';
 					}
 					++l;
 				}
@@ -351,7 +354,7 @@ int main (int argc, char * const argv[]) {
 					*s = '\0';
 					mata[k++] = (int8_t)atoi(str);
 					s = str;
-					str[0] = '\0';			
+					str[0] = '\0';
 				}
 				++m;
 			}
@@ -359,8 +362,8 @@ int main (int argc, char * const argv[]) {
 		if (k == 0) {
 			fprintf(stderr, "Problem of reading the weight matrix file.\n");
 			return 1;
-		} 
-		fclose(f_mat);	
+		}
+		fclose(f_mat);
 		n = m;
 		table = aa_table;
 		mat = mata;
@@ -388,9 +391,9 @@ int main (int argc, char * const argv[]) {
 	start = clock();
 	while (kseq_read(read_seq) >= 0) {
 		s_profile* p, *p_rc = 0;
-		int32_t readLen = read_seq->seq.l;	
-		int32_t maskLen = readLen / 2; 
-	//	int32_t maskLen = 2*readLen;	
+		int32_t readLen = read_seq->seq.l;
+		int32_t maskLen = readLen / 2;
+	//	int32_t maskLen = 2*readLen;
 
 		while (readLen >= s2) {
 			++s2;
@@ -416,7 +419,7 @@ int main (int argc, char * const argv[]) {
 		ref_seq = kseq_init(ref_fp);
 		while (kseq_read(ref_seq) >= 0) {
 			s_align* result, *result_rc = 0;
-			int32_t refLen = ref_seq->seq.l; 
+			int32_t refLen = ref_seq->seq.l;
 			int8_t flag = 0;
 			while (refLen > s1) {
 				++s1;
@@ -426,7 +429,7 @@ int main (int argc, char * const argv[]) {
 			for (m = 0; m < refLen; ++m) ref_num[m] = table[(int)ref_seq->seq.s[m]];
 			if (path == 1) flag = 2;
 			result = ssw_align (p, ref_num, refLen, gap_open, gap_extension, flag, filter, 0, maskLen);
-			if (reverse == 1 && protein == 0) 
+			if (reverse == 1 && protein == 0)
 				result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, filter, 0, maskLen);
 			if (result_rc && result_rc->score1 > result->score1 && result_rc->score1 >= filter) {
 				if (sam) ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 1);
@@ -438,7 +441,7 @@ int main (int argc, char * const argv[]) {
 			if (result_rc) align_destroy(result_rc);
 			align_destroy(result);
 		}
-		
+
 		if(p_rc) init_destroy(p_rc);
 		init_destroy(p);
 		kseq_destroy(ref_seq);
