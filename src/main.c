@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
- *	Version 0.1.4
- *  Last revision by Mengyao Zhao on 11/28/12.
+ *	Version 0.1.5
+ *  Last revision by Mengyao Zhao on 06/26/14.
  */
 
 #include <stdlib.h>
@@ -109,7 +109,7 @@ step2:
 							++q;
 							++p;
 						} else {
-							fprintf(stdout, "*");
+							fprintf(stdout, " ");
 							if (letter == 1) ++p;
 							else ++q;
 						}
