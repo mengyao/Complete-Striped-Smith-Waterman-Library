@@ -110,13 +110,8 @@ step2:
 							++q;
 							++p;
 						} else {
-<<<<<<< HEAD
 							fprintf(stdout, " ");
 							if (letter == 1) ++p;
-=======
-							fprintf(stdout, "*");
-							if (letter == 'I') ++p;
->>>>>>> 20f72d156bfefb0c182673c0275bfe7e189a8f5d
 							else ++q;
 						}
 						++ count;
