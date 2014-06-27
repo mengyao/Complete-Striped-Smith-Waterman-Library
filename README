@@ -95,7 +95,7 @@ query_name: 6:163296599:F:198;None;None/1
 optimal_alignment_score: 37	sub-optimal_alignment_score: 28	strand: +	target_begin: 453	target_end: 492	query_begin: 17	query_end: 51
 
 Target:      453    CCAATGCCACAAAACATCTGTCTCTAACTGGTG--TGTGTGT    492
-                    |||**|||*||||**||||||*|*|||*|||||**|*|||||
+                    |||  ||| ||||  |||||| | ||| |||||  |*|||||
 Query:        17    CCA--GCC-CAAA--ATCTGT-TTTAA-TGGTGGATTTGTGT    51
 
 target_name: chr1
@@ -103,7 +103,7 @@ query_name: 3:153409880:F:224;None;3,153410143,G,A/1
 optimal_alignment_score: 42	sub-optimal_alignment_score: 41	strand: +	target_begin: 523	target_end: 577	query_begin: 3	query_end: 53
 
 Target:      523    GAGAGAGAAAATTTCACTCCCTCCATAAATCTCACAGTATTCTTTTCTTTTTCCT    577
-                    ||*||||**|||||*|*||*||*||*|*|**|*||*|||*||||||*||||*|||
+                    || ||||**|||||*|*||*||*||*|*|**|*|| ||| |||||| ||||*|||
 Query:         3    GA-AGAGTTAATTTAAGTCACTTCAAACAGATTAC-GTA-TCTTTT-TTTTCCCT    53
 ...
 
