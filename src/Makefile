@@ -10,7 +10,10 @@ EXAMPLE_CPP = example_cpp
 
 .PHONY: all clean
 
-all: $(PROG) $(EXAMPLE) $(EXAMPLE_CPP)
+all: $(PROG) $(EXAMPLE) $(EXAMPLE_CPP) libssw.so
+
+libssw.so: ssw.c ssw.h
+	$(CC) -fPIC -shared -c $< -o $@
 
 $(PROG): main.c kseq.h
 
