@@ -14,7 +14,7 @@ EXAMPLE_CPP = example_cpp
 all: $(PROG) $(EXAMPLE) $(EXAMPLE_CPP) $(LIB)
 
 $(LIB): ssw.c ssw.h
-	$(CC) $(CFLAGS) -fPIC -shared -c $< -o $@
+	$(CC) $(CFLAGS) -fPIC -shared -rdynamic -o $@ $<
 
 $(PROG): main.c kseq.h
 
