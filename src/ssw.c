@@ -871,3 +871,31 @@ void align_destroy (s_align* a) {
 	free(a->cigar);
 	free(a);
 }
+
+char cigar_int_to_op (uint32_t cigar_int)
+{
+	uint8_t letter_code = cigar_int & 0xfU;
+	static const char map[] = {
+		'M',
+		'I',
+		'D',
+		'N',
+		'S',
+		'H',
+		'P',
+		'=',
+		'X',
+	};
+
+	if (letter_code >= (sizeof(map)/sizeof(map[0]))) {
+		return 'M';
+	}
+
+	return map[letter_code];
+}
+
+uint32_t cigar_int_to_len (uint32_t cigar_int)
+{
+	uint32_t res = cigar_int >> 4;
+	return res;
+}
