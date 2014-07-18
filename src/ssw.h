@@ -173,37 +173,13 @@ static inline uint32_t to_cigar_int (uint32_t length, char op_letter)
 	@param	cigar_int	32-bit unsigned integer, representing encoded CIGAR operation and length
 	@return			CIGAR operation character ('M', 'I', etc)
 */
-static inline char cigar_int_to_op (uint32_t cigar_int)
-{
-	uint8_t letter_code = cigar_int & 0xfU;
-	static const char map[] = {
-		'M',
-		'I',
-		'D',
-		'N',
-		'S',
-		'H',
-		'P',
-		'=',
-		'X',
-	};
-
-	if (letter_code >= (sizeof(map)/sizeof(map[0]))) {
-		return 'M';
-	}
-
-	return map[letter_code];
-}
+char cigar_int_to_op (uint32_t cigar_int);
 
 /*!	@function		Extract length of a CIGAR operation from CIGAR 32-bit unsigned integer
 	@param	cigar_int	32-bit unsigned integer, representing encoded CIGAR operation and length
 	@return			length of CIGAR operation
 */
-static inline uint32_t cigar_int_to_len (uint32_t cigar_int)
-{
-	uint32_t res = cigar_int >> 4;
-	return res;
-}
+uint32_t cigar_int_to_len (uint32_t cigar_int);
 
 #ifdef __cplusplus
 }
