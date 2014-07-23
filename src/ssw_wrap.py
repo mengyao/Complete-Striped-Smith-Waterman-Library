@@ -1,6 +1,10 @@
 """
-@package    ssw_wrap
-@brief      Simple python wrapper for SSW align library
+@package ssw_wrap
+@brief Simple python wrapper for SSW align library
+To use the dynamic library libssw.so you may need to modify the LD_LIBRARY_PATH environment
+variable to include the library directory (export LD_LIBRARY_PATH=$PWD) or for definitive
+inclusion of the lib edit /etc/ld.so.conf and add the path or the directory containing the
+library and update the cache by using /sbin/ldconfig as root
 @copyright  [The MIT licence](http://opensource.org/licenses/MIT)
 @author     Clement & Adrien Leger - 2014
 """
@@ -34,10 +38,6 @@ class Aligner(object):
     """
     @class  SSWAligner
     @brief Wrapper for SSW align library
-    To use the dynamic library libssw.so you may need to modify the LD_LIBRARY_PATH environment
-    variable to include the library directory (export LD_LIBRARY_PATH=$PWD) or for definitive
-    inclusion of the lib edit /etc/ld.so.conf and add the path or the directory containing the
-    library and update the cache by using /sbin/ldconfig as root
     """
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
