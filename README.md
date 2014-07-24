@@ -169,11 +169,11 @@ HWI-EAS397:8:1:1121:19907#CTTGTA/1	0	Ecoli_K12_U0096.3	954236	0	49M	*	0	0	AGAGAG
 ###Speed and memory usage of pyssw
 Test data set: 
 Target sequence: reference genome of E. coli K12 U0096.3 (4,641,652 nucleotides)
-Query sequences: 10000 reads of illumina E. coli 50pb  from [CLoVR public repository](http://data.clovr.org/d/17/e-coli-illumina-inputs)
+Query sequences: 10,000 reads of illumina E. coli 50pb  from [CLoVR public repository](http://data.clovr.org/d/17/e-coli-illumina-inputs)
 
 ```pyssw.py -s Ecoli_K12_U0096.3.fa -q Ecoli_illumina_10k.fastq -r -f 80```
-CPU time:
-Intel CPU: 
+
+Intel CPU time : 55m 40s
 
 
 ###Please cite this paper, if you need:
