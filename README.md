@@ -17,7 +17,9 @@ Last revision: 04/10/2013
 ##Overview
 SSW is a fast implementation of the Smith-Waterman algorithm, which uses the Single-Instruction Multiple-Data (SIMD) instructions to parallelize the algorithm at the instruction level. SSW library provides an API that can be flexibly used by programs written in C, C++ and other languages. We also provide a software that can do protein and genome alignment directly. Current version of our implementation is ~50 times faster than an ordinary Smith-Waterman. It can return the Smith-Waterman score, alignment location and traceback path (cigar) of the optimal alignment accurately; and return the sub-optimal alignment score and location heuristically.
 
-##How to use the API
+## C/C++ interface
+
+###How to use the API
 The API files include ssw.h and ssw.c, which can be directly used by any C or C++ program. For the C++ users who are more comfortable to use a C++ style interface, an additional C++ wrapper is provided with the file ssw_cpp.cpp and ssw_cpp.h.
 
 To use the C style API, please:
@@ -35,7 +37,7 @@ To use the C++ style API, please:
 
 The API function descriptions are in the file ssw_cpp.h. A simple example of using the C++ API is example.cpp.
 
-##Speed and memory usage of the API
+###Speed and memory usage of the API
 Test data set: 
 Target sequence: reference genome of E. coli strain 536 (4,938,920 nucleotides) from NCBI
 Query sequences: 1000 reads of Ion Torrent sequenced E. coli strain DH10B (C23-140, 318 PGM Run, 11/2011), read length: ~25-540 bp, most reads are ~200 bp
@@ -46,14 +48,14 @@ Intel CPU: default penalties: ~960 seconds; -m1 -x3 -o5 -e2: ~500 seconds
 
 Memory usage: ~40MB
  
-##Install the software
+###Install the software
 1. Download the software from https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library.
 2. cd src
 3. make
 4. The executable file will be ssw_test.
 
-##Run the software
-'''
+###Run the software
+```
 Usage: ssw_test [options] ... <target.fasta> <query.fasta>(or <query.fastq>)
 Options:
 	-m N	N is a positive integer for weight match in genome sequence alignment. [default: 2]
@@ -67,13 +69,13 @@ Options:
 	-r	The best alignment will be picked between the original read alignment and the reverse complement read alignment.
 	-s	Output in SAM format. [default: no header]
 	-h	If -s is used, include header in SAM output.
-'''
+```
 
-##Software output
+###Software output
 The software can output SAM format or BLAST like format results. 
 1. SAM format output:
 Example:
-'''
+```
 @HD VN:1.4  SO:queryname
 @SQ SN:chr1 LN:1001
 6:163296599:F:198;None;None/1   0   chr1    453 5   3M2D3M1D4M2D6M1D5M1D5M2I7M  *   0   0   CCAGCCCAAAATCTGTTTTAATGGTGGATTTGTGT *   AS:i:37 NM:i:11 ZS:i:28
@@ -83,14 +85,14 @@ Y:26750420:R:-132;None;None/1   0   chr1    120 4   2M1I4M3D3M1I7M2I9M2D6M1I8M  
 15:37079528:R:-240;None;None/1  0   chr1    4   5   4M2D4M1D9M1I3M4I16M1I3M1D4M2D5M *   0   0   ACAGTGATGCCAAGCCAGTGGGTTTTAGCTTGTGGAGTTCCATAGGAGCGATGC  *   AS:i:30 NM:i:22 ZS:i:23
 9:92308501:R:-176;None;None/1   0   chr1    142 4   4M3I5M4D10M2D4M1I2M2I6M5D1M1D6M2D3M *   0   0   AATAACCATAAAAATGGGCAAAGCAGCCTTCAGGGCTGCTGTTTCTA *   AS:i:26 NM:i:25 ZS:i:26
 ...
-'''
+```
 
 What is the output?
 Please check the document "The SAM Format Specification" at: http://samtools.sourceforge.net/SAM1.pdf for the full description.
 The additional optional field "ZS" indicates the suboptimal alignment score. For example, the 1st record in the upper example means the optimal alignment score of the given sequence is 37; the suboptimal alignment score is 28; the mismatch and INDEL base count within the aligned fragment of the read is 11.
 
 2. An example of the BLAST like output:
-'''
+```
 target_name: chr1
 query_name: 6:163296599:F:198;None;None/1
 optimal_alignment_score: 37	sub-optimal_alignment_score: 28	strand: +	target_begin: 453	target_end: 492	query_begin: 17	query_end: 51
@@ -107,9 +109,11 @@ Target:      523    GAGAGAGAAAATTTCACTCCCTCCATAAATCTCACAGTATTCTTTTCTTTTTCCT    5
                     || ||||**|||||*|*||*||*||*|*|**|*|| ||| |||||| ||||*|||
 Query:         3    GA-AGAGTTAATTTAAGTCACTTCAAACAGATTAC-GTA-TCTTTT-TTTTCCCT    53
 ...
-'''
+```
 
-##How to use the python wrapper
+##Python interface
+
+###How to use the python wrapper ssw_wrap.py
 
 A Python wrapper partially implements the c library functionality (only DNA sequences can be aligned for now). c libraries are completely integrated in a simple module that do not require any C programming knowledge to be used.
 Briefly, An aligner object can be initialized with alignment parameters and a reference subject sequence, then the object method *align* can be called with a query sequence and filtering conditions (min score and min length) as many time as desired.
@@ -117,23 +121,20 @@ Depending of the score and length requested an python object PyAlignRes will be 
 
 To use the python wrapper, please:
 
-1. Compile the scr folder by either using the makefile or by compiling a dynamic shared library with gcc (gcc -Wall -O3 -pipe -fPIC -shared -rdynamic -o libssw.so ssw.c ssw.h) 
+1. Compile the scr folder by either using the makefile or by compiling a dynamic shared library with gcc ```gcc -Wall -O3 -pipe -fPIC -shared -rdynamic -o libssw.so ssw.c ssw.h```
 2. libssw.so and ssw_wrap.py can them be put in the same folder of your own program files.
 3. Depending of the LINUX OS version installed it may be required to modify the LD_LIBRARY_PATH environment variable to use the dynamic library libssw.so by one of the 2 following possibilities :
-    * Export the path or the directory containing the library (LD_LIBRARY_PATH=path_of_the_library)
+    * Export the path or the directory containing the library ```LD_LIBRARY_PATH=path_of_the_library```
     * For a definitive inclusion edit /etc/ld.so.conf and add the path of the lib directory. Then, update the cache by using /sbin/ldconfig as root
-    
-##Import and run the wrapper class
-    
-1. In a python script or in a interactive interpreter the main class can be imported with : '''from ssw_wrap import Aligner'''
-2. Instantiate the Aligner class with initial parameters, including the reference subject sequence.
-    * Example ssw = Aligner(myref, match=2, mismatch=2, gap_open=3, gap_extension=1, report_secondary=False, report_cigar=False)
-3. Call the object align method with a query sequence as well as minimal score and length for the alignment to be reported
-    * Example res = ssw.align(myquery, min_score=10, min_len=20)
-4. Parse the returned PyAlignRes object for alignment result description 
+4. In a python script or in a interactive interpreter the main class can be imported with : ```from ssw_wrap import Aligner```
+5. Instantiate the Aligner class with initial parameters, including the reference subject sequence.
+    * Example ssw = ```Aligner(myref, match=2, mismatch=2, gap_open=3, gap_extension=1, report_secondary=False, report_cigar=False)```
+6. Call the object align method with a query sequence as well as minimal score and length for the alignment to be reported
+    * Example ```res = ssw.align(myquery, min_score=10, min_len=20)```
+7. Parse the returned PyAlignRes object for alignment result description 
 
-##Run the python standalone pyssw
-'''
+###Run pyssw standalone 
+```
 Usage: pyssw.py -s subject.fasta -q fastq (or fasta) [Facultative options]
 
 Options:
@@ -148,10 +149,13 @@ Options:
  -f MIN_SCORE, --min_score=MIN_SCORE   integer. Consider alignments having a score <= MIN_SCORE as not aligned. [default: 0]
  -l MIN_LEN, --min_len=MIN_LEN integer. Consider alignments having a length <= as not aligned. [default: 0]
  -r, --reverse         Flag. Align query in forward and reverse orientation and choose the best alignment. [default option]
-'''
+```
 
-Output SAM like files that can be parsed with typical NGS
-'''
+###pyssw output
+
+For now, the program only output a SAM like file. The file encoding is sightly more complete than the version created by the C/C++ software and is fully compatible with downstream NGS utilities such as samtools.
+
+```
 @HD	VN:1.0	SO:unsorted
 @SQ	SN:Ecoli_K12_U0096.3	LN:4641652
 @PG	ID:Striped-Smith-Waterman	PN:pyssw	VN:0.1
@@ -160,7 +164,17 @@ Output SAM like files that can be parsed with typical NGS
 HWI-EAS397:8:1:1067:18713#CTTGTA/1	4	*	0	0	*	*	0	0	TGGAGATGAGATTGTCGGCTTTATTACCCAGGGGCGGGGGGTTATTGTA	Y^]Lcda]YcffccffadafdWKd_V\``^\aa^BBBBBBBBBBBBBBB
 HWI-EAS397:8:1:1070:11813#CTTGTA/1	16	Ecoli_K12_U0096.3	4518866	0	49M	*	0	0	CCTGTCATACGCGTAAAACAGCCAGCGCTGACCTGCTTTAGCACCGACG	ccccaa_J[Saa\]acQ]J_V]V]RJaV]`HXILZLHVGOaaK\[aYaB
 HWI-EAS397:8:1:1121:19907#CTTGTA/1	0	Ecoli_K12_U0096.3	954236	0	49M	*	0	0	AGAGAGAAGCAAATGCCGCCAACCAGTTTTGCCATGCCGAAGGGCATTG	SIaJaL^ZT`[da^WcacfK^acSacfffff[cY^dcdd^f]\]cffff
-'''
+...
+```
+###Speed and memory usage of pyssw
+Test data set: 
+Target sequence: reference genome of E. coli K12 U0096.3 (4,641,652 nucleotides)
+Query sequences: 10000 reads of illumina E. coli 50pb  from [CLoVR public repository](http://data.clovr.org/d/17/e-coli-illumina-inputs)
+
+```pyssw.py -s Ecoli_K12_U0096.3.fa -q Ecoli_illumina_10k.fastq -r -f 80```
+CPU time:
+Intel CPU: 
+
 
 ###Please cite this paper, if you need:
 http://dx.plos.org/10.1371/journal.pone.0082138
