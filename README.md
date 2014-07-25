@@ -30,7 +30,8 @@ To use the C style API, please:
 
 The API function descriptions are in the file ssw.h. One simple example of the API usage is example.c. The Smith-Waterman penalties need to be integers. Small penalty numbers such as: match: 2, mismatch: -1, gap open: -3, gap extension: -1 are recommended, which will lead to shorter running time.  
 
-To use the C++ style API, please: 
+To use the C++ style API, please:
+
 1. Download ssw.h, ssw.c, ssw_cpp.cpp and ssw_cpp.h and put them in the same folder of your own program files.
 2. Write #include "ssw_cpp.h" into your file that will call the API functions.
 3. The API files are ready to be compiled together with your own C/C++ files.
@@ -49,6 +50,7 @@ Intel CPU: default penalties: ~960 seconds; -m1 -x3 -o5 -e2: ~500 seconds
 Memory usage: ~40MB
  
 ###Install the software
+
 1. Download the software from https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library.
 2. cd src
 3. make
@@ -73,7 +75,9 @@ Options:
 
 ###Software output
 The software can output SAM format or BLAST like format results. 
+
 1. SAM format output:
+
 Example:
 ```
 @HD VN:1.4  SO:queryname
@@ -92,6 +96,7 @@ Please check the document "The SAM Format Specification" at: http://samtools.sou
 The additional optional field "ZS" indicates the suboptimal alignment score. For example, the 1st record in the upper example means the optimal alignment score of the given sequence is 37; the suboptimal alignment score is 28; the mismatch and INDEL base count within the aligned fragment of the read is 11.
 
 2. An example of the BLAST like output:
+
 ```
 target_name: chr1
 query_name: 6:163296599:F:198;None;None/1
@@ -121,16 +126,19 @@ Depending of the score and length requested an python object PyAlignRes will be 
 
 To use the python wrapper, please:
 
-1. Compile the scr folder by either using the makefile or by compiling a dynamic shared library with gcc ```gcc -Wall -O3 -pipe -fPIC -shared -rdynamic -o libssw.so ssw.c ssw.h```
+1. Compile the scr folder by either using the makefile or by compiling a dynamic shared library with gcc 
+    ```gcc -Wall -O3 -pipe -fPIC -shared -rdynamic -o libssw.so ssw.c ssw.h```
 2. libssw.so and ssw_wrap.py can them be put in the same folder of your own program files.
 3. Depending of the LINUX OS version installed it may be required to modify the LD_LIBRARY_PATH environment variable to use the dynamic library libssw.so by one of the 2 following possibilities :
-    * Export the path or the directory containing the library ```LD_LIBRARY_PATH=path_of_the_library```
-    * For a definitive inclusion edit /etc/ld.so.conf and add the path of the lib directory. Then, update the cache by using /sbin/ldconfig as root
-4. In a python script or in a interactive interpreter the main class can be imported with : ```from ssw_wrap import Aligner```
+    * Export the path or the directory containing the library 
+    ```LD_LIBRARY_PATH=path_of_the_library```
+    * For a definitive inclusion edit /etc/ld.so.conf and add the path of the lib directory. Then, update the cache by using ```/sbin/ldconfig``` as root
+4. In a python script or in a interactive interpreter the main class can be imported with :
+    ```from ssw_wrap import Aligner```
 5. Instantiate the Aligner class with initial parameters, including the reference subject sequence.
-    * Example ssw = ```Aligner(myref, match=2, mismatch=2, gap_open=3, gap_extension=1, report_secondary=False, report_cigar=False)```
+    ```Aligner(myref, match=2, mismatch=2, gap_open=3, gap_extension=1, report_secondary=False, report_cigar=False)```
 6. Call the object align method with a query sequence as well as minimal score and length for the alignment to be reported
-    * Example ```res = ssw.align(myquery, min_score=10, min_len=20)```
+    ```res = ssw.align(myquery, min_score=10, min_len=20)```
 7. Parse the returned PyAlignRes object for alignment result description 
 
 ###Run pyssw standalone 
@@ -142,13 +150,15 @@ Options:
  -h, --help            show this help message and exit
  -s SUBJECT, --subject=SUBJECT Path of the fasta file containing the subject genome sequence [REQUIRED]
  -q QUERY, --query=QUERY   Path of the fastq or fasta file containing the short read to be aligned [REQUIRED]
+ -t QTYPE, --qtype=QTYPE   Type of the query file = fastq or fasta. [default:fastq]
  -m MATCH, --match=MATCH   positive integer for weight match in genome sequence alignment. [default: 2]
  -x MISMATCH, --mismatch=MISMATCH  positive integer. The negative value will be used as weight mismatch in genome sequence alignment.[default: 2]
  -o GAP_OPEN, --gap_open=GAP_OPEN  positive integer. The negative value will be used as weight for the gap opening. [default: 3]
  -e GAP_EXTEND, --gap_extend=GAP_EXTEND    positive integer. The negative value will be used as weight for the gap opening. [default: 1]
  -f MIN_SCORE, --min_score=MIN_SCORE   integer. Consider alignments having a score <= MIN_SCORE as not aligned. [default: 0]
  -l MIN_LEN, --min_len=MIN_LEN integer. Consider alignments having a length <= as not aligned. [default: 0]
- -r, --reverse         Flag. Align query in forward and reverse orientation and choose the best alignment. [default option]
+ -r, --reverse         Flag. Align query in forward and reverse orientation and choose the best alignment. [Set by default]
+ -u, --unaligned       Flag. Write unaligned reads in sam output [Unset by default]
 ```
 
 ###pyssw output

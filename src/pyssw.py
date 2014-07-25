@@ -20,27 +20,36 @@ import optparse
 from imp import find_module
 import sys
 from time import time
+import gzip
+
 
 #~~~~~~~MAIN FUNCTION~~~~~~~#
 def main (opt):
-    
-    start = time()
+
+    print ("Inport subject sequence")
     # Import fasta subject
-    if opt.subject.rpartition(".")[2].lower() in ["fa", "fasta"]:
-        subject = SeqIO.read(opt.subject, "fasta")
+    if opt.subject.rpartition(".")[2].lower() == "gz":
+        subject_handle = gzip.open(opt.subject, "r")
     else:
-        raise Exception ("The subject sequence if not in fasta format")
-    
-    # Import fasta or fastq query
-    if opt.query.rpartition(".")[2].lower() in ["fa", "fasta"]:
-        query_gen = SeqIO.parse(opt.query, "fasta")
-    elif opt.query.rpartition(".")[2].lower() == "fastq":
-        query_gen = SeqIO.parse(opt.query, "fastq")
+        subject_handle = open(opt.subject, "r")
+    subject = SeqIO.read(subject_handle, "fasta")
+
+    print ("Inport query sequences and count the number of sequences")
+    # Import fasta subject
+    if opt.query.rpartition(".")[2].lower() == "gz":
+        nseq = count_seq(opt.query, opt.qtype, True)
+        query_handle = gzip.open(opt.query, "r")
     else:
-        raise Exception ("The query sequence if not in fastq or fasta format")
-    
+        nseq = count_seq(opt.query, opt.qtype, False)
+        query_handle = open(opt.query, "r")
+    query_gen = SeqIO.parse(query_handle, opt.qtype)
+
+    print("{} contains {} sequences to align".format(opt.query, nseq))
+    # Calculate the a step list for the progress bar
+    nseq_list = [int(nseq*i/100.0) for i in range(5,101,5)]
+
     print ("Initialize ssw aligner with the subject sequence")
-    # Init the an Aligner object with the reference value 
+    # Init the an Aligner object with the reference value
     ssw = Aligner(
         str(subject.seq),
         match=int(opt.match),
@@ -49,7 +58,7 @@ def main (opt):
         gap_extend= int(opt.gap_extend),
         report_secondary=False,
         report_cigar=True)
-    
+
     # Write the header of the SAM file
     with open("result.sam", "w") as f:
         f.write("@HD\tVN:1.0\tSO:unsorted\n")
@@ -63,80 +72,88 @@ def main (opt):
         f.write("@CO\tFilter Options = min_score {}, min_len {}\n".format(
             opt.min_score,
             opt.min_len))
-        
+
+        start = time()
         # Align each query along the subject an write result in a SAM file
         print ("Align queries against the subject sequence")
         i = 0
         for query in query_gen:
-            
-            # Find the alignment
+
+            # Find the best alignment
             if opt.reverse:
                 al, orient = find_best_align (ssw, query, float(opt.min_score), int(opt.min_len))
             else:
                 al, orient = ssw.align(str(query.seq), float(opt.min_score), int(opt.min_len)), True
-            
-            # Try to extract the quality string if possible (fastq only)
-            try:
-                qual = SeqIO.QualityIO._get_sanger_quality_str(query)
-            except ValueError:
-                qual = "*"
-            
-            # Values if valid match found
-            if al:
-                flag = 0 if orient else 16
-                rname = subject.id
-                startpos = al.ref_begin
-                cigar = al.cigar_string
-                score = 0#al.score
-            
-            # Values if no valid match found
-            else:
-                flag = 4
-                rname = '*'
-                startpos = 0
-                cigar = '*'
-                score = 0
 
-            # Line written in case of match
-            f.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(
-                query.id,       # Read name
-                flag,           # Flag 0 = mapped forward 16 = mapped forward reverse
-                rname,          # Reference sequence
-                startpos,       # Start position on reference
-                score,          # MAPQ score = SSW score instead
-                cigar,          # Cigar string
-                '*',0,0,        # Pair end reads informations
-                str(query.seq), # Sequence of read
-                qual))          # Quality string of read (only for fastq query)
-        
-            # Progress bar 
+            # If valid match found
+            if al:
+                f.write(sam_line(
+                    qname=query.id,
+                    flag=0 if orient else 16,
+                    rname=subject.id,
+                    pos=al.ref_begin+1,
+                    mapq=al.score,
+                    cigar=al.cigar_string,
+                    seq=str(query.seq),
+                    qual=SeqIO.QualityIO._get_sanger_quality_str(query) if opt.qtype == "fastq" else "*"))
+
+            # If no valid match found and -u flag activated (report unaligned)
+            elif opt.unaligned:
+                f.write(sam_line(
+                    qname=query.id,
+                    flag=4,
+                    seq=str(query.seq),
+                    qual=SeqIO.QualityIO._get_sanger_quality_str(query) if opt.qtype == "fastq" else "*"))
+            # Else = match unreported
+
+            # Progress bar
             i+=1
-            if i % 10 == 0:
-                sys.stdout.write(".")
-                sys.stdout.flush()
-            if i % 1000 == 0:
-                sys.stdout.write("\n")
-                sys.stdout.flush()
-                
+            if i in nseq_list:
+                frac = i/float(nseq)
+                t = time()-start
+                print ("{} sequences \t{}% \tRemaining time = {}s".format(i, int(frac*100), t/frac-t))
+
         print ("\n{} Sequences processed in {}s".format(i, round(time()-start, 2)))
 
 #~~~~~~~HELPER FUNCTIONS~~~~~~~#
 
+
+def sam_line (qname='*', flag=4, rname='*', pos=0, mapq=0, cigar='*', rnext='*', pnext=0, tlen=0, seq='*', qual='*'):
+    """
+    Return a minimal sam line = by default return an undetermined sam line. Check the document
+    [SAM Format Specification](http://samtools.sourceforge.net/SAM1.pdf) for a full description.
+    @param qname Query template NAME
+    @param flag bitwise FLAG
+    @param rname Reference sequence NAME of the alignment
+    @param pos 1-based leftmost mapping POSition of the first matching base
+    @param mapq MAPping Quality
+    @param cigar CIGAR string
+    @param rnext Reference sequence name of the primary alignment of the mate
+    @param pnext 1-based leftmost position of the primary alignment of the mate
+    @param tlen signed observed Template LENgth
+    @param seq segment SEQuence
+    @param qual ASCII of base QUALity plus 33
+    @return A Sam alignment line
+    """
+    return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(
+        qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual)
+
+
 def find_best_align (ssw, query, min_score, min_len):
-    
+
     # Align reverse and forward query
     forward_al = ssw.align(str(query.seq), min_score, min_len)
     reverse_al = ssw.align(str(query.seq.reverse_complement()), min_score, min_len)
-    
+
     # Decision tree to return the best aligned sequence taking into acount the absence of result
     # by ssw_wrap in case of score filtering
-    
+
     if not forward_al:
         if not reverse_al:
             return (None, None)
         else:
             return (reverse_al, False)
-    
+
     else:
         if not reverse_al:
             return (forward_al, True)
@@ -145,9 +162,46 @@ def find_best_align (ssw, query, min_score, min_len):
                 return (forward_al, True)
             else:
                 return (reverse_al, False)
-    
+
+def count_seq (filename, seq_type="fasta", gziped=False):
+    """
+    Count the number of sequences in a fastq or a fastq file
+    @param filename Path to a valid readeable file
+    @param file_type Should be either fastq or fastq. Default fasta
+    @param gziped Boolean indicating if the file is gziped or not. Default False
+    """
+    #Standard library import
+    import gzip
+    from mmap import mmap
+
+    # Verify if the file is fasta or fastq type
+    assert seq_type in ["fasta", "fastq"], "The file has to be either fastq or fasta format"
+
+    # Open the file
+    if gziped:
+        f = gzip.open(filename, "r")
+    else:
+        f = open(filename, "r")
+
+    # FASTA Find a start line seq character ">" an increment the counter each time
+    if seq_type ==  "fasta":
+        nline = 0
+        for line in f:
+            if line[0] == ">":
+                nline+=1
+        f.close()
+        return nline
+
+    # FASTQ No motif to find, but 4 lines correspond to 1 sequence
+    else:
+        nline = 0
+        for line in f:
+            nline+=1
+        f.close()
+        return nline/4
+
 def optparser():
-    
+
     print("Parse command line options")
     # Usage and version strings
     program_name = "pyssw"
@@ -157,51 +211,56 @@ def optparser():
     optparser = optparse.OptionParser(usage = usage_string, version = version_string)
 
     # Define optparser options
-    hstr = "Path of the fasta file containing the subject genome sequence [REQUIRED] "
+    hstr = "Path of the fasta file containing the subject genome sequence. Can be gziped. [REQUIRED] "
     optparser.add_option( '-s', '--subject', dest="subject", help=hstr)
-    hstr = "Path of the fastq or fasta file containing the short read to be aligned [REQUIRED]"
+    hstr = "Path of the fastq or fasta file containing the short read to be aligned. Can be gziped. [REQUIRED]"
     optparser.add_option( '-q', '--query', dest="query", help=hstr)
-    hstr = "positive integer for weight match in genome sequence alignment. [default: 2]"
+    hstr = "Type of the query file = fastq or fasta. [default: fastq]"
+    optparser.add_option( '-t', '--qtype', dest="qtype", default="fastq", help=hstr)
+    hstr = "Positive integer for weight match in genome sequence alignment. [default: 2]"
     optparser.add_option( '-m', '--match', dest="match",default=2, help=hstr)
-    hstr = "positive integer. The negative value will be used as weight mismatch in genome sequence alignment. [default: 2]"
+    hstr = "Positive integer. The negative value will be used as weight mismatch in genome sequence alignment. [default: 2]"
     optparser.add_option( '-x', '--mismatch', dest="mismatch", default=2, help=hstr)
-    hstr = "positive integer. The negative value will be used as weight for the gap opening. [default: 3]"
+    hstr = "Positive integer. The negative value will be used as weight for the gap opening. [default: 3]"
     optparser.add_option( '-o', '--gap_open', dest="gap_open", default=3, help=hstr)
-    hstr = "positive integer. The negative value will be used as weight for the gap opening. [default: 1]"
+    hstr = "Positive integer. The negative value will be used as weight for the gap opening. [default: 1]"
     optparser.add_option( '-e', '--gap_extend', dest="gap_extend", default=1, help=hstr)
-    hstr = "integer. Consider alignments having a score <= as not aligned. [default: 0]"
+    hstr = "Integer. Consider alignments having a score <= as not aligned. [default: 0]"
     optparser.add_option( '-f', '--min_score', dest="min_score", default=0, help=hstr)
-    hstr = "integer. Consider alignments having a length <= as not aligned. [default: 0]"
+    hstr = "Integer. Consider alignments having a length <= as not aligned. [default: 0]"
     optparser.add_option( '-l', '--min_len', dest="min_len", default=0, help=hstr)
-    hstr = "Flag. Align query in forward and reverse orientation and choose the best alignment. [default option]"
+    hstr = "Flag. Align query in forward and reverse orientation and choose the best alignment. [Set by default]"
     optparser.add_option( '-r', '--reverse', dest="reverse", action="store_true", default=True, help=hstr)
+    hstr = "Flag. Write unaligned reads in sam output [Unset by default]"
+    optparser.add_option( '-u', '--unaligned', dest="unaligned", action="store_true", default=False, help=hstr)
+
     # Parse arg and return a dictionnary_like object of options
     opt, args = optparser.parse_args()
-    
+
     if not opt.subject:
         print ("\nERROR: a subject fasta file has to be provided (-s option)\n")
         optparser.print_help()
         sys.exit()
-    
+
     if not opt.query:
         print ("\nERROR: a query fasta or fastq file has to be provided (-q option)\n")
         optparser.print_help()
         sys.exit()
-    
+
     return opt
 
 #~~~~~~~TOP LEVEL INSTRUCTIONS~~~~~~~#
 
 if __name__ == '__main__':
-    
-    # try to import Third party and local packages   
+
+    # try to import Third party and local packages
     try:
         find_module('Bio')
         from Bio import SeqIO
     except ImportError:
         print ("ERROR: Please install Biopython package")
         sys.exit()
-    
+
     try:
         find_module('ssw_wrap')
         from ssw_wrap import Aligner
