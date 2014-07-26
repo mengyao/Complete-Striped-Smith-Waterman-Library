@@ -11,7 +11,9 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 Author: Mengyao Zhao & Wan-Ping Lee
+
 Contact: Mengyao Zhao <zhangmp@bc.edu>
+
 Last revision: 04/10/2013
 
 ##Overview
@@ -44,8 +46,9 @@ Target sequence: reference genome of E. coli strain 536 (4,938,920 nucleotides) 
 Query sequences: 1000 reads of Ion Torrent sequenced E. coli strain DH10B (C23-140, 318 PGM Run, 11/2011), read length: ~25-540 bp, most reads are ~200 bp
 
 CPU time:
-AMD CPU: default penalties: ~880 seconds; -m1 -x3 -o5 -e2: ~460 seconds
-Intel CPU: default penalties: ~960 seconds; -m1 -x3 -o5 -e2: ~500 seconds 
+
+* AMD CPU: default penalties: ~880 seconds; -m1 -x3 -o5 -e2: ~460 seconds
+* Intel CPU: default penalties: ~960 seconds; -m1 -x3 -o5 -e2: ~500 seconds 
 
 Memory usage: ~40MB
  
