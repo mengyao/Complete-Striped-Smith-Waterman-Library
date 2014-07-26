@@ -126,19 +126,15 @@ Depending of the score and length requested an python object PyAlignRes will be 
 
 To use the python wrapper, please:
 
-1. Compile the scr folder by either using the makefile or by compiling a dynamic shared library with gcc 
-    ```gcc -Wall -O3 -pipe -fPIC -shared -rdynamic -o libssw.so ssw.c ssw.h```
+1. Compile the scr folder by either using the makefile or by compiling a dynamic shared library with gcc ```gcc -Wall -O3 -pipe -fPIC -shared -rdynamic -o libssw.so ssw.c ssw.h```
 2. libssw.so and ssw_wrap.py can them be put in the same folder of your own program files.
 3. Depending of the LINUX OS version installed it may be required to modify the LD_LIBRARY_PATH environment variable to use the dynamic library libssw.so by one of the 2 following possibilities :
-    * Export the path or the directory containing the library 
-    ```LD_LIBRARY_PATH=path_of_the_library```
+
+    * Export the path or the directory containing the library ```LD_LIBRARY_PATH=path_of_the_library```
     * For a definitive inclusion edit /etc/ld.so.conf and add the path of the lib directory. Then, update the cache by using ```/sbin/ldconfig``` as root
-4. In a python script or in a interactive interpreter the main class can be imported with :
-    ```from ssw_wrap import Aligner```
-5. Instantiate the Aligner class with initial parameters, including the reference subject sequence.
-    ```Aligner(myref, match=2, mismatch=2, gap_open=3, gap_extension=1, report_secondary=False, report_cigar=False)```
-6. Call the object align method with a query sequence as well as minimal score and length for the alignment to be reported
-    ```res = ssw.align(myquery, min_score=10, min_len=20)```
+4. In a python script or in a interactive interpreter the main class can be imported with : ```from ssw_wrap import Aligner```
+5. Instantiate the Aligner class with initial parameters, including the reference subject sequence. ```Aligner(myref, match=2, mismatch=2, gap_open=3, gap_extension=1, report_secondary=False, report_cigar=False)```
+6. Call the object align method with a query sequence as well as minimal score and length for the alignment to be reported ```res = ssw.align(myquery, min_score=10, min_len=20)```
 7. Parse the returned PyAlignRes object for alignment result description 
 
 ###Run pyssw standalone 
