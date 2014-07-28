@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 """
 @package pyssw
 @brief Python standalone program for ssw alignment using the C library
@@ -17,11 +18,9 @@ Biopython module is require for fastq/fastq parsing
 #~~~~~~~GLOBAL IMPORTS~~~~~~~#
 # Standard library packages
 import optparse
-from imp import find_module
 import sys
 from time import time
 import gzip
-
 
 #~~~~~~~MAIN FUNCTION~~~~~~~#
 def main (opt):
@@ -45,7 +44,7 @@ def main (opt):
     query_gen = SeqIO.parse(query_handle, opt.qtype)
 
     print("{} contains {} sequences to align".format(opt.query, nseq))
-    # Calculate the a step list for the progress bar
+    # Calculate a step list for the progress bar
     nseq_list = [int(nseq*i/100.0) for i in range(5,101,5)]
 
     print ("Initialize ssw aligner with the subject sequence")
@@ -73,9 +72,9 @@ def main (opt):
             opt.min_score,
             opt.min_len))
 
+        print ("Starting alignment of queries against the subject sequence")
         start = time()
         # Align each query along the subject an write result in a SAM file
-        print ("Align queries against the subject sequence")
         i = 0
         for query in query_gen:
 
@@ -92,10 +91,10 @@ def main (opt):
                     flag=0 if orient else 16,
                     rname=subject.id,
                     pos=al.ref_begin+1,
-                    mapq=al.score,
                     cigar=al.cigar_string,
                     seq=str(query.seq),
-                    qual=SeqIO.QualityIO._get_sanger_quality_str(query) if opt.qtype == "fastq" else "*"))
+                    qual=SeqIO.QualityIO._get_sanger_quality_str(query) if opt.qtype == "fastq" else "*",
+                    tags=["AS:i:{}".format(al.score)]))
 
             # If no valid match found and -u flag activated (report unaligned)
             elif opt.unaligned:
@@ -111,14 +110,14 @@ def main (opt):
             if i in nseq_list:
                 frac = i/float(nseq)
                 t = time()-start
-                print ("{} sequences \t{}% \tRemaining time = {}s".format(i, int(frac*100), t/frac-t))
+                print ("{} sequences \t{}% \tRemaining time = {}s".format(i, int(frac*100), round(t/frac-t, 2)))
 
         print ("\n{} Sequences processed in {}s".format(i, round(time()-start, 2)))
 
 #~~~~~~~HELPER FUNCTIONS~~~~~~~#
 
 
-def sam_line (qname='*', flag=4, rname='*', pos=0, mapq=0, cigar='*', rnext='*', pnext=0, tlen=0, seq='*', qual='*'):
+def sam_line (qname='*', flag=4, rname='*', pos=0, mapq=0, cigar='*', rnext='*', pnext=0, tlen=0, seq='*', qual='*', tags=None):
     """
     Return a minimal sam line = by default return an undetermined sam line. Check the document
     [SAM Format Specification](http://samtools.sourceforge.net/SAM1.pdf) for a full description.
@@ -133,11 +132,15 @@ def sam_line (qname='*', flag=4, rname='*', pos=0, mapq=0, cigar='*', rnext='*',
     @param tlen signed observed Template LENgth
     @param seq segment SEQuence
     @param qual ASCII of base QUALity plus 33
+    @param tags list of optional tags
     @return A Sam alignment line
     """
-    return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(
-        qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual)
-
+    if tags:
+        return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(
+            qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual, " ".join(tags))
+    else:
+        return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
+            qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual)
 
 def find_best_align (ssw, query, min_score, min_len):
 
@@ -255,14 +258,12 @@ if __name__ == '__main__':
 
     # try to import Third party and local packages
     try:
-        find_module('Bio')
         from Bio import SeqIO
     except ImportError:
         print ("ERROR: Please install Biopython package")
         sys.exit()
 
     try:
-        find_module('ssw_wrap')
         from ssw_wrap import Aligner
     except ImportError:
         print ("ERROR: Please place ssw_wrap in the current directory or add its dir to python path")
