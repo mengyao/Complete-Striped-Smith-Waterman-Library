@@ -1,6 +1,10 @@
 """
-@package    ssw_wrap
-@brief      Simple python wrapper for SSW align library
+@package ssw_wrap
+@brief Simple python wrapper for SSW align library
+To use the dynamic library libssw.so you may need to modify the LD_LIBRARY_PATH environment
+variable to include the library directory (export LD_LIBRARY_PATH=$PWD) or for definitive
+inclusion of the lib edit /etc/ld.so.conf and add the path or the directory containing the
+library and update the cache by using /sbin/ldconfig as root
 @copyright  [The MIT licence](http://opensource.org/licenses/MIT)
 @author     Clement & Adrien Leger - 2014
 """
@@ -34,10 +38,6 @@ class Aligner(object):
     """
     @class  SSWAligner
     @brief Wrapper for SSW align library
-    To use the dynamic library libssw.so you may need to modify the LD_LIBRARY_PATH environment
-    variable to include the library directory (export LD_LIBRARY_PATH=$PWD) or for definitive
-    inclusion of the lib edit /etc/ld.so.conf and add the path or the directory containing the
-    library and update the cache by using /sbin/ldconfig as root
     """
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
@@ -73,7 +73,7 @@ class Aligner(object):
     def __repr__(self):
         msg = self.__str__()
         msg += "SCORE PARAMETERS:\n"
-        msg += " Gap Weight     Open: {}     Extension: {}\n".format(-self.gap_open, -self.gap_extension)
+        msg += " Gap Weight     Open: {}     Extension: {}\n".format(-self.gap_open, -self.gap_extend)
         msg += " Align Weight   Match: {}    Mismatch: {}\n\n".format(self.match, -self.mismatch)
         msg += " Match/mismatch Score matrix\n"
         msg += " \tA\tC\tG\tT\tN\n"
@@ -86,7 +86,10 @@ class Aligner(object):
         msg += " Report cigar           {}\n".format(self.report_cigar)
         msg += " Report secondary match {}\n\n".format(self.report_secondary)
         msg += "REFERENCE SEQUENCE :\n"
-        msg += "".join([self.int_to_base[i] for i in self.ref_seq])+"\n"
+        if self.ref_len <= 50:
+            msg += "".join([self.int_to_base[i] for i in self.ref_seq])+"\n"
+        else:
+            msg += "".join([self.int_to_base[self.ref_seq[i]] for i in range(50)])+"...\n"
         msg += " Lenght :{} nucleotides\n".format(self.ref_len)
         return msg
 
@@ -98,7 +101,7 @@ class Aligner(object):
                 match=2,
                 mismatch=2,
                 gap_open=3,
-                gap_extension=1,
+                gap_extend=1,
                 report_secondary=False,
                 report_cigar=False):
         """
@@ -109,7 +112,7 @@ class Aligner(object):
         @param match Weight for a match
         @param mismatch Absolute value of mismatch penalty
         @param gap_open Absolute value of gap open penalty
-        @param gap_extension Absolute value of gap extend penalty
+        @param gap_extend Absolute value of gap extend penalty
         @param report_secondary Report the 2nd best alignement if true
         @param report_cigar Report cigar string if true
         """
@@ -119,7 +122,7 @@ class Aligner(object):
         self.report_cigar = report_cigar
 
         # Set gap penalties
-        self.set_gap(gap_open, gap_extension)
+        self.set_gap(gap_open, gap_extend)
 
         # Set the cost matrix
         self.set_mat(match, mismatch)
@@ -129,12 +132,12 @@ class Aligner(object):
 
     #~~~~~~~SETTERS METHODS~~~~~~~#
 
-    def set_gap(self, gap_open=3, gap_extension=1):
+    def set_gap(self, gap_open=3, gap_extend=1):
         """
         Store gapopen and gap extension penalties
         """
         self.gap_open = gap_open
-        self.gap_extension = gap_extension
+        self.gap_extend = gap_extend
 
 
     def set_mat(self, match=2, mismatch=2):
@@ -196,7 +199,7 @@ class Aligner(object):
                                 self.ref_seq, # Ref seq in c type integers
                                 c_int32(self.ref_len), # Length of Refseq in bites
                                 self.gap_open, # Absolute value of gap open penalty
-                                self.gap_extension, # absolute value of gap extend penalty
+                                self.gap_extend, # absolute value of gap extend penalty
                                 1, # Bitwise FLAG for output values = return all
                                 0, # Score filter = return all
                                 0, # Distance filter = return all
