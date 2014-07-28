@@ -137,7 +137,7 @@ To use the python wrapper, please:
     * For a definitive inclusion edit /etc/ld.so.conf and add the path of the lib directory. Then, update the cache by using ```/sbin/ldconfig``` as root
 4. In a python script or in a interactive interpreter the main class can be imported with : ```from ssw_wrap import Aligner```
 5. Instantiate the Aligner class with initial parameters, including the reference subject sequence. ```Aligner(myref, match=2, mismatch=2, gap_open=3, gap_extension=1, report_secondary=False, report_cigar=False)```
-6. Call the object align method with a query sequence as well as minimal score and length for the alignment to be reported ```res = ssw.align(myquery, min_score=10, min_len=20)```
+6. Call the object align method with a query sequence, the minimal score and length for the alignment to be reported ```res = ssw.align(myquery, min_score=10, min_len=20)```
 7. Parse the returned PyAlignRes object for alignment result description 
 
 ###Run pyssw standalone 
@@ -162,28 +162,34 @@ Options:
 
 ###pyssw output
 
-For now, the program only output a SAM like file. The file encoding is sightly more complete than the version created by the C/C++ software and is fully compatible with downstream NGS utilities such as samtools.
+For now, the program only output a SAM like file. The file encoding is sightly more complete than the version created by the C/C++ software and is fully compatible with downstream NGS utilities such as samtools. The MAPQ score field is set to 0, but the ssw score is reported in the AS optional tag. 
 
 ```
 @HD	VN:1.0	SO:unsorted
-@SQ	SN:Ecoli_K12_U0096.3	LN:4641652
+@SQ	SN:Virus_genome	LN:2216
 @PG	ID:Striped-Smith-Waterman	PN:pyssw	VN:0.1
 @CO	Score_values = match 2, mismatch 2, gap_open 3, gap_extend 1
-@CO	Filter Options = min_score 80, min_len 0
-HWI-EAS397:8:1:1067:18713#CTTGTA/1	4	*	0	0	*	*	0	0	TGGAGATGAGATTGTCGGCTTTATTACCCAGGGGCGGGGGGTTATTGTA	Y^]Lcda]YcffccffadafdWKd_V\``^\aa^BBBBBBBBBBBBBBB
-HWI-EAS397:8:1:1070:11813#CTTGTA/1	16	Ecoli_K12_U0096.3	4518866	0	49M	*	0	0	CCTGTCATACGCGTAAAACAGCCAGCGCTGACCTGCTTTAGCACCGACG	ccccaa_J[Saa\]acQ]J_V]V]RJaV]`HXILZLHVGOaaK\[aYaB
-HWI-EAS397:8:1:1121:19907#CTTGTA/1	0	Ecoli_K12_U0096.3	954236	0	49M	*	0	0	AGAGAGAAGCAAATGCCGCCAACCAGTTTTGCCATGCCGAAGGGCATTG	SIaJaL^ZT`[da^WcacfK^acSacfffff[cY^dcdd^f]\]cffff
+@CO	Filter Options = min_score 250, min_len 0
+M00785:2:000000000-A60JC:1:1101:14942:1516	16	Virus_genome	1773	0	151M	*	0	0    TTGTTT...TATTAC >A1AAF...@1@@2@	    AS:i:302
+M00785:2:000000000-A60JC:1:1101:13644:1543	0	Virus_genome	1985	0	21M1I129M	*	0	0    TTTAAA...CTCGCT	AAAA11.../<</</     AS:i:289
+M00785:2:000000000-A60JC:1:1101:13883:1547	16	Virus_genome	716	0	36M2D115M	*	0	0	CTTACC...GGAATT	>AA1>C...////?F    AS:i:294
 ...
 ```
 ###Speed and memory usage of pyssw
-Test data set: 
-Target sequence: reference genome of E. coli K12 U0096.3 (4,641,652 nucleotides)
-Query sequences: 10,000 reads of illumina E. coli 50pb  from [CLoVR public repository](http://data.clovr.org/d/17/e-coli-illumina-inputs)
 
-```pyssw.py -s Ecoli_K12_U0096.3.fa -q Ecoli_illumina_10k.fastq -r -f 80```
+Intel Core i5 3320PM CPU @ 2.60GHz x 2
 
-Intel CPU time : 55m 40s
+* E. coli K12 U0096.3 (4,641,652 nucleotides) vs 10,000 illumina reads (50pb) from [CLoVR public repository](http://data.clovr.org/d/17/e-coli-illumina-inputs)
 
+    ```pyssw.py -s Ecoli_K12_U0096.3.fa -q Ecoli_illumina_10k.fastq -r -f 80```
+
+    Time : ~55m 40s
+
+* Short virus reference (2,216 nt) vs 100,000 illumina Miseq reads (150pb) (see demo dataset)
+
+    ```pyssw.py -s Virus_genome.fa.gz -q 100k_illumina1.fastq.gz -f 250```
+
+    Time : ~60s
 
 ###Please cite this paper, if you need:
 http://dx.plos.org/10.1371/journal.pone.0082138
