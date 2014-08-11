@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.5
- *  Last revision by Mengyao Zhao on 06/26/14.
+ *  Last revision by Mengyao Zhao on 06/27/14.
  */
 
 #include <stdlib.h>
@@ -111,7 +111,7 @@ step2:
 							++p;
 						} else {
 							fprintf(stdout, " ");
-							if (letter == 1) ++p;
+							if (letter == 'I') ++p;
 							else ++q;
 						}
 						++ count;

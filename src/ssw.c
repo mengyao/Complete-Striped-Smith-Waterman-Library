@@ -31,7 +31,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 12/07/12.
+ *	Last revision by Mengyao Zhao on 06/27/14.
  *
  */
 
@@ -557,7 +557,8 @@ static cigar* banded_sw (const int8_t* ref,
 				 int32_t n) {
 
 	uint32_t *c = (uint32_t*)malloc(16 * sizeof(uint32_t)), *c1;
-	int32_t i, j, e, f, temp1, temp2, s = 16, s1 = 8, s2 = 1024, l, max = 0;
+	int32_t i, j, e, f, temp1, temp2, s = 16, s1 = 8, l, max = 0;
+	int64_t s2 = 1024;
 	char op, prev_op;
 	int32_t width, width_d, *h_b, *e_b, *h_c;
 	int8_t *direction, *direction_line;
@@ -869,4 +870,32 @@ end:
 void align_destroy (s_align* a) {
 	free(a->cigar);
 	free(a);
+}
+
+char cigar_int_to_op (uint32_t cigar_int)
+{
+	uint8_t letter_code = cigar_int & 0xfU;
+	static const char map[] = {
+		'M',
+		'I',
+		'D',
+		'N',
+		'S',
+		'H',
+		'P',
+		'=',
+		'X',
+	};
+
+	if (letter_code >= (sizeof(map)/sizeof(map[0]))) {
+		return 'M';
+	}
+
+	return map[letter_code];
+}
+
+uint32_t cigar_int_to_len (uint32_t cigar_int)
+{
+	uint32_t res = cigar_int >> 4;
+	return res;
 }
