@@ -1,7 +1,7 @@
 package ssw;
 
 /**
- * SSW alignment result
+ * Smith-Waterman alignment
  * 
  * @author cameron.d
  *

@@ -35,24 +35,13 @@ public class Aligner {
 	 */
 	public static final int FLAG_INCLUDE_BEST_ALIGNMENT_POSITION_AND_CIGAR = 0x01;
 	/**
+	 * Do Striped Smith-Waterman alignment. Warning: No parameter checking is performed. Incorrect arguments are likely to crash the JVM.
 	 * 
 	 * @param read pointer to the query sequence; the query sequence needs to be numbers
 	 * @param flattenedMatrix pointer to the substitution matrix; mat needs to be corresponding to the read sequence
 	 * @param n the square root of the number of elements in mat (mat has n*n elements)
 	 * @param score_size estimated Smith-Waterman score; if your estimated best alignment score is surely < 255 please set 0; if
-						your estimated best alignment score >= 255, please set 1; if you don't know, please set 2
-	 * @return handle to an opaque query profile structure
-	 */
-	public static native long initprofile(byte[] read, byte[] flattenedMatrix, int n, int score_size);
-	/**
-	 * Release the memory allocated by function initprofile.
-	 * @param profilePtr handle to the opaque query profile structure
-	 */
-	public static native void destroyprofile(long profilePtr);
-	/**
-	 * Do Striped Smith-Waterman alignment
-	 * 
-	 * @param profilePtr handle to the opaque query profile structure
+					your estimated best alignment score >= 255, please set 1; if you don't know, please set 2
 	 * @param ref pointer to the target sequence; the target sequence needs to be numbers and corresponding to the mat parameter of function initprofile
 	 * @param gapOpen the absolute value of gap open penalty.
 	 * @param gapExtend the absolute value of gap extension penalty.
@@ -79,29 +68,37 @@ public class Aligner {
 					picking the scores that belong to the alignments sharing the partial best alignment, SSW C library masks the
 					reference loci nearby (mask length = maskLen) the best alignment ending position and locates the second largest
 					score from the unmasked elements.
-	 * @return
+	 * @return Smith-Waterman alignment
 	 */
-	public static native Alignment align(long profilePtr, byte[] ref, int gapOpen, int gapExtend, int flag, short filterscore, int filterdistance, int maskLen);
+	public static native Alignment align(byte[] read, byte[] flattenedMatrix, int n, int score_size, byte[] ref, int gapOpen, int gapExtend, int flag, short filterscore, int filterdistance, int maskLen);
+	/**
+	 * Performs striped Smith-Waterman alignment
+	 * 
+	 * @param read read sequence
+	 * @param ref reference sequence
+	 * @param matrix scoring matrix
+	 * @param gapOpen absolute value of gap open penalty
+	 * @param gapExtend absolute value of gap extension penalty
+	 * @param ignoreCase upper and lowercase sequence values are treated as the same value.
+	 * @return Smith-Waterman alignment
+	 */
 	public static Alignment align(byte[] read, byte[] ref, int[][] matrix, int gapOpen, int gapExtend, boolean ignoreCase) {
 		if (gapOpen < 0 || gapExtend < 0) throw new IllegalArgumentException("Gap open and extension penalties must be positive");
 		if (gapOpen >= 256 || gapExtend >= 256) throw new IllegalArgumentException("Gap open and extension penalties must fit into unsigned 8-bit integer");
 		//if (flag != flag & 0xFF) throw new IllegalArgumentException("Only lowest 8 bits of flag are meaningful");
-		int[] lookup = new int[257];
+		int[] lookup = new int[257]; // lookup[256] is used as sentinal for number of unique bases/matrix size
 		java.util.Arrays.fill(lookup, -1);
-		lookup[256] = 0; // used as sentinal for number of unique bases/matrix size
+		lookup[256] = 0;
 		byte[] readNum = convertToNumeric(lookup, read, ignoreCase);
 		byte[] refNum = convertToNumeric(lookup, ref, ignoreCase);
 		byte[] flattenedMatrix = flatten(lookup, matrix);
-		assert(flattenedMatrix.length == lookup[256] * lookup[256]);
-		assert(maxValue(readNum) <= lookup[256]);
-		assert(maxValue(refNum) <= lookup[256]);
-		long profileHandle = initprofile(readNum, flattenedMatrix, lookup[256], MAX_SCORE_UNSURE);
-		if (profileHandle == 0) {
-			throw new RuntimeException("Error creating ssw profile");
-		}
-		Alignment alignment = align(profileHandle, refNum, gapOpen, gapExtend, FLAG_INCLUDE_BEST_ALIGNMENT_POSITION_AND_CIGAR, (short)0, 0, 15);//readNum.length / 2);
-		destroyprofile(profileHandle);
-		
+		int uniqueBases = lookup[256];
+		assert(flattenedMatrix.length == uniqueBases * uniqueBases);
+		assert(maxValue(readNum) < uniqueBases);
+		assert(maxValue(refNum) < uniqueBases);
+		Alignment alignment = align(
+				readNum, flattenedMatrix, uniqueBases, MAX_SCORE_UNSURE,
+				refNum, gapOpen, gapExtend, FLAG_INCLUDE_BEST_ALIGNMENT_POSITION_AND_CIGAR, (short)0, 0, Math.max(15, readNum.length / 2));
 		return alignment;
 	}
 	private static int maxValue(byte[] array) {
@@ -113,6 +110,13 @@ public class Aligner {
 		}
 		return max;
 	}
+	/**
+	 * Converts an ASCII sequence into numeric successive 0-based values 
+	 * @param lookup ASCII to numeric conversion lookup array
+	 * @param sequence ASCII sequence
+	 * @param ignoreCase treat upper and lowercase ASCII values as the same 
+	 * @return numeric sequence
+	 */
 	private static byte[] convertToNumeric(int[] lookup, byte[] sequence, boolean ignoreCase) {
 		byte[] numericSeq = new byte[sequence.length];
 		for (int i = 0; i < sequence.length; i++) {
@@ -127,6 +131,12 @@ public class Aligner {
 		}
 		return numericSeq;
 	}
+	/**
+	 * Generates a flattened ssw scoring matrix  
+	 * @param lookup ASCII to numeric conversion lookup array
+	 * @param matrix scoring matrix
+	 * @return flattened ssw numeric scoring matrix
+	 */
 	private static byte[] flatten(int[] lookup, int[][] matrix) {
 		int size = lookup[256];
 		byte[] flattened = new byte[size * size];
