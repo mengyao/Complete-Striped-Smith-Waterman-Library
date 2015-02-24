@@ -3,7 +3,7 @@ package ssw;
 /**
  * Smith-Waterman alignment
  * 
- * @author cameron.d
+ * @author Daniel Cameron
  *
  */
 public class Alignment {

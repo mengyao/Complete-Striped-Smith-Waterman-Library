@@ -61,6 +61,8 @@ Memory usage: ~40MB
 3. make
 4. The executable file will be ssw_test.
 
+Note: the default goal of the Makefile attempts to build all demo programs and libraries, including the python and java wrapper libraries. If java is not installed or JAVA_HOME not set correct, the default make task will fail when attempting to build the java wrapper. If the java wrapper is not required, ssw_test can be build directly using `make ssw_test`.
+
 ###Run the software
 ```
 Usage: ssw_test [options] ... <target.fasta> <query.fasta>(or <query.fastq>)
@@ -192,6 +194,21 @@ Intel Core i5 3320PM CPU @ 2.60GHz x 2
     ```pyssw.py -s Virus_genome.fa.gz -q 100k_illumina1.fastq.gz -f 250```
 
     Time : ~60s
+
+	
+##Java interface
+
+The java wrapper is a thin JNI (Java Native Interface) wrapper around the native C implementation.
+
+###Building
+
+The default Makefile goal generates both ssw.jar and libsswjni.so required for the Java interface. Note that for compilation to succeed, either the JRE JNI include directory must be on the C include path, or JAVA_HOME must be set.
+
+###How to use the java wrapper
+
+The java wrapper consist of two separate components. libsswjni.so is a native C library which exposes the JNI entry points, and ssw.jar is a java library containing the Java interface. The ssw.Aligner java class is a thread-safe static class that exposes two `align()` methods. The first exposes the SSW C library directly. No error checking is performed on arguments passed to this method and misuse is highly likely to crash the JVM. The second align() method is a more user-friendly entry point that exposes a simpler API and performs some basic error checking. Alignment results are returned in the ssw.Alignment class for each each field has a direct correspondence and identical meaning to the C s_align struct.
+
+To reference the library, either reference the ssw.jar or including the Aligner and Alignment classes directly. As for any JNI library, the native library must be loaded (using `System.loadLibrary("sswjni")` or similar) before invokation of native methods. For the JVM to find the library, ensure that either the library is included in the LD_LIBRARY_PATH environment variable, or `-Djava.library.path=<directory containing libsswjni.so>` is set on the java command line.
 
 ###Please cite this paper, if you need:
 http://dx.plos.org/10.1371/journal.pone.0082138

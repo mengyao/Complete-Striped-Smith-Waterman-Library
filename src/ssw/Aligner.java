@@ -3,6 +3,9 @@ package ssw;
 
 /**
  * JNI wrapper for Striped Smith-Waterman alignment
+ * 
+ * @author Daniel Cameron
+ *
  */
 public class Aligner {
 	/**
