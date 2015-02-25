@@ -13,9 +13,13 @@ JAVA_LIB = libsswjni.so
 JAVA_INLCUDES = -I"$(JAVA_HOME)/include" -I"$(JAVA_HOME)/include/linux"
 JAVA_OBJ = ssw/Aligner.class ssw/Alignment.class ssw/Example.class
 
-.PHONY: all clean
+.PHONY: all default java clean
 
-all: $(PROG) $(EXAMPLE) $(EXAMPLE_CPP) $(LIB) $(JAVA_JAR) $(JAVA_LIB) 
+default: $(PROG) $(EXAMPLE) $(EXAMPLE_CPP) $(LIB) 
+
+all: default java
+
+java: $(JAVA_JAR) $(JAVA_LIB)
 
 $(LIB): ssw.c ssw.h
 	$(CC) $(CFLAGS) -fPIC -shared -rdynamic -o $@ $<
