@@ -193,5 +193,31 @@ Intel Core i5 3320PM CPU @ 2.60GHz x 2
 
     Time : ~60s
 
+	
+##Java interface
+
+The java wrapper is a thin JNI (Java Native Interface) wrapper around the native C implementation.
+
+###Building
+
+Only the C, C++ and C shared libraries are generated from the default make goal, and as such, the java interface must be built explicitly.
+
+1. Ensure `javac` and `jar` are on path
+2. Ensure JAVA_HOME is set to an installed JRE or JDK, or the JNI include directory is included in the C system library search path
+3. `make java` from the src directory.
+4. libsswjni.so and ssw.jar should be built.
+
+###How to use the java wrapper
+
+The java wrapper consist of the following components:
+
+* libsswjni.so: native C library exposing the JNI entry points
+* ssw.jar is a java library containing the Java interface to the native C library. This small wrapper library is composed of:
+    * ssw.Aligner java class: a thread-safe static class that exposes two `align()` methods. The first exposes the SSW C library directly. No error checking is performed on arguments passed to this method and misuse is highly likely to crash the JVM. The second align() method is a more user-friendly entry point that exposes a simpler API and performs some basic error checking.
+    * ssw.Alignment java class: this class stores alignment results. Each each field has a direct correspondence and identical meaning to the C s_align struct.
+    * ssw.Example java class: java version of the example_c sample code. Run `java -jar ssw.jar` to execute the sample.
+
+To use the library, either reference the ssw.jar or including the Aligner and Alignment classes directly. As for any JNI library, the native library must be loaded (using `System.loadLibrary("sswjni")` or similar) before invokation of native methods. For the JVM to find the library, ensure that either the library is included in the LD_LIBRARY_PATH environment variable, or `-Djava.library.path=<directory containing libsswjni.so>` is set on the java command line.
+
 ###Please cite this paper, if you need:
 http://dx.plos.org/10.1371/journal.pone.0082138

@@ -1,6 +1,6 @@
 #include <jni.h>
 #include <stdio.h>
-#include "../ssw.h"
+#include "ssw.h"
 
 jstring s_align_cigar_to_jstring(JNIEnv* env, s_align* align) {
 	jstring jstrBuf = NULL;

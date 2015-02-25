@@ -1,5 +1,11 @@
 package ssw;
 
+/**
+ * Example code for SSW JNI wrapper
+ * 
+ * @author Daniel Cameron
+ *
+ */
 public class Example {
 	public static void main(String[] args) {
 		try {
