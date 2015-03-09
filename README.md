@@ -1,4 +1,4 @@
-#SSW Library: An SIMD Smith-Waterman C/C++/Python Library for Use in Genomic Applications
+#SSW Library: An SIMD Smith-Waterman C/C++/Python/Java Library for Use in Genomic Applications
 
 License: MIT
 
@@ -14,7 +14,7 @@ Author: Mengyao Zhao & Wan-Ping Lee
 
 Contact: Mengyao Zhao <zhangmp@bc.edu>
 
-Last revision: 15/08/2014
+Last revision: 03/09/2014
 
 ##Overview
 SSW is a fast implementation of the Smith-Waterman algorithm, which uses the Single-Instruction Multiple-Data (SIMD) instructions to parallelize the algorithm at the instruction level. SSW library provides an API that can be flexibly used by programs written in C, C++ and other languages. We also provide a software that can do protein and genome alignment directly. Current version of our implementation is ~50 times faster than an ordinary Smith-Waterman. It can return the Smith-Waterman score, alignment location and traceback path (cigar) of the optimal alignment accurately; and return the sub-optimal alignment score and location heuristically.
