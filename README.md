@@ -12,9 +12,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 Author: Mengyao Zhao & Wan-Ping Lee
 
-Contact: Mengyao Zhao <zhangmp@bc.edu>
+Contact: Mengyao Zhao <zhaomengyao@gmail.com>
 
-Last revision: 03/09/2014
+Last revision: 07/30/2015
 
 ##Overview
 SSW is a fast implementation of the Smith-Waterman algorithm, which uses the Single-Instruction Multiple-Data (SIMD) instructions to parallelize the algorithm at the instruction level. SSW library provides an API that can be flexibly used by programs written in C, C++ and other languages. We also provide a software that can do protein and genome alignment directly. Current version of our implementation is ~50 times faster than an ordinary Smith-Waterman. It can return the Smith-Waterman score, alignment location and traceback path (cigar) of the optimal alignment accurately; and return the sub-optimal alignment score and location heuristically.
@@ -32,7 +32,7 @@ To use the C style API, please:
 2. Write #include "ssw.h" into your file that will call the API functions.
 3. The API files are ready to be compiled together with your own C/C++ files.
 
-The API function descriptions are in the file ssw.h. One simple example of the API usage is example.c. The Smith-Waterman penalties need to be integers. Small penalty numbers such as: match: 2, mismatch: -1, gap open: -3, gap extension: -1 are recommended, which will lead to shorter running time.  
+The API function descriptions are in the file ssw.h. One simple example of the API usage is example.c. The Smith-Waterman penalties need to be integers. Small penalty numbers such as: match: 2, mismatch: -1, gap open (the total penalty when one gap is opened): -3, gap extension: -1 are recommended, which will lead to shorter running time.  
 
 To use the C++ style API, please:
 
