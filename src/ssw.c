@@ -607,7 +607,7 @@ static cigar* banded_sw (const int8_t* ref,
 				temp1 = i == 0 ? -weight_gapO : h_b[e] - weight_gapO;
 				temp2 = i == 0 ? -weight_gapE : e_b[e] - weight_gapE;
 				e_b[u] = temp1 > temp2 ? temp1 : temp2;
-				fprintf(stderr, "de: %d\twidth_d: %d\treadLen: %d\ts2:%d\n", de, width_d, readLen, s2);
+				fprintf(stderr, "de: %d\twidth_d: %d\treadLen: %d\ts2:%lu\n", de, width_d, readLen, s2);
 				direction_line[de] = temp1 > temp2 ? 3 : 2;
 
 				temp1 = h_c[b] - weight_gapO;
@@ -873,30 +873,12 @@ void align_destroy (s_align* a) {
 	free(a);
 }
 
-char cigar_int_to_op (uint32_t cigar_int)
-{
-	uint8_t letter_code = cigar_int & 0xfU;
-	static const char map[] = {
-		'M',
-		'I',
-		'D',
-		'N',
-		'S',
-		'H',
-		'P',
-		'=',
-		'X',
-	};
-
-	if (letter_code >= (sizeof(map)/sizeof(map[0]))) {
-		return 'M';
-	}
-
-	return map[letter_code];
+inline char cigar_int_to_op(uint32_t cigar_int) {
+	return cigar_int > 8 ? 'M': MAPSTR[cigar_int];
 }
 
-uint32_t cigar_int_to_len (uint32_t cigar_int)
+
+inline uint32_t cigar_int_to_len (uint32_t cigar_int)
 {
-	uint32_t res = cigar_int >> 4;
-	return res;
+	return cigar_int >> BAM_CIGAR_SHIFT;
 }

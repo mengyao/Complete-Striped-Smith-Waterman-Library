@@ -20,6 +20,11 @@
 extern "C" {
 #endif	// __cplusplus
 
+#define MAPSTR "MIDNSHP=X"
+#ifndef BAM_CIGAR_SHIFT
+#define BAM_CIGAR_SHIFT 4
+#endif
+
 
 /*!	@typedef	structure of the query profile	*/
 struct _profile;
@@ -131,43 +136,30 @@ void align_destroy (s_align* a);
 */
 static inline uint32_t to_cigar_int (uint32_t length, char op_letter)
 {
-	uint32_t res;
-	uint8_t op_code;
-
 	switch (op_letter) {
 		case 'M': /* alignment match (can be a sequence match or mismatch */
 		default:
-			op_code = 0;
-			break;
+			return length << 4;
 		case 'I': /* insertion to the reference */
-			op_code = 1;
-			break;
+			return (length << 4) | (1u);
 		case 'D': /* deletion from the reference */
-			op_code = 2;
-			break;
+			return (length << 4) | (2u);
 		case 'N': /* skipped region from the reference */
-			op_code = 3;
-			break;
+			return (length << 4) | (3u);
 		case 'S': /* soft clipping (clipped sequences present in SEQ) */
-			op_code = 4;
-			break;
+			return (length << 4) | (4u);
 		case 'H': /* hard clipping (clipped sequences NOT present in SEQ) */
-			op_code = 5;
-			break;
+			return (length << 4) | (5u);
 		case 'P': /* padding (silent deletion from padded reference) */
-			op_code = 6;
-			break;
+			return (length << 4) | (6u);
 		case '=': /* sequence match */
-			op_code = 7;
-			break;
+			return (length << 4) | (7u);
 		case 'X': /* sequence mismatch */
-			op_code = 8;
-			break;
+			return (length << 4) | (8u);
 	}
-
-	res = (length << 4) | op_code;
-	return res;
+	return (uint32_t)-1; // This never happens
 }
+
 
 /*!	@function		Extract CIGAR operation character from CIGAR 32-bit unsigned integer
 	@param	cigar_int	32-bit unsigned integer, representing encoded CIGAR operation and length
