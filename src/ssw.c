@@ -874,7 +874,7 @@ void align_destroy (s_align* a) {
 }
 
 inline char cigar_int_to_op(uint32_t cigar_int) {
-	return cigar_int > 8 ? 'M': MAPSTR[cigar_int];
+	return UNLIKELY((cigar_int & 0xfU) > 8) ? 'M': MAPSTR[cigar_int & 0xfU];
 }
 
 
