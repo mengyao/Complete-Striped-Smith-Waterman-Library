@@ -140,16 +140,16 @@ static inline uint32_t to_cigar_int (uint32_t length, char op_letter)
 		case 'M': /* alignment match (can be a sequence match or mismatch */
 		default:
 			return length << BAM_CIGAR_SHIFT;
-		case 'I': /* insertion to the reference */
-			return (length << BAM_CIGAR_SHIFT) | (1u);
-		case 'D': /* deletion from the reference */
-			return (length << BAM_CIGAR_SHIFT) | (2u);
-		case 'N': /* skipped region from the reference */
-			return (length << BAM_CIGAR_SHIFT) | (3u);
 		case 'S': /* soft clipping (clipped sequences present in SEQ) */
 			return (length << BAM_CIGAR_SHIFT) | (4u);
+		case 'D': /* deletion from the reference */
+			return (length << BAM_CIGAR_SHIFT) | (2u);
+		case 'I': /* insertion to the reference */
+			return (length << BAM_CIGAR_SHIFT) | (1u);
 		case 'H': /* hard clipping (clipped sequences NOT present in SEQ) */
 			return (length << BAM_CIGAR_SHIFT) | (5u);
+		case 'N': /* skipped region from the reference */
+			return (length << BAM_CIGAR_SHIFT) | (3u);
 		case 'P': /* padding (silent deletion from padded reference) */
 			return (length << BAM_CIGAR_SHIFT) | (6u);
 		case '=': /* sequence match */
