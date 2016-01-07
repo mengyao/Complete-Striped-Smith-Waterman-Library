@@ -607,7 +607,7 @@ static cigar* banded_sw (const int8_t* ref,
 				temp1 = i == 0 ? -weight_gapO : h_b[e] - weight_gapO;
 				temp2 = i == 0 ? -weight_gapE : e_b[e] - weight_gapE;
 				e_b[u] = temp1 > temp2 ? temp1 : temp2;
-				fprintf(stderr, "de: %d\twidth_d: %d\treadLen: %d\ts2:%d\n", de, width_d, readLen, s2);
+				//fprintf(stderr, "de: %d\twidth_d: %d\treadLen: %d\ts2:%d\n", de, width_d, readLen, s2);
 				direction_line[de] = temp1 > temp2 ? 3 : 2;
 
 				temp1 = h_c[b] - weight_gapO;
