@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.5
- *  Last revision by Mengyao Zhao on 06/27/14.
+ *  Last revision by Mengyao Zhao on 07/31/15.
  */
 
 #include <stdlib.h>
@@ -388,7 +388,6 @@ int main (int argc, char * const argv[]) {
 		s_profile* p, *p_rc = 0;
 		int32_t readLen = read_seq->seq.l;
 		int32_t maskLen = readLen / 2;
-	//	int32_t maskLen = 2*readLen;
 
 		while (readLen >= s2) {
 			++s2;
