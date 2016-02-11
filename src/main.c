@@ -364,7 +364,20 @@ int main (int argc, char * const argv[]) {
 		mat = mata;
 	}
 
+	fprintf(stderr, "query: %s\n", argv[optind + 1]);
 	read_fp = gzopen(argv[optind + 1], "r");
+
+    if (! read_fp) {
+        fprintf (stderr, "gzopen of '%s' failed.\n", argv[optind + 1]);
+            exit (EXIT_FAILURE);
+    }
+	char* test = calloc (100, sizeof(char));
+	test = "\0";
+	fgets (test, 99, read_fp);
+	fprintf (stderr, "test: %s\n", test);
+	free (test);
+
+
 	read_seq = kseq_init(read_fp);
 	if (sam && header && path) {
 		fprintf(stdout, "@HD\tVN:1.4\tSO:queryname\n");
@@ -384,6 +397,7 @@ int main (int argc, char * const argv[]) {
 		num_rc = (int8_t*)malloc(s2);
 	}
 	start = clock();
+fprintf(stderr, "Here2\n");
 	while (kseq_read(read_seq) >= 0) {
 		s_profile* p, *p_rc = 0;
 		int32_t readLen = read_seq->seq.l;
@@ -411,6 +425,7 @@ int main (int argc, char * const argv[]) {
 
 		ref_fp = gzopen(argv[optind], "r");
 		ref_seq = kseq_init(ref_fp);
+fprintf(stderr, "Here1\n");
 		while (kseq_read(ref_seq) >= 0) {
 			s_align* result, *result_rc = 0;
 			int32_t refLen = ref_seq->seq.l;
@@ -425,6 +440,7 @@ int main (int argc, char * const argv[]) {
 			result = ssw_align (p, ref_num, refLen, gap_open, gap_extension, flag, filter, 0, maskLen);
 			if (reverse == 1 && protein == 0)
 				result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, filter, 0, maskLen);
+fprintf(stderr, "Here\n");
 			if (result_rc && result_rc->score1 > result->score1 && result_rc->score1 >= filter) {
 				if (sam) ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 1);
 				else ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 0);

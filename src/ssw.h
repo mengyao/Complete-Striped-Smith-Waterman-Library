@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 01/30/13.
+ *	Last revision by Mengyao Zhao on 02/11/16.
  *
  */
 
@@ -19,6 +19,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif	// __cplusplus
+
+#define MAPSTR "MIDNSHP=X"
+#ifndef BAM_CIGAR_SHIFT
+#define BAM_CIGAR_SHIFT 4
+#endif
 
 
 /*!	@typedef	structure of the query profile	*/
@@ -131,56 +136,51 @@ void align_destroy (s_align* a);
 */
 static inline uint32_t to_cigar_int (uint32_t length, char op_letter)
 {
-	uint32_t res;
-	uint8_t op_code;
-
 	switch (op_letter) {
 		case 'M': /* alignment match (can be a sequence match or mismatch */
 		default:
-			op_code = 0;
-			break;
-		case 'I': /* insertion to the reference */
-			op_code = 1;
-			break;
-		case 'D': /* deletion from the reference */
-			op_code = 2;
-			break;
-		case 'N': /* skipped region from the reference */
-			op_code = 3;
-			break;
+			return length << BAM_CIGAR_SHIFT;
 		case 'S': /* soft clipping (clipped sequences present in SEQ) */
-			op_code = 4;
-			break;
+			return (length << BAM_CIGAR_SHIFT) | (4u);
+		case 'D': /* deletion from the reference */
+			return (length << BAM_CIGAR_SHIFT) | (2u);
+		case 'I': /* insertion to the reference */
+			return (length << BAM_CIGAR_SHIFT) | (1u);
 		case 'H': /* hard clipping (clipped sequences NOT present in SEQ) */
-			op_code = 5;
-			break;
+			return (length << BAM_CIGAR_SHIFT) | (5u);
+		case 'N': /* skipped region from the reference */
+			return (length << BAM_CIGAR_SHIFT) | (3u);
 		case 'P': /* padding (silent deletion from padded reference) */
-			op_code = 6;
-			break;
+			return (length << BAM_CIGAR_SHIFT) | (6u);
 		case '=': /* sequence match */
-			op_code = 7;
-			break;
+			return (length << BAM_CIGAR_SHIFT) | (7u);
 		case 'X': /* sequence mismatch */
-			op_code = 8;
-			break;
+			return (length << BAM_CIGAR_SHIFT) | (8u);
 	}
-
-	res = (length << 4) | op_code;
-	return res;
+	return (uint32_t)-1; // This never happens
 }
+
 
 /*!	@function		Extract CIGAR operation character from CIGAR 32-bit unsigned integer
 	@param	cigar_int	32-bit unsigned integer, representing encoded CIGAR operation and length
 	@return			CIGAR operation character ('M', 'I', etc)
 */
-char cigar_int_to_op (uint32_t cigar_int);
+//char cigar_int_to_op (uint32_t cigar_int);
+static inline char cigar_int_to_op(uint32_t cigar_int) 
+{
+	return (cigar_int & 0xfU) > 8 ? 'M': MAPSTR[cigar_int & 0xfU];
+}
+
 
 /*!	@function		Extract length of a CIGAR operation from CIGAR 32-bit unsigned integer
 	@param	cigar_int	32-bit unsigned integer, representing encoded CIGAR operation and length
 	@return			length of CIGAR operation
 */
-uint32_t cigar_int_to_len (uint32_t cigar_int);
-
+//uint32_t cigar_int_to_len (uint32_t cigar_int);
+static inline uint32_t cigar_int_to_len (uint32_t cigar_int)
+{
+	return cigar_int >> BAM_CIGAR_SHIFT;
+}
 #ifdef __cplusplus
 }
 #endif	// __cplusplus
