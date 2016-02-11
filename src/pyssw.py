@@ -264,7 +264,7 @@ if __name__ == '__main__':
         sys.exit()
 
     try:
-        from ssw_wrap import Aligner
+        from ssw import Aligner
     except ImportError:
         print ("ERROR: Please place ssw_wrap in the current directory or add its dir to python path")
         sys.exit()
