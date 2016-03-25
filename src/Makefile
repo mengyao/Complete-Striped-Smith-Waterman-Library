@@ -1,6 +1,6 @@
 CC = gcc
 CXX = g++
-CFLAGS := -Wall -pipe -pg #-O3
+CFLAGS := -Wall -pipe -O3
 CXXFLAGS := $(CFLAGS)
 LOBJS = ssw.o
 LCPPOBJS = ssw_cpp.o
