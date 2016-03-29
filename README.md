@@ -125,18 +125,18 @@ Query:         3    GA-AGAGTTAATTTAAGTCACTTCAAACAGATTAC-GTA-TCTTTT-TTTTCCCT    5
 
 ###How to use the python wrapper ssw_lib.py
 
-A Python wrapper fully supports APIs of the c library. C programming knowledge is not required.
-A library object is initialized with the PATH of library. The PATH can be skipped if libssw.so and ssw_lib.py can be found in the current directory or sys.paths. APIs provied by the library are then available from the object.
+ssw_lib.py is a Python wrapper that fully supports APIs of the C library. To use this Python library, C programming knowledge is not required.
 
 To use the python wrapper, please:
 
-1. Compile the scr folder by either using the makefile or by compiling a dynamic shared library with gcc ```gcc -Wall -O3 -pipe -fPIC -shared -rdynamic -o libssw.so ssw.c ssw.h```
-2. libssw.so and ssw_lib.py can then be put in the same directory of your own program files or directories in sys.paths.
-3. Depending of the LINUX OS version installed it may be required to modify the LD_LIBRARY_PATH environment variable to use the dynamic library libssw.so by one of the 2 following possibilities :
-    * Export the path or the directory containing the library ```LD_LIBRARY_PATH=path_of_the_library```
-    * For a definitive inclusion edit /etc/ld.so.conf and add the path of the lib directory. Then, update the cache by using ```/sbin/ldconfig``` as root
-4. In a python script or in a interactive interpreter the CSsw class can be imported with : ```from ssw_lib import CSsw``` or ```import ssw_lib``` and then call ```ssw_lib.CSsw```
-5. Call APIs with input parameters and parse the results (Please see usages in pyssw.py as examples)
+1. Compile the src folder by either using the makefile or by compiling a dynamic shared library with gcc  
+```gcc -Wall -O3 -pipe -fPIC -shared -rdynamic -o libssw.so ssw.c ssw.h```
+2. Put libssw.so and ssw_lib.py in the same directory of your own program files or directories in sys.paths.
+3. Depending on your LINUX system, the LD_LIBRARY_PATH environment variable may need to be modified to include the directory of the dynamic library libssw.so by one of the 2 following mathods:
+    * ```export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:path_of_libssw.so```
+    * For a definitive inclusion edit /etc/ld.so.conf and add the path of the libssw.so. Then, update the cache by ```/sbin/ldconfig```.
+4. In a python script or in a interactive interpreter the CSsw class can be imported by: ```from ssw_lib import CSsw``` or ```import ssw_lib``` and then call ```ssw_lib.CSsw```
+5. Call APIs with input parameters and parse the results (Please see pyssw.py as an example).
 
 ###Run pyssw standalone 
 ```
