@@ -19,7 +19,7 @@ Java wrapper: Daniel Cameron
 Contact:  
 Mengyao Zhao <zhaomengyao@gmail.com>  
 Wan-Ping Lee <wanping.lee@gmail.com>  
-Yongan Zhao <yongan.zhao@sbgenomics.com> 
+Yongan Zhao <yongan.zhao@sbgenomics.com>   
 Daniel Cameron <cameron.d@wehi.edu.au>  
 
 Last revision: 03/29/2016
