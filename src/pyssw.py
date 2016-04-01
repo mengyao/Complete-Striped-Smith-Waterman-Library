@@ -16,8 +16,6 @@ import math
 import ssw_lib
 
 
-
-
 def read(sFile):
     """
     read a sequence file
@@ -371,8 +369,8 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--bBest', action='store_true', help='The best alignment will be picked between the original read alignment and the reverse complement read alignment. [default: False]')
     parser.add_argument('-s', '--bSam', action='store_true', help='Output in SAM format. [default: no header]')
     parser.add_argument('-header', '--bHeader', action='store_true', help='If -s is used, include header in SAM output.')
-    parser.add_argument('target', nargs='?', default='target.fasta', help='targe file')
-    parser.add_argument('query', nargs='?', default='query.fasta', help='query file')
+    parser.add_argument('target', help='targe file')
+    parser.add_argument('query', help='query file')
     args = parser.parse_args()
 
     t1 = ti.default_timer()

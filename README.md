@@ -19,10 +19,10 @@ Java wrapper: Daniel Cameron
 Contact:  
 Mengyao Zhao <zhaomengyao@gmail.com>  
 Wan-Ping Lee <wanping.lee@gmail.com>  
-Yongan Zhao <yongan.zhao@sbgenomics.com>   
+Yongan Zhao <zhaoyanswill@gmail.com>   
 Daniel Cameron <cameron.d@wehi.edu.au>  
 
-Last revision: 03/29/2016
+Last revision: 04/01/2016
 
 ##Overview
 SSW is a fast implementation of the Smith-Waterman algorithm, which uses the Single-Instruction Multiple-Data (SIMD) instructions to parallelize the algorithm at the instruction level. SSW library provides an API that can be flexibly used by programs written in C, C++ and other languages. We also provide a software that can do protein and genome alignment directly. Current version of our implementation is ~50 times faster than an ordinary Smith-Waterman. It can return the Smith-Waterman score, alignment location and traceback path (cigar) of the optimal alignment accurately; and return the sub-optimal alignment score and location heuristically.
@@ -140,7 +140,7 @@ To use the python wrapper, please:
 1. Compile the src folder by either using the makefile or by compiling a dynamic shared library with gcc  
 ```gcc -Wall -O3 -pipe -fPIC -shared -rdynamic -o libssw.so ssw.c ssw.h```
 2. Put libssw.so and ssw_lib.py in the same directory of your own program files or directories in sys.paths.
-3. Depending on your LINUX system, the LD_LIBRARY_PATH environment variable may need to be modified to include the directory of the dynamic library libssw.so by one of the two following mathods:
+3. The LD_LIBRARY_PATH environment variable may need to be modified to include the directory of the dynamic library libssw.so by one of the two following mathods:
     * ```export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:path_of_libssw.so```
     * For a definitive inclusion edit /etc/ld.so.conf and add the path of the libssw.so. Then, update the cache by ```/sbin/ldconfig```.
 4. In a python script or in a interactive interpreter, import the CSsw class by: ```from ssw_lib import CSsw``` or ```import ssw_lib``` and then call ```ssw_lib.CSsw```
