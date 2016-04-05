@@ -16,6 +16,8 @@ import math
 import ssw_lib
 
 
+
+
 def read(sFile):
     """
     read a sequence file
@@ -210,7 +212,7 @@ def main(args):
                     if lEle[i] == lEle[j]:
                         lScore[i*nEleNum+j] = args.nMatch
                     else:
-                        lScore[i*nEleNum+j] = args.nMismatch
+                        lScore[i*nEleNum+j] = -args.nMismatch
         else:
             lEle, dEle2Int, dInt2Ele, lScore = ssw.read_matrix(args.sMatrix)
     else:
@@ -371,6 +373,9 @@ if __name__ == '__main__':
     parser.add_argument('-header', '--bHeader', action='store_true', help='If -s is used, include header in SAM output.')
     parser.add_argument('target', help='targe file')
     parser.add_argument('query', help='query file')
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit()
     args = parser.parse_args()
 
     t1 = ti.default_timer()

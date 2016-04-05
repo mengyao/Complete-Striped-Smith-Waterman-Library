@@ -110,7 +110,7 @@ class CSsw(object):
         else:
 # otherwise just search in PATH
             bFound = False
-            for s in sys.paths:
+            for s in sys.path:
                 if op.exists(op.join(s,sLibName)):
                     bFound = True
                     self.ssw = ct.cdll.LoadLibrary(op.join(s,sLibName))
