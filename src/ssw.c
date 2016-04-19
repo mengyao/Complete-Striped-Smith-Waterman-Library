@@ -294,8 +294,6 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 		if (maxColumn[i] == terminate) break;
 	}
 
-fprintf(stderr, "\n");
-
 	/* Trace the alignment ending position on read. */
 	uint8_t *t = (uint8_t*)pvHmax;
 	int32_t column_len = segLen * 16;
