@@ -26,11 +26,11 @@ void BuildSwScoreMatrix(const uint8_t& match_score,
 
   // The score matrix looks like
   //                 // A,  C,  G,  T,  N
-  //  score_matrix_ = { 2, -2, -2, -2,  0, // A
-  //                   -2,  2, -2, -2,  0, // C
-  //                   -2, -2,  2, -2,  0, // G
-  //                   -2, -2, -2,  2,  0, // T
-  //                    0,  0,  0,  0,  0};// N
+  //  score_matrix_ = { 2, -2, -2, -2, -2, // A
+  //                   -2,  2, -2, -2, -2, // C
+  //                   -2, -2,  2, -2, -2, // G
+  //                   -2, -2, -2,  2, -2, // T
+  //                   -2, -2, -2, -2, -2};// N
 
   int id = 0;
   for (int i = 0; i < 4; ++i) {
@@ -38,12 +38,12 @@ void BuildSwScoreMatrix(const uint8_t& match_score,
       matrix[id] = ((i == j) ? match_score : static_cast<int8_t>(-mismatch_penalty));
       ++id;
     }
-    matrix[id] = 0;
+    matrix[id] = -mismatch_penalty; // For N
     ++id;
   }
 
   for (int i = 0; i < 5; ++i)
-    matrix[id++] = 0;
+    matrix[id++] = -mismatch_penalty; // For N
 
 }
 
