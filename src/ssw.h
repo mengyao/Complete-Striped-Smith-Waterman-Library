@@ -168,7 +168,7 @@ static inline uint32_t to_cigar_int (uint32_t length, char op_letter)
 //char cigar_int_to_op (uint32_t cigar_int);
 static inline char cigar_int_to_op(uint32_t cigar_int) 
 {
-	return (cigar_int & 0xfU) > 8 ? 'M': MAPSTR[cigar_int & 0xfU];
+	return (cigar_int & ((uint32_t)0xfU)) > 8 ? 'M': MAPSTR[cigar_int & 0xfU];
 }
 
 
