@@ -22,7 +22,7 @@ java: java_home $(JAVA_JAR) $(JAVA_LIB)
 all: default java
 
 $(LIB): ssw.c ssw.h
-	$(CC) $(CFLAGS) -fPIC -shared -rdynamic -o $@ $<
+	$(CC) $(CFLAGS) -fPIC -shared -o $@ $<
 
 $(PROG): main.c kseq.h
 
@@ -40,7 +40,7 @@ $(EXAMPLE_CPP): example.cpp $(LOBJS) $(LCPPOBJS)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS) -lm -lz
 
 $(JAVA_LIB): sswjni.c ssw.c ssw.h
-	$(CC) $(CFLAGS) $(JAVA_INLCUDES) -fPIC -shared -rdynamic -o $@ $< ssw.c 
+	$(CC) $(CFLAGS) $(JAVA_INLCUDES) -fPIC -shared -o $@ $< ssw.c
 
 $(JAVA_JAR): $(JAVA_OBJ)
 	jar cvfe $@ ssw.Example $^
