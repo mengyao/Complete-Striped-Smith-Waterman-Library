@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 0.1.5
- *  Last revision by Mengyao Zhao on 02/23/16.
+ *  Last revision by Mengyao Zhao on 06/24/16.
  */
 
 #include <stdlib.h>
@@ -364,7 +364,7 @@ int main (int argc, char * const argv[]) {
 		mat = mata;
 	}
 
-	fprintf(stderr, "query: %s\n", argv[optind + 1]);
+	//fprintf(stderr, "query: %s\n", argv[optind + 1]);
 	read_fp = gzopen(argv[optind + 1], "r");
 
     if (! read_fp) {

@@ -181,13 +181,10 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 		step = -1;
 	}
 	for (i = begin; LIKELY(i != end); i += step) {
-//fprintf(stderr, "%d", ref[i]);
 		int32_t cmp;
 		__m128i e, vF = vZero, vMaxColumn = vZero; /* Initialize F value to 0.
 							   Any errors to vH values will be corrected in the Lazy_F loop.
 							 */
-//		max16(maxColumn[i], vMaxColumn);
-//		fprintf(stderr, "middle[%d]: %d\n", i, maxColumn[i]);
 
 		__m128i vH = pvHStore[segLen - 1];
 		vH = _mm_slli_si128 (vH, 1); /* Shift the 128-bit value in vH left by 1 byte. */
@@ -202,21 +199,12 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 		for (j = 0; LIKELY(j < segLen); ++j) {
 			vH = _mm_adds_epu8(vH, _mm_load_si128(vP + j));
 			vH = _mm_subs_epu8(vH, vBias); /* vH will be always > 0 */
-	//	max16(maxColumn[i], vH);
-	//	fprintf(stderr, "H[%d]: %d\n", i, maxColumn[i]);
-//	int8_t* t;
-//	int32_t ti;
-//for (t = (int8_t*)&vH, ti = 0; ti < 16; ++ti) fprintf(stderr, "%d\t", *t++);
 
 			/* Get max from vH, vE and vF. */
 			e = _mm_load_si128(pvE + j);
 			vH = _mm_max_epu8(vH, e);
 			vH = _mm_max_epu8(vH, vF);
 			vMaxColumn = _mm_max_epu8(vMaxColumn, vH);
-
-	//	max16(maxColumn[i], vMaxColumn);
-	//	fprintf(stderr, "middle[%d]: %d\n", i, maxColumn[i]);
-//	for (t = (int8_t*)&vMaxColumn, ti = 0; ti < 16; ++ti) fprintf(stderr, "%d\t", *t++);
 
 			/* Save vH values. */
 			_mm_store_si128(pvHStore + j, vH);
@@ -290,11 +278,8 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 
 		/* Record the max score of current column. */
 		max16(maxColumn[i], vMaxColumn);
-	//	fprintf(stderr, "maxColumn[%d]: %d\n", i, maxColumn[i]);
 		if (maxColumn[i] == terminate) break;
 	}
-
-fprintf(stderr, "\n");
 
 	/* Trace the alignment ending position on read. */
 	uint8_t *t = (uint8_t*)pvHmax;
@@ -324,7 +309,6 @@ fprintf(stderr, "\n");
 
 	edge = (end_ref - maskLen) > 0 ? (end_ref - maskLen) : 0;
 	for (i = 0; i < edge; i ++) {
-//			fprintf (stderr, "maxColumn[%d]: %d\n", i, maxColumn[i]);
 		if (maxColumn[i] > bests[1].score) {
 			bests[1].score = maxColumn[i];
 			bests[1].ref = i;
@@ -332,7 +316,6 @@ fprintf(stderr, "\n");
 	}
 	edge = (end_ref + maskLen) > refLen ? refLen : (end_ref + maskLen);
 	for (i = edge + 1; i < refLen; i ++) {
-//			fprintf (stderr, "refLen: %d\tmaxColumn[%d]: %d\n", refLen, i, maxColumn[i]);
 		if (maxColumn[i] > bests[1].score) {
 			bests[1].score = maxColumn[i];
 			bests[1].ref = i;
@@ -608,7 +591,6 @@ static cigar* banded_sw (const int8_t* ref,
 				temp1 = i == 0 ? -weight_gapO : h_b[e] - weight_gapO;
 				temp2 = i == 0 ? -weight_gapE : e_b[e] - weight_gapE;
 				e_b[u] = temp1 > temp2 ? temp1 : temp2;
-				//fprintf(stderr, "de: %d\twidth_d: %d\treadLen: %d\ts2:%lu\n", de, width_d, readLen, s2);
 				direction_line[de] = temp1 > temp2 ? 3 : 2;
 
 				temp1 = h_c[b] - weight_gapO;
@@ -823,7 +805,6 @@ s_align* ssw_align (const s_profile* prof,
 	}
 	r->score1 = bests[0].score;
 	r->ref_end1 = bests[0].ref;
-//fprintf(stderr, "0based ref_end: %d\n", r->ref_end1);
 	r->read_end1 = bests[0].read;
 	if (maskLen >= 15) {
 		r->score2 = bests[1].score;
