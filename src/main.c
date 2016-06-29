@@ -1,6 +1,6 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
- *	Version 0.1.5
+ *	Version 1.0
  *  Last revision by Mengyao Zhao on 06/24/16.
  */
 

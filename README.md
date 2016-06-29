@@ -22,10 +22,13 @@ Wan-Ping Lee <wanping.lee@gmail.com>
 Yongan Zhao <zhaoyanswill@gmail.com>   
 Daniel Cameron <cameron.d@wehi.edu.au>  
 
-Last revision: 04/05/2016
+Last revision: 06/29/2016
 
 ##Overview
 SSW is a fast implementation of the Smith-Waterman algorithm, which uses the Single-Instruction Multiple-Data (SIMD) instructions to parallelize the algorithm at the instruction level. SSW library provides an API that can be flexibly used by programs written in C, C++ and other languages. We also provide a software that can do protein and genome alignment directly. Current version of our implementation is ~50 times faster than an ordinary Smith-Waterman. It can return the Smith-Waterman score, alignment location and traceback path (cigar) of the optimal alignment accurately; and return the sub-optimal alignment score and location heuristically.
+
+The Debian package of this library can be achieved here:
+https://tracker.debian.org/pkg/libssw
 
 Note: When SSW open a gap, the gap open penalty alone is applied.
 
