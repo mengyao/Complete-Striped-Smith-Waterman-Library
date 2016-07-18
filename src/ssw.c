@@ -31,7 +31,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 02/11/16.
+ *	Last revision by Mengyao Zhao on 07/18/16.
  *
  */
 
@@ -855,13 +855,93 @@ void align_destroy (s_align* a) {
 	free(a->cigar);
 	free(a);
 }
-/*
-inline char cigar_int_to_op(uint32_t cigar_int) {
-	return UNLIKELY((cigar_int & 0xfU) > 8) ? 'M': MAPSTR[cigar_int & 0xfU];
+
+void add_cigar (uint32_t* new_cigar, int32_t* p, int32_t* s, uint32_t length, char op) {
+	if (*p >= *s) {
+		++(*s);
+		kroundup32(*s);
+		new_cigar = (uint32_t*)realloc(new_cigar, (*s)*sizeof(uint32_t));
+	}
+	new_cigar[(*p) ++] = to_cigar_int(length, op);
 }
 
+void store_previous_m (int8_t chioce,	// 0: current not M, 1: current match, 2: current mismatch
+					   uint32_t* length_m,
+					   uint32_t* length_x,
+					   int32_t* p,
+					   int32_t* s,
+					   uint32_t* new_cigar) {
 
-inline uint32_t cigar_int_to_len (uint32_t cigar_int)
-{
-	return cigar_int >> BAM_CIGAR_SHIFT;
-}*/
+	if ((*length_m) && (choice == 2 || !choice)) {
+		add_cigar (new_cigar, p, s, (*length_m), '=') 
+		(*length_m) = 0;
+	} else if ((*length_x) && (choice == 1 || !choice)) { 
+		add_cigar (new_cigar, p, s, (*length_x), 'X') 
+		(*length_x) = 0;
+	}
+}				
+
+/*! @function:
+     1. Calculate the number of mismatches.
+     2. Modify the cigar string:
+         differentiate matches (=) and mismatches(X); add softclip(S) at the beginning and ending of the original cigar.
+    @return:
+     The number of mismatches.
+	 The cigar is modified.
+*/
+int32_t mark_mismatch (int32_t ref_begin1,
+					   int32_t read_begin1,
+					   int32_t read_end1,
+					   const int8_t* ref,
+					   const int8_t* read,
+					   int32_t readLen,
+					   uint32_t* cigar,
+					   int32_t cigarLen) {
+
+	int32_t mismatch_length = p = 0, i, length, j, s = cigarLen + 2;
+	uint32_t *new_cigar = (uint32_t*)malloc(s*sizeof(uint32_t)), length_m = length_x = 0;
+	char op;
+
+	ref += ref_begin1;
+	read += read_begin1;
+	if (read_begin1 > 0) new_cigar[p ++] = to_cigar_int(read_begin1, 'S');
+	for (i = 0; i < cigarLen; ++i) {
+		op = cigar_int_to_op(cigar[i]);
+		length = cigar_int_to_len(cigar[i]);
+		if (op == 'M') {
+			for (j = 0; j < length; ++j) {
+				if (*ref != *read) {
+					++ mismatch_length;
+					// the previous is match; however the current one is mismatche
+					store_previous_m (2, &length_m, &length_x, &p, &s, new_cigar);			
+					++ length_x;
+				} else {
+					// the previous is mismatch; however the current one is matche
+					store_previous_m (1, &length_m, &length_x, &p, &s, new_cigar);			
+					++ length_m;
+				}
+				++ ref;
+				++ read;
+			}
+		}else if (op == 'I') {
+			read += length;
+			mismatch_length += length;
+			store_previous_m (0, &length_m, &length_x, &p, &s, new_cigar);			
+			add_cigar (&new_cigar, &p, &s, length, 'I') 
+		}else if (op == 'D') {
+			ref += length;
+			mismatch_length += length;
+			store_previous_m (0, &length_m, &length_x, &p, &s, new_cigar);			
+			add_cigar (&new_cigar, &p, &s, length, 'D') 
+		}
+	}
+	store_previous_m (0, &length_m, &length_x, &p, &s, new_cigar);
+	
+	length = readLen - read_end1 - 1;
+	if (length > 0) add_cigar(&new_cigar, &p, &s, length, 'S');
+		
+	free(cigar);
+	cigar = new_cigar;
+	return mismatch_length;
+}
+

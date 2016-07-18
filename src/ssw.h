@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 02/11/16.
+ *	Last revision by Mengyao Zhao on 07/18/16.
  *
  */
 
@@ -128,6 +128,31 @@ s_align* ssw_align (const s_profile* prof,
 	@param	a	pointer to the alignment result structure
 */
 void align_destroy (s_align* a);
+
+/*! @function:
+     1. Calculate the number of mismatches.
+     2. Modify the cigar string:
+         differentiate matches (=), mismatches(X), and softclip(S).
+	@param	ref_begin1	0-based best alignment beginning position on the reference sequence
+	@param	read_begin1	0-based best alignment beginning position on the read sequence
+	@param	read_end1	0-based best alignment ending position on the read sequence
+	@param	ref	pointer to the reference sequence
+	@param	read	pointer to the read sequence
+	@param	readLen	length of the read
+	@param	cigar	best alignment cigar; stored the same as that in BAM format, high 28 bits: length, low 4 bits: M/I/D (0/1/2)
+	@param	cigarLen	length of the cigar string
+ 	@return:
+     The number of mismatches.
+	 The cigar is modified.
+*/
+int32_t mark_mismatch (int32_t ref_begin1,
+					   int32_t read_begin1,
+					   int32_t read_end1,
+					   const int8_t* ref,
+					   const int8_t* read,
+					   int32_t readLen,
+					   uint32_t* cigar, 
+					   int32_t cigarLen);
 
 /*!	@function		Produce CIGAR 32-bit unsigned integer from CIGAR operation and CIGAR length
 	@param	length		length of CIGAR
