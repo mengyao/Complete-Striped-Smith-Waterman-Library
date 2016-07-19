@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 1.0
- *  Last revision by Mengyao Zhao on 06/24/16.
+ *  Last revision by Mengyao Zhao on 07/19/16.
  */
 
 #include <stdlib.h>
@@ -168,7 +168,7 @@ end:
 				uint32_t length = cigar_int_to_len(a->cigar[c]);
 				fprintf(stdout, "%lu%c", (unsigned long)length, letter);
 			}
-			fprintf(stderr, "%s\tmismatch: %d\n", read->name.s, mismatch);
+	//		fprintf(stderr, "%s\tmismatch: %d\n", read->name.s, mismatch);
 			fprintf(stdout, "\t*\t0\t0\t");
 			for (c = a->read_begin1; c <= a->read_end1; ++c) fprintf(stdout, "%c", read_seq[c]);
 			fprintf(stdout, "\t");

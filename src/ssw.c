@@ -857,17 +857,12 @@ void align_destroy (s_align* a) {
 }
 
 uint32_t* add_cigar (uint32_t* new_cigar, int32_t* p, int32_t* s, uint32_t length, char op) {
-//	int i;
 	if ((*p) >= (*s)) {
-//		fprintf(stderr, "s_old:%d\tp: %d\n", *s, *p);
-//		for (i = 0; i < *s; ++i) fprintf(stderr, "new_cigar[%d]: %d\n", i, new_cigar[i]);
 		++(*s);
 		kroundup32(*s);
-//		fprintf(stderr, "s: %d\tnew_cigar_before: %p\n", *s, new_cigar);
 		new_cigar = (uint32_t*)realloc(new_cigar, (*s)*sizeof(uint32_t));
 	}
 	new_cigar[(*p) ++] = to_cigar_int(length, op);
-//	fprintf(stderr, "new_cigar_after: %p\n", new_cigar);
 	return new_cigar;
 }
 
@@ -879,11 +874,9 @@ uint32_t* store_previous_m (int8_t choice,	// 0: current not M, 1: current match
 					   uint32_t* new_cigar) {
 
 	if ((*length_m) && (choice == 2 || !choice)) {
-//		fprintf(stderr, "call add_cigar in =\n");
 		new_cigar = add_cigar (new_cigar, p, s, (*length_m), '='); 
 		(*length_m) = 0;
 	} else if ((*length_x) && (choice == 1 || !choice)) { 
-//		fprintf(stderr, "call add_cigar in X\n");
 		new_cigar = add_cigar (new_cigar, p, s, (*length_x), 'X'); 
 		(*length_x) = 0;
 	}
@@ -936,20 +929,17 @@ int32_t mark_mismatch (int32_t ref_begin1,
 			read += length;
 			mismatch_length += length;
 			new_cigar = store_previous_m (0, &length_m, &length_x, &p, &s, new_cigar);			
-//		fprintf(stderr, "call add_cigar in I\n");
 			new_cigar = add_cigar (new_cigar, &p, &s, length, 'I'); 
 		}else if (op == 'D') {
 			ref += length;
 			mismatch_length += length;
 			new_cigar = store_previous_m (0, &length_m, &length_x, &p, &s, new_cigar);			
-//		fprintf(stderr, "call add_cigar in D\n");
 			new_cigar = add_cigar (new_cigar, &p, &s, length, 'D'); 
 		}
 	}
 	new_cigar = store_previous_m (0, &length_m, &length_x, &p, &s, new_cigar);
 	
 	length = readLen - read_end1 - 1;
-//		fprintf(stderr, "call add_cigar in S\n");
 	if (length > 0) new_cigar = add_cigar(new_cigar, &p, &s, length, 'S');
 	
 	(*cigarLen) = p;	
