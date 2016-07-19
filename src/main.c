@@ -56,7 +56,7 @@ static void reverse_comple(const char* seq, char* rc) {
 	if (start == end) rc[start] = (char)rc_table[(int8_t)seq[start]];
 }
 
-static void ssw_write (const s_align* a,
+static void ssw_write (s_align* a,
 			const kseq_t* ref_seq,
 			const kseq_t* read,
 			const char* read_seq,	// strand == 0: original read; strand == 1: reverse complement read
@@ -64,6 +64,7 @@ static void ssw_write (const s_align* a,
 			int8_t strand,	// 0: forward aligned ; 1: reverse complement aligned
 			int8_t sam) {	// 0: Blast like output; 1: Sam format output
 
+	int32_t mismatch;
 	if (sam == 0) {	// Blast like output
 		fprintf(stdout, "target_name: %s\nquery_name: %s\noptimal_alignment_score: %d\t", ref_seq->name.s, read->name.s, a->score1);
 		if (a->score2 > 0) fprintf(stdout, "suboptimal_alignment_score: %d\t", a->score2);
@@ -161,11 +162,13 @@ end:
 			if (strand) fprintf(stdout, "16\t");
 			else fprintf(stdout, "0\t");
 			fprintf(stdout, "%s\t%d\t%d\t", ref_seq->name.s, a->ref_begin1 + 1, mapq);
+			mismatch = mark_mismatch(a->ref_begin1, a->read_begin1, a->read_end1, ref_seq->seq.s, read_seq, read->seq.l, &a->cigar, &a->cigarLen);
 			for (c = 0; c < a->cigarLen; ++c) {
 				char letter = cigar_int_to_op(a->cigar[c]);
 				uint32_t length = cigar_int_to_len(a->cigar[c]);
 				fprintf(stdout, "%lu%c", (unsigned long)length, letter);
 			}
+			fprintf(stderr, "%s\tmismatch: %d\n", read->name.s, mismatch);
 			fprintf(stdout, "\t*\t0\t0\t");
 			for (c = a->read_begin1; c <= a->read_end1; ++c) fprintf(stdout, "%c", read_seq[c]);
 			fprintf(stdout, "\t");

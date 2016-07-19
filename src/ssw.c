@@ -31,7 +31,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 07/18/16.
+ *	Last revision by Mengyao Zhao on 07/19/16.
  *
  */
 
@@ -856,16 +856,22 @@ void align_destroy (s_align* a) {
 	free(a);
 }
 
-void add_cigar (uint32_t* new_cigar, int32_t* p, int32_t* s, uint32_t length, char op) {
-	if (*p >= *s) {
+uint32_t* add_cigar (uint32_t* new_cigar, int32_t* p, int32_t* s, uint32_t length, char op) {
+//	int i;
+	if ((*p) >= (*s)) {
+//		fprintf(stderr, "s_old:%d\tp: %d\n", *s, *p);
+//		for (i = 0; i < *s; ++i) fprintf(stderr, "new_cigar[%d]: %d\n", i, new_cigar[i]);
 		++(*s);
 		kroundup32(*s);
+//		fprintf(stderr, "s: %d\tnew_cigar_before: %p\n", *s, new_cigar);
 		new_cigar = (uint32_t*)realloc(new_cigar, (*s)*sizeof(uint32_t));
 	}
 	new_cigar[(*p) ++] = to_cigar_int(length, op);
+//	fprintf(stderr, "new_cigar_after: %p\n", new_cigar);
+	return new_cigar;
 }
 
-void store_previous_m (int8_t chioce,	// 0: current not M, 1: current match, 2: current mismatch
+uint32_t* store_previous_m (int8_t choice,	// 0: current not M, 1: current match, 2: current mismatch
 					   uint32_t* length_m,
 					   uint32_t* length_x,
 					   int32_t* p,
@@ -873,12 +879,15 @@ void store_previous_m (int8_t chioce,	// 0: current not M, 1: current match, 2: 
 					   uint32_t* new_cigar) {
 
 	if ((*length_m) && (choice == 2 || !choice)) {
-		add_cigar (new_cigar, p, s, (*length_m), '=') 
+//		fprintf(stderr, "call add_cigar in =\n");
+		new_cigar = add_cigar (new_cigar, p, s, (*length_m), '='); 
 		(*length_m) = 0;
 	} else if ((*length_x) && (choice == 1 || !choice)) { 
-		add_cigar (new_cigar, p, s, (*length_x), 'X') 
+//		fprintf(stderr, "call add_cigar in X\n");
+		new_cigar = add_cigar (new_cigar, p, s, (*length_x), 'X'); 
 		(*length_x) = 0;
 	}
+	return new_cigar;
 }				
 
 /*! @function:
@@ -887,37 +896,37 @@ void store_previous_m (int8_t chioce,	// 0: current not M, 1: current match, 2: 
          differentiate matches (=) and mismatches(X); add softclip(S) at the beginning and ending of the original cigar.
     @return:
      The number of mismatches.
-	 The cigar is modified.
+	 The cigar and cigarLen are modified.
 */
 int32_t mark_mismatch (int32_t ref_begin1,
 					   int32_t read_begin1,
 					   int32_t read_end1,
-					   const int8_t* ref,
-					   const int8_t* read,
+					   const char* ref,
+					   const char* read,
 					   int32_t readLen,
-					   uint32_t* cigar,
-					   int32_t cigarLen) {
+					   uint32_t** cigar,
+					   int32_t* cigarLen) {
 
-	int32_t mismatch_length = p = 0, i, length, j, s = cigarLen + 2;
-	uint32_t *new_cigar = (uint32_t*)malloc(s*sizeof(uint32_t)), length_m = length_x = 0;
+	int32_t mismatch_length = 0, p = 0, i, length, j, s = *cigarLen + 2;
+	uint32_t *new_cigar = (uint32_t*)malloc(s*sizeof(uint32_t)), length_m = 0,  length_x = 0;
 	char op;
 
 	ref += ref_begin1;
 	read += read_begin1;
 	if (read_begin1 > 0) new_cigar[p ++] = to_cigar_int(read_begin1, 'S');
-	for (i = 0; i < cigarLen; ++i) {
-		op = cigar_int_to_op(cigar[i]);
-		length = cigar_int_to_len(cigar[i]);
+	for (i = 0; i < (*cigarLen); ++i) {
+		op = cigar_int_to_op((*cigar)[i]);
+		length = cigar_int_to_len((*cigar)[i]);
 		if (op == 'M') {
 			for (j = 0; j < length; ++j) {
 				if (*ref != *read) {
 					++ mismatch_length;
 					// the previous is match; however the current one is mismatche
-					store_previous_m (2, &length_m, &length_x, &p, &s, new_cigar);			
+					new_cigar = store_previous_m (2, &length_m, &length_x, &p, &s, new_cigar);			
 					++ length_x;
 				} else {
 					// the previous is mismatch; however the current one is matche
-					store_previous_m (1, &length_m, &length_x, &p, &s, new_cigar);			
+					new_cigar = store_previous_m (1, &length_m, &length_x, &p, &s, new_cigar);			
 					++ length_m;
 				}
 				++ ref;
@@ -926,22 +935,26 @@ int32_t mark_mismatch (int32_t ref_begin1,
 		}else if (op == 'I') {
 			read += length;
 			mismatch_length += length;
-			store_previous_m (0, &length_m, &length_x, &p, &s, new_cigar);			
-			add_cigar (&new_cigar, &p, &s, length, 'I') 
+			new_cigar = store_previous_m (0, &length_m, &length_x, &p, &s, new_cigar);			
+//		fprintf(stderr, "call add_cigar in I\n");
+			new_cigar = add_cigar (new_cigar, &p, &s, length, 'I'); 
 		}else if (op == 'D') {
 			ref += length;
 			mismatch_length += length;
-			store_previous_m (0, &length_m, &length_x, &p, &s, new_cigar);			
-			add_cigar (&new_cigar, &p, &s, length, 'D') 
+			new_cigar = store_previous_m (0, &length_m, &length_x, &p, &s, new_cigar);			
+//		fprintf(stderr, "call add_cigar in D\n");
+			new_cigar = add_cigar (new_cigar, &p, &s, length, 'D'); 
 		}
 	}
-	store_previous_m (0, &length_m, &length_x, &p, &s, new_cigar);
+	new_cigar = store_previous_m (0, &length_m, &length_x, &p, &s, new_cigar);
 	
 	length = readLen - read_end1 - 1;
-	if (length > 0) add_cigar(&new_cigar, &p, &s, length, 'S');
-		
-	free(cigar);
-	cigar = new_cigar;
+//		fprintf(stderr, "call add_cigar in S\n");
+	if (length > 0) new_cigar = add_cigar(new_cigar, &p, &s, length, 'S');
+	
+	(*cigarLen) = p;	
+	free(*cigar);
+	(*cigar) = new_cigar;
 	return mismatch_length;
 }
 

@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 07/18/16.
+ *	Last revision by Mengyao Zhao on 07/19/16.
  *
  */
 
@@ -143,16 +143,16 @@ void align_destroy (s_align* a);
 	@param	cigarLen	length of the cigar string
  	@return:
      The number of mismatches.
-	 The cigar is modified.
+	 The cigar and cigarLen are modified.
 */
 int32_t mark_mismatch (int32_t ref_begin1,
 					   int32_t read_begin1,
 					   int32_t read_end1,
-					   const int8_t* ref,
-					   const int8_t* read,
+					   const char* ref,
+					   const char* read,
 					   int32_t readLen,
-					   uint32_t* cigar, 
-					   int32_t cigarLen);
+					   uint32_t** cigar, 
+					   int32_t* cigarLen);
 
 /*!	@function		Produce CIGAR 32-bit unsigned integer from CIGAR operation and CIGAR length
 	@param	length		length of CIGAR

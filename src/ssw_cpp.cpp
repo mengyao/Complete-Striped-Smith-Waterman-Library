@@ -117,7 +117,6 @@ void CleanPreviousMOperator(
 //     1. Calculate the number of mismatches.
 //     2. Modify the cigar string:
 //         differentiate matches (M) and mismatches(X).
-//         Note that SSW does not differentiate matches and mismatches.
 // @Return:
 //     The number of mismatches.
 int CalculateNumberMismatch(
