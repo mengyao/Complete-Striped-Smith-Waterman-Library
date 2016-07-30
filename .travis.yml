@@ -1,1 +1,4 @@
-install: true
+language: cpp
+compiler: gcc
+os: linux
+script: cd src/ && make
