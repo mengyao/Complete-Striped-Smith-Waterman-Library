@@ -1,0 +1,400 @@
+target_name: chr3
+query_name: 6:163296599:F:198;None;None/1
+optimal_alignment_score: 53	suboptimal_alignment_score: 52	strand: +	target_end: 745864	query_end: 54
+
+target_name: chr3
+query_name: 3:153409880:F:224;None;3,153410143,G,A/1
+optimal_alignment_score: 47	suboptimal_alignment_score: 45	strand: +	target_end: 350986	query_end: 53
+
+target_name: chr3
+query_name: Y:26750420:R:-132;None;None/1
+optimal_alignment_score: 50	suboptimal_alignment_score: 49	strand: +	target_end: 319376	query_end: 52
+
+target_name: chr3
+query_name: 13:91170622:R:-276;None;None/1
+optimal_alignment_score: 49	suboptimal_alignment_score: 48	strand: +	target_end: 353946	query_end: 49
+
+target_name: chr3
+query_name: 15:37079528:R:-240;None;None/1
+optimal_alignment_score: 40	suboptimal_alignment_score: 39	strand: +	target_end: 257705	query_end: 53
+
+target_name: chr3
+query_name: 9:92308501:R:-176;None;None/1
+optimal_alignment_score: 80	suboptimal_alignment_score: 70	strand: +	target_end: 105983	query_end: 48
+
+target_name: chr3
+query_name: 3:109533106:R:-128;None;None/1
+optimal_alignment_score: 42	suboptimal_alignment_score: 42	strand: +	target_end: 198965	query_end: 47
+
+target_name: chr3
+query_name: 16:32366683:R:-158;16,32366730,G,A;None/1
+optimal_alignment_score: 50	suboptimal_alignment_score: 46	strand: +	target_end: 823370	query_end: 52
+
+target_name: chr3
+query_name: 13:111809970:R:-237;None;None/1
+optimal_alignment_score: 43	suboptimal_alignment_score: 40	strand: +	target_end: 509164	query_end: 53
+
+target_name: chr3
+query_name: 3:38871305:F:159;None;None/1
+optimal_alignment_score: 39	suboptimal_alignment_score: 37	strand: +	target_end: 841259	query_end: 54
+
+target_name: chr3
+query_name: 19:8434785:F:295;None;None/1
+optimal_alignment_score: 47	suboptimal_alignment_score: 43	strand: +	target_end: 330617	query_end: 53
+
+target_name: chr3
+query_name: 8:132563397:R:-144;None;None/1
+optimal_alignment_score: 49	suboptimal_alignment_score: 40	strand: +	target_end: 54827	query_end: 54
+
+target_name: chr3
+query_name: 3:190507952:R:-57;3,190507958,G,A;None/1
+optimal_alignment_score: 41	suboptimal_alignment_score: 41	strand: +	target_end: 138110	query_end: 54
+
+target_name: chr3
+query_name: 10:59883855:R:-120;None;None/1
+optimal_alignment_score: 43	suboptimal_alignment_score: 43	strand: +	target_end: 244247	query_end: 53
+
+target_name: chr3
+query_name: 6:148630669:R:-271;None;None/1
+optimal_alignment_score: 41	suboptimal_alignment_score: 39	strand: +	target_end: 658593	query_end: 54
+
+target_name: chr3
+query_name: 3:64518566:R:-93;None;None/1
+optimal_alignment_score: 46	suboptimal_alignment_score: 45	strand: +	target_end: 881546	query_end: 44
+
+target_name: chr3
+query_name: 14:42514746:R:-187;None;None/1
+optimal_alignment_score: 58	suboptimal_alignment_score: 58	strand: +	target_end: 206906	query_end: 48
+
+target_name: chr3
+query_name: 7:126497810:R:-191;None;None/1
+optimal_alignment_score: 45	suboptimal_alignment_score: 40	strand: +	target_end: 232372	query_end: 54
+
+target_name: chr3
+query_name: 21:15123085:R:-140;None;None/1
+optimal_alignment_score: 43	suboptimal_alignment_score: 43	strand: +	target_end: 492310	query_end: 51
+
+target_name: chr3
+query_name: 2:217172401:R:-226;None;None/1
+optimal_alignment_score: 42	suboptimal_alignment_score: 41	strand: +	target_end: 261738	query_end: 54
+
+target_name: chr3
+query_name: 6:129456169:R:-167;None;None/1
+optimal_alignment_score: 42	suboptimal_alignment_score: 39	strand: +	target_end: 750865	query_end: 53
+
+target_name: chr3
+query_name: 4:160333309:R:-131;None;4,160333230,T,G/1
+optimal_alignment_score: 42	suboptimal_alignment_score: 41	strand: +	target_end: 465814	query_end: 54
+
+target_name: chr3
+query_name: 3:37890126:R:-228;None;None/1
+optimal_alignment_score: 40	suboptimal_alignment_score: 40	strand: +	target_end: 661952	query_end: 53
+
+target_name: chr3
+query_name: 17:49899522:F:154;None;None/1
+optimal_alignment_score: 47	suboptimal_alignment_score: 46	strand: +	target_end: 94043	query_end: 51
+
+target_name: chr3
+query_name: 8:138662818:R:-211;None;8,138662609,C,T/1
+optimal_alignment_score: 43	suboptimal_alignment_score: 41	strand: +	target_end: 175380	query_end: 50
+
+target_name: chr3
+query_name: 3:97260940:R:-254;None;None/1
+optimal_alignment_score: 39	suboptimal_alignment_score: 38	strand: +	target_end: 903012	query_end: 54
+
+target_name: chr3
+query_name: 7:14401638:F:350;None;None/1
+optimal_alignment_score: 50	suboptimal_alignment_score: 47	strand: +	target_end: 265434	query_end: 48
+
+target_name: chr3
+query_name: 13:19068477:F:246;None;None/1
+optimal_alignment_score: 47	suboptimal_alignment_score: 45	strand: +	target_end: 628991	query_end: 54
+
+target_name: chr3
+query_name: 3:179655047:F:206;None;None/1
+optimal_alignment_score: 45	suboptimal_alignment_score: 44	strand: +	target_end: 476787	query_end: 51
+
+target_name: chr3
+query_name: 20:15001091:F:174;None;None/1
+optimal_alignment_score: 44	suboptimal_alignment_score: 43	strand: +	target_end: 226051	query_end: 51
+
+target_name: chr3
+query_name: 2:54967337:R:-153;None;None/1
+optimal_alignment_score: 43	suboptimal_alignment_score: 42	strand: +	target_end: 689523	query_end: 54
+
+target_name: chr3
+query_name: 18:39435195:F:202;None;None/1
+optimal_alignment_score: 51	suboptimal_alignment_score: 45	strand: +	target_end: 998370	query_end: 53
+
+target_name: chr3
+query_name: X:68133790:F:167;None;None/1
+optimal_alignment_score: 43	suboptimal_alignment_score: 40	strand: +	target_end: 612440	query_end: 50
+
+target_name: chr3
+query_name: 9:18241281:F:267;None;None/1
+optimal_alignment_score: 53	suboptimal_alignment_score: 49	strand: +	target_end: 872860	query_end: 53
+
+target_name: chr3
+query_name: 7:141812631:F:239;None;None/1
+optimal_alignment_score: 40	suboptimal_alignment_score: 40	strand: +	target_end: 510995	query_end: 44
+
+target_name: chr3
+query_name: 15:54133744:R:-269;None;None/1
+optimal_alignment_score: 41	suboptimal_alignment_score: 40	strand: +	target_end: 725603	query_end: 53
+
+target_name: chr3
+query_name: 4:66588719:R:-245;None;None/1
+optimal_alignment_score: 58	suboptimal_alignment_score: 58	strand: +	target_end: 163129	query_end: 54
+
+target_name: chr3
+query_name: 1:217587184:F:229;None;None/1
+optimal_alignment_score: 46	suboptimal_alignment_score: 46	strand: +	target_end: 196793	query_end: 52
+
+target_name: chr3
+query_name: 2:119213044:R:-184;None;None/1
+optimal_alignment_score: 49	suboptimal_alignment_score: 44	strand: +	target_end: 552663	query_end: 50
+
+target_name: chr3
+query_name: 2:36811349:F:265;None;None/1
+optimal_alignment_score: 44	suboptimal_alignment_score: 43	strand: +	target_end: 945971	query_end: 52
+
+target_name: chr3
+query_name: 1:68786835:F:349;None;None/1
+optimal_alignment_score: 45	suboptimal_alignment_score: 45	strand: +	target_end: 528144	query_end: 52
+
+target_name: chr3
+query_name: 4:126634771:F:185;None;None/1
+optimal_alignment_score: 45	suboptimal_alignment_score: 42	strand: +	target_end: 745309	query_end: 50
+
+target_name: chr3
+query_name: 4:114171402:R:-296;None;None/1
+optimal_alignment_score: 44	suboptimal_alignment_score: 42	strand: +	target_end: 751541	query_end: 53
+
+target_name: chr3
+query_name: 9:125206364:R:-140;None;None/1
+optimal_alignment_score: 41	suboptimal_alignment_score: 39	strand: +	target_end: 932480	query_end: 50
+
+target_name: chr3
+query_name: X:25208394:F:245;None;None/1
+optimal_alignment_score: 42	suboptimal_alignment_score: 41	strand: +	target_end: 696734	query_end: 52
+
+target_name: chr3
+query_name: 2:222217158:F:227;None;None/1
+optimal_alignment_score: 41	suboptimal_alignment_score: 40	strand: +	target_end: 704921	query_end: 53
+
+target_name: chr3
+query_name: 1:196837088:F:230;None;None/1
+optimal_alignment_score: 46	suboptimal_alignment_score: 45	strand: +	target_end: 563639	query_end: 53
+
+target_name: chr3
+query_name: 7:24300836:R:-208;7,24300863,*,+1T;None/1
+optimal_alignment_score: 44	suboptimal_alignment_score: 42	strand: +	target_end: 239063	query_end: 54
+
+target_name: chr3
+query_name: 1:76948473:F:230;None;None/1
+optimal_alignment_score: 45	suboptimal_alignment_score: 45	strand: +	target_end: 386767	query_end: 54
+
+target_name: chr3
+query_name: 8:62727783:F:135;None;None/1
+optimal_alignment_score: 47	suboptimal_alignment_score: 46	strand: +	target_end: 406541	query_end: 54
+
+target_name: chr3
+query_name: 7:94677617:R:-155;None;None/1
+optimal_alignment_score: 46	suboptimal_alignment_score: 46	strand: +	target_end: 345086	query_end: 54
+
+target_name: chr3
+query_name: 4:10707991:F:305;None;None/1
+optimal_alignment_score: 94	suboptimal_alignment_score: 86	strand: +	target_end: 198089	query_end: 53
+
+target_name: chr3
+query_name: 1:183203391:R:-141;None;None/1
+optimal_alignment_score: 48	suboptimal_alignment_score: 45	strand: +	target_end: 344874	query_end: 53
+
+target_name: chr3
+query_name: 15:63526307:R:-83;None;None/1
+optimal_alignment_score: 40	suboptimal_alignment_score: 40	strand: +	target_end: 78739	query_end: 52
+
+target_name: chr3
+query_name: 8:79068236:F:137;None;None/1
+optimal_alignment_score: 43	suboptimal_alignment_score: 42	strand: +	target_end: 326507	query_end: 47
+
+target_name: chr3
+query_name: 9:1290219:R:-251;None;None/1
+optimal_alignment_score: 84	suboptimal_alignment_score: 80	strand: +	target_end: 537411	query_end: 54
+
+target_name: chr3
+query_name: 5:122248402:R:-212;None;None/1
+optimal_alignment_score: 40	suboptimal_alignment_score: 39	strand: +	target_end: 40834	query_end: 52
+
+target_name: chr3
+query_name: X:153897575:R:-263;None;None/1
+optimal_alignment_score: 75	suboptimal_alignment_score: 74	strand: +	target_end: 223405	query_end: 49
+
+target_name: chr3
+query_name: 6:95453360:F:204;None;None/1
+optimal_alignment_score: 45	suboptimal_alignment_score: 42	strand: +	target_end: 182708	query_end: 52
+
+target_name: chr3
+query_name: 10:6951101:R:-212;None;None/1
+optimal_alignment_score: 41	suboptimal_alignment_score: 38	strand: +	target_end: 897043	query_end: 47
+
+target_name: chr3
+query_name: 13:59325230:F:98;None;None/1
+optimal_alignment_score: 39	suboptimal_alignment_score: 38	strand: +	target_end: 773481	query_end: 54
+
+target_name: chr3
+query_name: 3:37059536:F:184;None;None/1
+optimal_alignment_score: 49	suboptimal_alignment_score: 44	strand: +	target_end: 899262	query_end: 54
+
+target_name: chr3
+query_name: 9:91156368:F:149;None;None/1
+optimal_alignment_score: 43	suboptimal_alignment_score: 42	strand: +	target_end: 606747	query_end: 51
+
+target_name: chr3
+query_name: 12:55970708:R:-246;12,55970762,C,T;None/1
+optimal_alignment_score: 92	suboptimal_alignment_score: 88	strand: +	target_end: 771042	query_end: 54
+
+target_name: chr3
+query_name: 3:120828442:F:203;None;None/1
+optimal_alignment_score: 44	suboptimal_alignment_score: 41	strand: +	target_end: 595794	query_end: 50
+
+target_name: chr3
+query_name: 19:60104965:R:-147;None;None/1
+optimal_alignment_score: 65	suboptimal_alignment_score: 64	strand: +	target_end: 866783	query_end: 52
+
+target_name: chr3
+query_name: 11:98782460:R:-46;None;None/1
+optimal_alignment_score: 56	suboptimal_alignment_score: 42	strand: +	target_end: 819223	query_end: 51
+
+target_name: chr3
+query_name: 12:91111930:F:209;None;None/1
+optimal_alignment_score: 43	suboptimal_alignment_score: 42	strand: +	target_end: 679515	query_end: 51
+
+target_name: chr3
+query_name: 3:192601514:F:196;None;None/1
+optimal_alignment_score: 42	suboptimal_alignment_score: 40	strand: +	target_end: 392672	query_end: 40
+
+target_name: chr3
+query_name: X:47989386:R:-46;None;None/1
+optimal_alignment_score: 39	suboptimal_alignment_score: 36	strand: +	target_end: 793950	query_end: 54
+
+target_name: chr3
+query_name: 2:39824446:R:-127;None;None/1
+optimal_alignment_score: 72	suboptimal_alignment_score: 70	strand: +	target_end: 972352	query_end: 54
+
+target_name: chr3
+query_name: 1:227528596:F:219;None;None/1
+optimal_alignment_score: 44	suboptimal_alignment_score: 42	strand: +	target_end: 869543	query_end: 51
+
+target_name: chr3
+query_name: X:4440324:R:-90;None;None/1
+optimal_alignment_score: 42	suboptimal_alignment_score: 40	strand: +	target_end: 100289	query_end: 52
+
+target_name: chr3
+query_name: X:73634281:F:88;None;None/1
+optimal_alignment_score: 52	suboptimal_alignment_score: 41	strand: +	target_end: 922600	query_end: 49
+
+target_name: chr3
+query_name: 3:53909823:F:239;None;3,53910104,T,C/1
+optimal_alignment_score: 44	suboptimal_alignment_score: 44	strand: +	target_end: 640897	query_end: 47
+
+target_name: chr3
+query_name: 3:170059370:R:-173;None;3,170059212,G,C/1
+optimal_alignment_score: 44	suboptimal_alignment_score: 43	strand: +	target_end: 483764	query_end: 54
+
+target_name: chr3
+query_name: 20:8823533:F:251;None;None/1
+optimal_alignment_score: 39	suboptimal_alignment_score: 38	strand: +	target_end: 887639	query_end: 49
+
+target_name: chr3
+query_name: 5:106802036:F:200;None;None/1
+optimal_alignment_score: 44	suboptimal_alignment_score: 42	strand: +	target_end: 137797	query_end: 53
+
+target_name: chr3
+query_name: 5:74632980:R:-252;None;None/1
+optimal_alignment_score: 44	suboptimal_alignment_score: 43	strand: +	target_end: 297976	query_end: 54
+
+target_name: chr3
+query_name: 12:84751900:F:268;None;None/1
+optimal_alignment_score: 42	suboptimal_alignment_score: 42	strand: +	target_end: 183485	query_end: 48
+
+target_name: chr3
+query_name: X:135811790:R:-164;None;None/1
+optimal_alignment_score: 48	suboptimal_alignment_score: 44	strand: +	target_end: 178654	query_end: 54
+
+target_name: chr3
+query_name: 10:53108829:R:-138;None;None/1
+optimal_alignment_score: 45	suboptimal_alignment_score: 42	strand: +	target_end: 625392	query_end: 50
+
+target_name: chr3
+query_name: 11:83660431:R:-245;None;None/1
+optimal_alignment_score: 47	suboptimal_alignment_score: 44	strand: +	target_end: 226749	query_end: 54
+
+target_name: chr3
+query_name: 10:119650756:F:207;None;None/1
+optimal_alignment_score: 44	suboptimal_alignment_score: 42	strand: +	target_end: 529549	query_end: 41
+
+target_name: chr3
+query_name: 2:154848222:R:-185;None;None/1
+optimal_alignment_score: 45	suboptimal_alignment_score: 43	strand: +	target_end: 585761	query_end: 54
+
+target_name: chr3
+query_name: 3:63918850:F:276;None;None/1
+optimal_alignment_score: 42	suboptimal_alignment_score: 41	strand: +	target_end: 345340	query_end: 50
+
+target_name: chr3
+query_name: 10:11447534:F:239;None;None/1
+optimal_alignment_score: 38	suboptimal_alignment_score: 38	strand: +	target_end: 114931	query_end: 52
+
+target_name: chr3
+query_name: 1:57651555:R:-316;None;None/1
+optimal_alignment_score: 46	suboptimal_alignment_score: 44	strand: +	target_end: 104219	query_end: 54
+
+target_name: chr3
+query_name: X:91671697:R:-206;None;X,91671506,G,A/1
+optimal_alignment_score: 48	suboptimal_alignment_score: 47	strand: +	target_end: 771479	query_end: 49
+
+target_name: chr3
+query_name: 12:101622421:R:-187;None;None/1
+optimal_alignment_score: 45	suboptimal_alignment_score: 44	strand: +	target_end: 361502	query_end: 49
+
+target_name: chr3
+query_name: 13:43163355:R:-200;None;None/1
+optimal_alignment_score: 42	suboptimal_alignment_score: 42	strand: +	target_end: 167308	query_end: 53
+
+target_name: chr3
+query_name: 19:37349825:R:-160;None;None/1
+optimal_alignment_score: 70	suboptimal_alignment_score: 68	strand: +	target_end: 261459	query_end: 54
+
+target_name: chr3
+query_name: 8:41173199:R:-175;None;8,41173056,T,C/1
+optimal_alignment_score: 44	suboptimal_alignment_score: 43	strand: +	target_end: 644612	query_end: 47
+
+target_name: chr3
+query_name: 16:29068055:R:-232;None;None/1
+optimal_alignment_score: 44	suboptimal_alignment_score: 40	strand: +	target_end: 934198	query_end: 53
+
+target_name: chr3
+query_name: 1:4694340:F:179;None;None/1
+optimal_alignment_score: 48	suboptimal_alignment_score: 45	strand: +	target_end: 140768	query_end: 54
+
+target_name: chr3
+query_name: 17:76451446:F:221;None;None/1
+optimal_alignment_score: 42	suboptimal_alignment_score: 40	strand: +	target_end: 561765	query_end: 54
+
+target_name: chr3
+query_name: 1:242817485:F:158;None;None/1
+optimal_alignment_score: 52	suboptimal_alignment_score: 46	strand: +	target_end: 396383	query_end: 50
+
+target_name: chr3
+query_name: 18:29611708:R:-146;None;18,29611585,G,A/1
+optimal_alignment_score: 45	suboptimal_alignment_score: 40	strand: +	target_end: 157255	query_end: 47
+
+target_name: chr3
+query_name: 9:36493018:F:206;None;None/1
+optimal_alignment_score: 82	suboptimal_alignment_score: 80	strand: +	target_end: 872774	query_end: 54
+
+target_name: chr3
+query_name: 9:16274705:F:129;9,16274709,C,A:9,16274719,C,G:9,16274741,A,T;9,16274862,A,G/1
+optimal_alignment_score: 72	suboptimal_alignment_score: 64	strand: +	target_end: 524699	query_end: 54
+
