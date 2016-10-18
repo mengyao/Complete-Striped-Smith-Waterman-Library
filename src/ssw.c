@@ -30,8 +30,8 @@
  *
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
- *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 07/19/16.
+ *	Version 1.2
+ *	Last revision by Mengyao Zhao on 10/18/16.
  *
  */
 
@@ -943,10 +943,9 @@ int32_t mark_mismatch (int32_t ref_begin1,
 		length = cigar_int_to_len((*cigar)[i]);
 		if (op == 'M') {
 			for (j = 0; j < length; ++j) {
-				fprintf(stderr, "ref[%d]: %c\tread[%d]: %c\n", j, *ref, j, *read);
 				if (*ref != *read) {
 					++ mismatch_length;
-					fprintf(stderr, "length_m: %d\n", length_m);
+				//	fprintf(stderr, "length_m: %d\n", length_m);
 					// the previous is match; however the current one is mismatche
 					new_cigar = store_previous_m (2, &length_m, &length_x, &p, &s, new_cigar);			
 					++ length_x;
