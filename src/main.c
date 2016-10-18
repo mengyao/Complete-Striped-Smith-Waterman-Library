@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
- *	Version 1.0
- *  Last revision by Mengyao Zhao on 07/19/16.
+ *	Version 1.2
+ *  Last revision by Mengyao Zhao on 10/18/16.
  */
 
 #include <stdlib.h>
@@ -170,7 +170,8 @@ end:
 			}
 	//		fprintf(stderr, "%s\tmismatch: %d\n", read->name.s, mismatch);
 			fprintf(stdout, "\t*\t0\t0\t");
-			for (c = a->read_begin1; c <= a->read_end1; ++c) fprintf(stdout, "%c", read_seq[c]);
+		//	for (c = a->read_begin1; c <= a->read_end1; ++c) fprintf(stdout, "%c", read_seq[c]);
+			fprintf(stdout, "%s", read_seq);
 			fprintf(stdout, "\t");
 			if (read->qual.s && strand) {
 				p = a->read_end1;
