@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
- *	Version 1.2
- *  Last revision by Mengyao Zhao on 10/18/16.
+ *	Version 1.2.1
+ *  Last revision by Mengyao Zhao on 11/18/16.
  */
 
 #include <stdlib.h>
@@ -155,7 +155,7 @@ end:
 		fprintf(stdout, "%s\t", read->name.s);
 		if (a->score1 == 0) fprintf(stdout, "4\t*\t0\t255\t*\t*\t0\t0\t*\t*\n");
 		else {
-			int32_t c, l = a->read_end1 - a->read_begin1 + 1, qb = a->ref_begin1, pb = a->read_begin1, p;
+			int32_t c, qb = a->ref_begin1, pb = a->read_begin1, p;
 			uint32_t mapq = -4.343 * log(1 - (double)abs(a->score1 - a->score2)/(double)a->score1);
 			mapq = (uint32_t) (mapq + 4.99);
 			mapq = mapq < 254 ? mapq : 254;
@@ -174,18 +174,14 @@ end:
 			fprintf(stdout, "%s", read_seq);
 			fprintf(stdout, "\t");
 			if (read->qual.s && strand) {
-				p = a->read_end1;
-				for (c = 0; c < l; ++c) {
+				for (p = read->qual.l - 1; p > 0; --p) {
+			//	p = a->read_end1;
+			//	for (c = 0; c < l; ++c) {
 					fprintf(stdout, "%c", read->qual.s[p]);
-					--p;
+			//		--p;
 				}
-			}else if (read->qual.s){
-				p = a->read_begin1;
-				for (c = 0; c < l; ++c) {
-					fprintf(stdout, "%c", read->qual.s[p]);
-					++p;
-				}
-			} else fprintf(stdout, "*");
+			}else if (read->qual.s) fprintf (stdout, "%s", read->qual.s);
+			else fprintf(stdout, "*");
 			fprintf(stdout, "\tAS:i:%d", a->score1);
 			mapq = 0;	// counter of difference
 			for (c = 0; c < a->cigarLen; ++c) {
