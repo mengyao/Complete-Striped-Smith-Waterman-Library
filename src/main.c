@@ -174,7 +174,7 @@ end:
 			fprintf(stdout, "%s", read_seq);
 			fprintf(stdout, "\t");
 			if (read->qual.s && strand) {
-				for (p = read->qual.l - 1; p > 0; --p) {
+				for (p = read->qual.l - 1; p >= 0; --p) {
 			//	p = a->read_end1;
 			//	for (c = 0; c < l; ++c) {
 					fprintf(stdout, "%c", read->qual.s[p]);
