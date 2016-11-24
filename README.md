@@ -226,5 +226,17 @@ The java wrapper consist of the following components:
 
 To use the library, either reference the ssw.jar or including the Aligner and Alignment classes directly. As for any JNI library, the native library must be loaded (using `System.loadLibrary("sswjni")` or similar) before invokation of native methods. For the JVM to find the library, ensure that either the library is included in the LD_LIBRARY_PATH environment variable, or `-Djava.library.path=<directory containing libsswjni.so>` is set on the java command line.
 
+###Example of running SSW by java
+code
+
+	cd   src
+	make java
+	java  -Djava.library.path=. -jar ssw.jar ssw.Example
+
+Result
+
+	Aligning nucleotides
+	score1=21 score2=8 ref_begin1=8 ref_end1=21 read_begin1=0 read_end1=14 ref_end2=4 cigar=9M1I5M
+
 ###Please cite this paper, if you need:
 http://dx.plos.org/10.1371/journal.pone.0082138
