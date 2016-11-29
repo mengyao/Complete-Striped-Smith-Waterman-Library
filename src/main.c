@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 1.2.1
- *  Last revision by Mengyao Zhao on 11/18/16.
+ *  Last revision by Mengyao Zhao on 11/29/16.
  */
 
 #include <stdlib.h>
@@ -60,6 +60,8 @@ static void ssw_write (s_align* a,
 			const kseq_t* ref_seq,
 			const kseq_t* read,
 			const char* read_seq,	// strand == 0: original read; strand == 1: reverse complement read
+			const int8_t* ref_num,
+			const int8_t* read_num,
 			const int8_t* table,
 			int8_t strand,	// 0: forward aligned ; 1: reverse complement aligned
 			int8_t sam) {	// 0: Blast like output; 1: Sam format output
@@ -162,32 +164,25 @@ end:
 			if (strand) fprintf(stdout, "16\t");
 			else fprintf(stdout, "0\t");
 			fprintf(stdout, "%s\t%d\t%d\t", ref_seq->name.s, a->ref_begin1 + 1, mapq);
-			mismatch = mark_mismatch(a->ref_begin1, a->read_begin1, a->read_end1, ref_seq->seq.s, read_seq, read->seq.l, &a->cigar, &a->cigarLen);
+			mismatch = mark_mismatch(a->ref_begin1, a->read_begin1, a->read_end1, ref_num, read_num, read->seq.l, &a->cigar, &a->cigarLen);
 			for (c = 0; c < a->cigarLen; ++c) {
 				char letter = cigar_int_to_op(a->cigar[c]);
 				uint32_t length = cigar_int_to_len(a->cigar[c]);
 				fprintf(stdout, "%lu%c", (unsigned long)length, letter);
 			}
-	//		fprintf(stderr, "%s\tmismatch: %d\n", read->name.s, mismatch);
 			fprintf(stdout, "\t*\t0\t0\t");
-		//	for (c = a->read_begin1; c <= a->read_end1; ++c) fprintf(stdout, "%c", read_seq[c]);
 			fprintf(stdout, "%s", read_seq);
 			fprintf(stdout, "\t");
 			if (read->qual.s && strand) {
-				for (p = read->qual.l - 1; p >= 0; --p) {
-			//	p = a->read_end1;
-			//	for (c = 0; c < l; ++c) {
-					fprintf(stdout, "%c", read->qual.s[p]);
-			//		--p;
-				}
+				for (p = read->qual.l - 1; p >= 0; --p) fprintf(stdout, "%c", read->qual.s[p]);
 			}else if (read->qual.s) fprintf (stdout, "%s", read->qual.s);
 			else fprintf(stdout, "*");
 			fprintf(stdout, "\tAS:i:%d", a->score1);
-			mapq = 0;	// counter of difference
+	/*		mapq = 0;	// counter of difference
 			for (c = 0; c < a->cigarLen; ++c) {
 				char letter = cigar_int_to_op(a->cigar[c]);
 				uint32_t length = cigar_int_to_len(a->cigar[c]);
-				if (letter == 'M') {
+				if (letter == 'M' || letter == 'X') {
 					for (p = 0; p < length; ++p){
 						if (table[(int)*(ref_seq->seq.s + qb)] != table[(int)*(read_seq + pb)]) ++mapq;
 						++qb;
@@ -201,7 +196,8 @@ end:
 					mapq += length;
 				}
 			}
-			fprintf(stdout,"\tNM:i:%d\t", mapq);
+			fprintf(stdout,"\tNM:i:%d\t", mapq);*/
+			fprintf(stdout,"\tNM:i:%d\t", mismatch);
 			if (a->score2 > 0) fprintf(stdout, "ZS:i:%d\n", a->score2);
 			else fprintf(stdout, "\n");
 		}
@@ -364,7 +360,6 @@ int main (int argc, char * const argv[]) {
 		mat = mata;
 	}
 
-	//fprintf(stderr, "query: %s\n", argv[optind + 1]);
 	read_fp = gzopen(argv[optind + 1], "r");
 
     if (! read_fp) {
@@ -433,11 +428,11 @@ int main (int argc, char * const argv[]) {
 			if (reverse == 1 && protein == 0)
 				result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, filter, 0, maskLen);
 			if (result_rc && result_rc->score1 > result->score1 && result_rc->score1 >= filter) {
-				if (sam) ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 1);
-				else ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 0);
+				if (sam) ssw_write (result_rc, ref_seq, read_seq, read_rc, ref_num, num_rc, table, 1, 1);
+				else ssw_write (result_rc, ref_seq, read_seq, read_rc, ref_num, num_rc, table, 1, 0);
 			}else if (result && result->score1 >= filter){
-				if (sam) ssw_write(result, ref_seq, read_seq, read_seq->seq.s, table, 0, 1);
-				else ssw_write(result, ref_seq, read_seq, read_seq->seq.s, table, 0, 0);
+				if (sam) ssw_write(result, ref_seq, read_seq, read_seq->seq.s, ref_num, num, table, 0, 1);
+				else ssw_write(result, ref_seq, read_seq, read_seq->seq.s, ref_num, num, table, 0, 0);
 			} else if (! result) return 1;
 			if (result_rc) align_destroy(result_rc);
 			align_destroy(result);

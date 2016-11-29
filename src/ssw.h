@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 0.1.4
- *	Last revision by Mengyao Zhao on 07/19/16.
+ *	Last revision by Mengyao Zhao on 11/29/16.
  *
  */
 
@@ -148,8 +148,8 @@ void align_destroy (s_align* a);
 int32_t mark_mismatch (int32_t ref_begin1,
 					   int32_t read_begin1,
 					   int32_t read_end1,
-					   const char* ref,
-					   const char* read,
+					   const int8_t* ref,
+					   const int8_t* read,
 					   int32_t readLen,
 					   uint32_t** cigar, 
 					   int32_t* cigarLen);

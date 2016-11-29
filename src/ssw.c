@@ -31,7 +31,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 1.2
- *	Last revision by Mengyao Zhao on 10/18/16.
+ *	Last revision by Mengyao Zhao on 11/29/16.
  *
  */
 
@@ -925,8 +925,8 @@ uint32_t* store_previous_m (int8_t choice,	// 0: current not M, 1: current match
 int32_t mark_mismatch (int32_t ref_begin1,
 					   int32_t read_begin1,
 					   int32_t read_end1,
-					   const char* ref,
-					   const char* read,
+					   const int8_t* ref,
+					   const int8_t* read,
 					   int32_t readLen,
 					   uint32_t** cigar,
 					   int32_t* cigarLen) {
@@ -945,7 +945,6 @@ int32_t mark_mismatch (int32_t ref_begin1,
 			for (j = 0; j < length; ++j) {
 				if (*ref != *read) {
 					++ mismatch_length;
-				//	fprintf(stderr, "length_m: %d\n", length_m);
 					// the previous is match; however the current one is mismatche
 					new_cigar = store_previous_m (2, &length_m, &length_x, &p, &s, new_cigar);			
 					++ length_x;
