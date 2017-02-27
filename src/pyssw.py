@@ -242,7 +242,7 @@ def main(args):
 # print sam head
     if args.bSam and args.bHeader and args.bPath:
         print '@HD\tVN:1.4\tSO:queryname'
-        for sRId,sRSeq,_ in read(sTarget):
+        for sRId,sRSeq,_ in read(args.target):
             print '@SQ\tSN:{}\tLN:{}'.format(sRId, len(sRSeq))
     elif args.bSam and not args.bPath:
         print >> sys.stderr, 'SAM format output is only available together with option -c.\n'
