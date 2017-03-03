@@ -84,7 +84,7 @@ struct _profile{
 	int32_t n;
 	uint8_t bias;
 };
-
+#include <stdlib.h>
 /* Generate query profile rearrange query sequence & calculate the weight of match/mismatch. */
 static __m128i* qP_byte (const int8_t* read_num,
 				  const int8_t* mat,
@@ -96,7 +96,12 @@ static __m128i* qP_byte (const int8_t* read_num,
 								     Each piece is 8 bit. Split the read into 16 segments.
 								     Calculat 16 segments in parallel.
 								   */
-	__m128i* vProfile = (__m128i*)malloc(n * segLen * sizeof(__m128i));
+#ifdef WIN32
+	__m128i* vProfile = (__m128i*)_aligned_malloc(n * segLen * sizeof(__m128i), 16); //(__m128i*)malloc(n * segLen * sizeof(__m128i));
+#else
+    __m128i* vProfile;
+    posix_memalign((void**)&vProfile, 16, n * segLen * sizeof(__m128i));
+#endif
 	int8_t* t = (int8_t*)vProfile;
 	int32_t nt, i, j, segNum;
 
@@ -111,6 +116,25 @@ static __m128i* qP_byte (const int8_t* read_num,
 		}
 	}
 	return vProfile;
+}
+
+
+void *_aligned_calloc(size_t nelem, size_t elsize, size_t alignment)
+{
+	// Watch out for overflow
+	if (elsize == 0 || nelem >= ((size_t)-1) / elsize)
+		return NULL;
+
+	size_t size = nelem * elsize;
+#ifdef WIN32
+	void *memory = _aligned_malloc(size, alignment);
+#else
+    void *memory;
+    posix_memalign((void**)&memory, alignment, size);
+#endif
+	if (memory != NULL)
+		memset(memory, 0, size);
+	return memory;
 }
 
 /* Striped Smith-Waterman
@@ -154,10 +178,10 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 	/* Define 16 byte 0 vector. */
 	__m128i vZero = _mm_set1_epi32(0);
 
-	__m128i* pvHStore = (__m128i*) calloc(segLen, sizeof(__m128i));
-	__m128i* pvHLoad = (__m128i*) calloc(segLen, sizeof(__m128i));
-	__m128i* pvE = (__m128i*) calloc(segLen, sizeof(__m128i));
-	__m128i* pvHmax = (__m128i*) calloc(segLen, sizeof(__m128i));
+	__m128i* pvHStore = (__m128i*) _aligned_calloc(segLen, sizeof(__m128i), 16);
+	__m128i* pvHLoad = (__m128i*) _aligned_calloc(segLen, sizeof(__m128i), 16);
+	__m128i* pvE = (__m128i*) _aligned_calloc(segLen, sizeof(__m128i), 16);
+	__m128i* pvHmax = (__m128i*) _aligned_calloc(segLen, sizeof(__m128i), 16);
 
 	int32_t i, j;
 	/* 16 byte insertion begin vector */
@@ -292,11 +316,18 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 		}
 	}
 
-	free(pvHmax);
+#ifdef WIN32
+	_aligned_free(pvHmax);
+	_aligned_free(pvE);
+	_aligned_free(pvHLoad);
+	_aligned_free(pvHStore);
+#else
+    free(pvHmax);
 	free(pvE);
 	free(pvHLoad);
 	free(pvHStore);
-
+#endif
+    
 	/* Find the most possible 2nd best alignment. */
 	alignment_end* bests = (alignment_end*) calloc(2, sizeof(alignment_end));
 	bests[0].score = max + bias >= 255 ? 255 : max;
@@ -333,7 +364,13 @@ static __m128i* qP_word (const int8_t* read_num,
 				  const int32_t n) {
 
 	int32_t segLen = (readLen + 7) / 8;
-	__m128i* vProfile = (__m128i*)malloc(n * segLen * sizeof(__m128i));
+#ifdef WIN32
+	__m128i* vProfile = (__m128i*)_aligned_malloc(n * segLen * sizeof(__m128i), 16);
+#else
+    __m128i* vProfile;
+    posix_memalign((void**)&vProfile, 16, n * segLen * sizeof(__m128i));
+#endif
+    
 	int16_t* t = (int16_t*)vProfile;
 	int32_t nt, i, j;
 	int32_t segNum;
@@ -380,10 +417,10 @@ static alignment_end* sw_sse2_word (const int8_t* ref,
 	/* Define 16 byte 0 vector. */
 	__m128i vZero = _mm_set1_epi32(0);
 
-	__m128i* pvHStore = (__m128i*) calloc(segLen, sizeof(__m128i));
-	__m128i* pvHLoad = (__m128i*) calloc(segLen, sizeof(__m128i));
-	__m128i* pvE = (__m128i*) calloc(segLen, sizeof(__m128i));
-	__m128i* pvHmax = (__m128i*) calloc(segLen, sizeof(__m128i));
+	__m128i* pvHStore = (__m128i*) _aligned_calloc(segLen, sizeof(__m128i), 16);
+	__m128i* pvHLoad = (__m128i*) _aligned_calloc(segLen, sizeof(__m128i), 16);
+	__m128i* pvE = (__m128i*) _aligned_calloc(segLen, sizeof(__m128i), 16);
+	__m128i* pvHmax = (__m128i*) _aligned_calloc(segLen, sizeof(__m128i), 16);
 
 	int32_t i, j, k;
 	/* 16 byte insertion begin vector */
@@ -494,12 +531,19 @@ end:
 		}
 	}
 
-	free(pvHmax);
+#ifdef WIN32
+	_aligned_free(pvHmax);
+	_aligned_free(pvE);
+	_aligned_free(pvHLoad);
+	_aligned_free(pvHStore);
+#else
+    free(pvHmax);
 	free(pvE);
 	free(pvHLoad);
 	free(pvHStore);
-
-	/* Find the most possible 2nd best alignment. */
+#endif
+	
+    /* Find the most possible 2nd best alignment. */
 	alignment_end* bests = (alignment_end*) calloc(2, sizeof(alignment_end));
 	bests[0].score = max;
 	bests[0].ref = end_ref;
@@ -785,8 +829,13 @@ s_profile* ssw_init (const int8_t* read, const int32_t readLen, const int8_t* ma
 }
 
 void init_destroy (s_profile* p) {
-	free(p->profile_byte);
-	free(p->profile_word);
+#ifdef WIN32
+	_aligned_free(p->profile_byte);
+	_aligned_free(p->profile_word);
+#else
+    free(p->profile_byte);
+    free(p->profile_word);
+#endif
 	free(p);
 }
 
@@ -856,7 +905,11 @@ s_align* ssw_align (const s_profile* prof,
 		vP = qP_word(read_reverse, prof->mat, r->read_end1 + 1, prof->n);
 		bests_reverse = sw_sse2_word(ref, 1, r->ref_end1 + 1, r->read_end1 + 1, weight_gapO, weight_gapE, vP, r->score1, maskLen);
 	}
-	free(vP);
+#ifdef WIN32
+	_aligned_free(vP);
+#else
+    free(vP);
+#endif
 	free(read_reverse);
 	r->ref_begin1 = bests_reverse[0].ref;
 	r->read_begin1 = r->read_end1 - bests_reverse[0].read;
