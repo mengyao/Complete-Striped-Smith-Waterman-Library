@@ -31,11 +31,11 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 1.2
- *	Last revision by Mengyao Zhao on 11/29/16.
+ *	Last revision by Mengyao Zhao on 03/07/17.
  *
  */
 
-#include <emmintrin.h>
+#include <nmmintrin.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -134,11 +134,12 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 	 						 uint8_t bias,  /* Shift 0 point to a positive value. */
 							 int32_t maskLen) {
 
+// Put the largest number of the 16 numbers in vm into m.
 #define max16(m, vm) (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 8)); \
 					  (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 4)); \
 					  (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 2)); \
 					  (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 1)); \
-					  (m) = _mm_extract_epi16((vm), 0)
+					  (m) = _mm_extract_epi8((vm), 0)
 
 	uint8_t max = 0;		                     /* the max alignment score */
 	int32_t end_read = readLen - 1;
