@@ -56,6 +56,29 @@ static void reverse_comple(const char* seq, char* rc) {
 	if (start == end) rc[start] = (char)rc_table[(int8_t)seq[start]];
 }
 
+static char *Strcpy(char *dest, const char *src, size_t maxSizeAllowed)
+{
+	if(dest == NULL)
+	{
+		fprintf(stderr, "Error (Strcpy): NULL destination string.\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	if(src == NULL)
+	{
+		fprintf(stderr, "Error (Strcpy): NULL source string.\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	if(strlen(src) >= maxSizeAllowed)
+	{
+		fprintf(stderr, "Error (Strcpy): source string is too big to be copied to the destination string.\n");
+		exit(EXIT_FAILURE);	
+	}
+		
+	return strcpy(dest, src);
+}
+
 static void ssw_write (s_align* a,
 			const kseq_t* ref_seq,
 			const kseq_t* read,
@@ -212,7 +235,7 @@ int main (int argc, char * const argv[]) {
 	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0, header = 0, s1 = 67108864, s2 = 128, filter = 0;
 	int8_t* mata = (int8_t*)calloc(25, sizeof(int8_t));
 	const int8_t* mat = mata;
-	char mat_name[16];
+	char mat_name[FILENAME_MAX];
 	mat_name[0] = '\0';
 	int8_t* ref_num = (int8_t*)malloc(s1);
 	int8_t* num = (int8_t*)malloc(s2), *num_rc = 0;
@@ -279,7 +302,7 @@ int main (int argc, char * const argv[]) {
 			case 'x': mismatch = atoi(optarg); break;
 			case 'o': gap_open = atoi(optarg); break;
 			case 'e': gap_extension = atoi(optarg); break;
-			case 'a': strcpy(mat_name, optarg); break;
+			case 'a': Strcpy(mat_name, optarg,FILENAME_MAX); break;
 			case 'f': filter = atoi(optarg); break;
 			case 'p': protein = 1; break;
 			case 'c': path = 1; break;
