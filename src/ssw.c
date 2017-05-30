@@ -30,12 +30,13 @@
  *
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
- *	Version 1.2
- *	Last revision by Mengyao Zhao on 03/07/17.
+ *	Version 1.2.2
+ *	Last revision by Mengyao Zhao on 2017-05-30.
  *
  */
 
-#include <nmmintrin.h>
+//#include <nmmintrin.h>
+#include <emmintrin.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -139,7 +140,7 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 					  (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 4)); \
 					  (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 2)); \
 					  (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 1)); \
-					  (m) = _mm_extract_epi8((vm), 0)
+					  (m) = _mm_extract_epi16((vm), 0)
 
 	uint8_t max = 0;		                     /* the max alignment score */
 	int32_t end_read = readLen - 1;

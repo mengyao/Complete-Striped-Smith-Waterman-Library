@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
- *	Version 1.2.1
- *  Last revision by Mengyao Zhao on 11/29/16.
+ *	Version 1.2.2
+ *  Last revision by Mengyao Zhao on 2017-05-30.
  */
 
 #include <stdlib.h>
@@ -157,7 +157,7 @@ end:
 		fprintf(stdout, "%s\t", read->name.s);
 		if (a->score1 == 0) fprintf(stdout, "4\t*\t0\t255\t*\t*\t0\t0\t*\t*\n");
 		else {
-			int32_t c, qb = a->ref_begin1, pb = a->read_begin1, p;
+			int32_t c, p;
 			uint32_t mapq = -4.343 * log(1 - (double)abs(a->score1 - a->score2)/(double)a->score1);
 			mapq = (uint32_t) (mapq + 4.99);
 			mapq = mapq < 254 ? mapq : 254;
@@ -178,25 +178,6 @@ end:
 			}else if (read->qual.s) fprintf (stdout, "%s", read->qual.s);
 			else fprintf(stdout, "*");
 			fprintf(stdout, "\tAS:i:%d", a->score1);
-	/*		mapq = 0;	// counter of difference
-			for (c = 0; c < a->cigarLen; ++c) {
-				char letter = cigar_int_to_op(a->cigar[c]);
-				uint32_t length = cigar_int_to_len(a->cigar[c]);
-				if (letter == 'M' || letter == 'X') {
-					for (p = 0; p < length; ++p){
-						if (table[(int)*(ref_seq->seq.s + qb)] != table[(int)*(read_seq + pb)]) ++mapq;
-						++qb;
-						++pb;
-					}
-				} else if (letter == 'I') {
-					pb += length;
-					mapq += length;
-				} else {
-					qb += length;
-					mapq += length;
-				}
-			}
-			fprintf(stdout,"\tNM:i:%d\t", mapq);*/
 			fprintf(stdout,"\tNM:i:%d\t", mismatch);
 			if (a->score2 > 0) fprintf(stdout, "ZS:i:%d\n", a->score2);
 			else fprintf(stdout, "\n");

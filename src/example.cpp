@@ -5,6 +5,7 @@
 // 1) g++ -Wall ssw_cpp.cpp ssw.c example.cpp
 // 2) ./a.out
 // Created by Wan-Ping Lee on 09/04/12.
+// Last revision by Mengyao Zhao on 2017-05-30
 // ==========================
 
 #include <iostream>
@@ -21,6 +22,8 @@ static void PrintAlignment(const StripedSmithWaterman::Alignment& alignment);
 int main() {
   const string ref   = "CAGCCTTTCTGACCCGGAAATCAAAATAGGCACAACAAA";
   const string query = "CTGAGCCGGTAAATC";
+  int32_t maskLen = strlen(query.c_str())/2;
+  maskLen = maskLen < 15 ? 15 : maskLen;
   //const string ref   = "CCGTTTATCGCA";
   //const string query = "CCTTTTATCGCA";
 
@@ -31,7 +34,7 @@ int main() {
   // Declares an alignment that stores the result
   StripedSmithWaterman::Alignment alignment;
   // Aligns the query to the ref
-  aligner.Align(query.c_str(), ref.c_str(), ref.size(), filter, &alignment);
+  aligner.Align(query.c_str(), ref.c_str(), ref.size(), filter, &alignment, maskLen);
 
   PrintAlignment(alignment);
 

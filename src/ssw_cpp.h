@@ -1,3 +1,7 @@
+// ssw_cpp.h
+// Created by Wan-Ping Lee
+// Last revision by Mengyao Zhao on 2017-05-30
+
 #ifndef COMPLETE_STRIPED_SMITH_WATERMAN_CPP_H_
 #define COMPLETE_STRIPED_SMITH_WATERMAN_CPP_H_
 
@@ -127,9 +131,12 @@ class Aligner {
   // @param    query     The query sequence.
   // @param    filter    The filter for the alignment.
   // @param    alignment The container contains the result.
+  // @param    maskLen   The distance between the optimal and suboptimal alignment ending position will >= maskLen. We suggest to 
+  //                     use readLen/2, if you don't have special concerns. Note: maskLen has to be >= 15, otherwise this function 
+  //                     will NOT return the suboptimal alignment information.
   // @return   True: succeed; false: fail.
   // =========
-  bool Align(const char* query, const Filter& filter, Alignment* alignment) const;
+  bool Align(const char* query, const Filter& filter, Alignment* alignment, const int32_t maskLen) const;
 
   // =========
   // @function Align the query againt the reference.
@@ -141,10 +148,13 @@ class Aligner {
   // @param    ref_len   The length of the reference sequence.
   // @param    filter    The filter for the alignment.
   // @param    alignment The container contains the result.
+  // @param    maskLen   The distance between the optimal and suboptimal alignment ending position will >= maskLen. We suggest to 
+  //                     use readLen/2, if you don't have special concerns. Note: maskLen has to be >= 15, otherwise this function 
+  //                     will NOT return the suboptimal alignment information.
   // @return   True: succeed; false: fail.
   // =========
   bool Align(const char* query, const char* ref, const int& ref_len,
-             const Filter& filter, Alignment* alignment) const;
+             const Filter& filter, Alignment* alignment, const int32_t maskLen) const;
 
   // @function Clear up all containers and thus the aligner is disabled.
   //             To rebuild the aligner please use Build functions.

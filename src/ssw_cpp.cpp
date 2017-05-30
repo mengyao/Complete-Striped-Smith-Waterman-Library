@@ -1,3 +1,7 @@
+// ssw_cpp.cpp
+// Created by Wan-Ping Lee
+// Last revision by Mengyao Zhao on 2017-05-30
+
 #include "ssw_cpp.h"
 #include "ssw.h"
 
@@ -323,7 +327,7 @@ int Aligner::TranslateBase(const char* bases, const int& length,
 
 
 bool Aligner::Align(const char* query, const Filter& filter,
-                    Alignment* alignment) const
+                    Alignment* alignment, const int32_t maskLen) const
 {
   if (!translation_matrix_) return false;
   if (reference_length_ == 0) return false;
@@ -342,7 +346,7 @@ bool Aligner::Align(const char* query, const Filter& filter,
   s_align* s_al = ssw_align(profile, translated_reference_, reference_length_,
                                  static_cast<int>(gap_opening_penalty_),
 				 static_cast<int>(gap_extending_penalty_),
-				 flag, filter.score_filter, filter.distance_filter, query_len);
+				 flag, filter.score_filter, filter.distance_filter, maskLen);
 
   alignment->Clear();
   ConvertAlignment(*s_al, query_len, alignment);
@@ -359,7 +363,7 @@ bool Aligner::Align(const char* query, const Filter& filter,
 
 
 bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
-                    const Filter& filter, Alignment* alignment) const
+                    const Filter& filter, Alignment* alignment, const int32_t maskLen) const
 {
   if (!translation_matrix_) return false;
 
@@ -369,9 +373,6 @@ bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
   TranslateBase(query, query_len, translated_query);
 
   // calculate the valid length
-  //int calculated_ref_length = static_cast<int>(strlen(ref));
-  //int valid_ref_len = (calculated_ref_length > ref_len)
-  //                    ? ref_len : calculated_ref_length;
   int valid_ref_len = ref_len;
   int8_t* translated_ref = new int8_t[valid_ref_len];
   TranslateBase(ref, valid_ref_len, translated_ref);
@@ -386,7 +387,7 @@ bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
   s_align* s_al = ssw_align(profile, translated_ref, valid_ref_len,
                                  static_cast<int>(gap_opening_penalty_),
 				 static_cast<int>(gap_extending_penalty_),
-				 flag, filter.score_filter, filter.distance_filter, query_len);
+				 flag, filter.score_filter, filter.distance_filter, maskLen);
 
   alignment->Clear();
   ConvertAlignment(*s_al, query_len, alignment);
