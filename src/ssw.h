@@ -160,7 +160,6 @@ int32_t mark_mismatch (int32_t ref_begin1,
 	@param	op_letter	CIGAR operation character ('M', 'I', etc)
 	@return			32-bit unsigned integer, representing encoded CIGAR operation and length
 */
-//uint32_t to_cigar_int (uint32_t length, char op_letter);
 static inline uint32_t to_cigar_int (uint32_t length, char op_letter) {
 	return (length << BAM_CIGAR_SHIFT) | (encoded_ops[(int)op_letter]);
 }
@@ -178,7 +177,6 @@ static inline char cigar_int_to_op(uint32_t cigar_int) {
 	@param	cigar_int	32-bit unsigned integer, representing encoded CIGAR operation and length
 	@return			length of CIGAR operation
 */
-//uint32_t cigar_int_to_len (uint32_t cigar_int);
 static inline uint32_t cigar_int_to_len (uint32_t cigar_int) {
 	return cigar_int >> BAM_CIGAR_SHIFT;
 }
