@@ -30,8 +30,8 @@
  *
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
- *	Version 1.2.2
- *	Last revision by Mengyao Zhao on 2017-05-30.
+ *	Version 1.2.3
+ *	Last revision by Mengyao Zhao on 2017-06-26.
  *
  */
 
@@ -84,6 +84,43 @@ struct _profile{
 	int32_t readLen;
 	int32_t n;
 	uint8_t bias;
+};
+
+/* array index is an ASCII character value from a CIGAR, 
+   element value is the corresponding integer opcode between 0 and 8 */
+const uint8_t encoded_ops[] = {
+	0,         0,         0,         0,
+	0,         0,         0,         0,
+	0,         0,         0,         0,
+	0,         0,         0,         0,
+	0,         0,         0,         0,
+	0,         0,         0,         0,
+	0,         0,         0,         0,
+	0,         0,         0,         0,
+	0 /*   */, 0 /* ! */, 0 /* " */, 0 /* # */,
+	0 /* $ */, 0 /* % */, 0 /* & */, 0 /* ' */,
+	0 /* ( */, 0 /* ) */, 0 /* * */, 0 /* + */,
+	0 /* , */, 0 /* - */, 0 /* . */, 0 /* / */,
+	0 /* 0 */, 0 /* 1 */, 0 /* 2 */, 0 /* 3 */,
+	0 /* 4 */, 0 /* 5 */, 0 /* 6 */, 0 /* 7 */,
+	0 /* 8 */, 0 /* 9 */, 0 /* : */, 0 /* ; */,
+	0 /* < */, 7 /* = */, 0 /* > */, 0 /* ? */,
+	0 /* @ */, 0 /* A */, 0 /* B */, 0 /* C */,
+	2 /* D */, 0 /* E */, 0 /* F */, 0 /* G */,
+	5 /* H */, 1 /* I */, 0 /* J */, 0 /* K */,
+	0 /* L */, 0 /* M */, 3 /* N */, 0 /* O */,
+	6 /* P */, 0 /* Q */, 0 /* R */, 4 /* S */,
+	0 /* T */, 0 /* U */, 0 /* V */, 0 /* W */,
+	8 /* X */, 0 /* Y */, 0 /* Z */, 0 /* [ */,
+	0 /* \ */, 0 /* ] */, 0 /* ^ */, 0 /* _ */,
+	0 /* ` */, 0 /* a */, 0 /* b */, 0 /* c */,
+	0 /* d */, 0 /* e */, 0 /* f */, 0 /* g */,
+	0 /* h */, 0 /* i */, 0 /* j */, 0 /* k */,
+	0 /* l */, 0 /* m */, 0 /* n */, 0 /* o */,
+	0 /* p */, 0 /* q */, 0 /* r */, 0 /* s */,
+	0 /* t */, 0 /* u */, 0 /* v */, 0 /* w */,
+	0 /* x */, 0 /* y */, 0 /* z */, 0 /* { */,
+	0 /* | */, 0 /* } */, 0 /* ~ */, 0 /*  */
 };
 
 /* Generate query profile rearrange query sequence & calculate the weight of match/mismatch. */
@@ -536,32 +573,33 @@ end:
         @param  op_letter       CIGAR operation character ('M', 'I', etc)
         @return                 32-bit unsigned integer, representing encoded CIGAR operation and length
 */
+/*
 uint32_t to_cigar_int (uint32_t length, char op_letter)
 {
         switch (op_letter) {
-                case 'M': /* alignment match (can be a sequence match or mismatch */
+                case 'M': // alignment match (can be a sequence match or mismatch 
                 default:
                         return length << BAM_CIGAR_SHIFT;
-                case 'S': /* soft clipping (clipped sequences present in SEQ) */
+                case 'S': // soft clipping (clipped sequences present in SEQ) 
                         return (length << BAM_CIGAR_SHIFT) | (4u);
-                case 'D': /* deletion from the reference */
+                case 'D': // deletion from the reference 
                         return (length << BAM_CIGAR_SHIFT) | (2u);
-                case 'I': /* insertion to the reference */
+                case 'I': // insertion to the reference 
                         return (length << BAM_CIGAR_SHIFT) | (1u);
-                case 'H': /* hard clipping (clipped sequences NOT present in SEQ) */
+                case 'H': // hard clipping (clipped sequences NOT present in SEQ) 
                         return (length << BAM_CIGAR_SHIFT) | (5u);
-                case 'N': /* skipped region from the reference */
+                case 'N': // skipped region from the reference 
                         return (length << BAM_CIGAR_SHIFT) | (3u);
-                case 'P': /* padding (silent deletion from padded reference) */
+                case 'P': // padding (silent deletion from padded reference) 
                         return (length << BAM_CIGAR_SHIFT) | (6u);
-                case '=': /* sequence match */
+                case '=': // sequence match 
                         return (length << BAM_CIGAR_SHIFT) | (7u);
-                case 'X': /* sequence mismatch */
+                case 'X': // sequence mismatch 
                         return (length << BAM_CIGAR_SHIFT) | (8u);
         }
         return (uint32_t)-1; // This never happens
 }
-
+*/
 static cigar* banded_sw (const int8_t* ref,
 				 const int8_t* read,
 				 int32_t refLen,

@@ -3,7 +3,7 @@
  *
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
- *	Version 0.1.4
+ *	Version 1.2.3
  *	Last revision by Mengyao Zhao on 11/29/16.
  *
  */
@@ -25,6 +25,7 @@ extern "C" {
 #define BAM_CIGAR_SHIFT 4u
 #endif
 
+extern const uint8_t encoded_ops[];
 
 /*!	@typedef	structure of the query profile	*/
 struct _profile;
@@ -159,28 +160,29 @@ int32_t mark_mismatch (int32_t ref_begin1,
 	@param	op_letter	CIGAR operation character ('M', 'I', etc)
 	@return			32-bit unsigned integer, representing encoded CIGAR operation and length
 */
-uint32_t to_cigar_int (uint32_t length, char op_letter);
+//uint32_t to_cigar_int (uint32_t length, char op_letter);
+static inline uint32_t to_cigar_int (uint32_t length, char op_letter) {
+	return (length << BAM_CIGAR_SHIFT) | (encoded_ops[(int)op_letter]);
+}
 
 /*!	@function		Extract CIGAR operation character from CIGAR 32-bit unsigned integer
 	@param	cigar_int	32-bit unsigned integer, representing encoded CIGAR operation and length
 	@return			CIGAR operation character ('M', 'I', etc)
 */
 //char cigar_int_to_op (uint32_t cigar_int);
-static inline char cigar_int_to_op(uint32_t cigar_int) 
-{
+static inline char cigar_int_to_op(uint32_t cigar_int) {
 	return (cigar_int & 0xfU) > 8 ? 'M': MAPSTR[cigar_int & 0xfU];
 }
-
 
 /*!	@function		Extract length of a CIGAR operation from CIGAR 32-bit unsigned integer
 	@param	cigar_int	32-bit unsigned integer, representing encoded CIGAR operation and length
 	@return			length of CIGAR operation
 */
 //uint32_t cigar_int_to_len (uint32_t cigar_int);
-static inline uint32_t cigar_int_to_len (uint32_t cigar_int)
-{
+static inline uint32_t cigar_int_to_len (uint32_t cigar_int) {
 	return cigar_int >> BAM_CIGAR_SHIFT;
 }
+
 #ifdef __cplusplus
 }
 #endif	// __cplusplus
