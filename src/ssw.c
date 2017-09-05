@@ -250,13 +250,13 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 
 			/* Update vE value. */
 			vH = _mm_subs_epu8(vH, vGapO); /* saturation arithmetic, result >= 0 */
-			e = _mm_subs_epu8(e, vGapE);
 			e = _mm_max_epu8(e, vH);
+			e = _mm_subs_epu8(e, vGapE);
 			_mm_store_si128(pvE + j, e);
 
 			/* Update vF value. */
-			vF = _mm_subs_epu8(vF, vGapE);
 			vF = _mm_max_epu8(vF, vH);
+			vF = _mm_subs_epu8(vF, vGapE);
 
 			/* Load the next vH. */
 			vH = _mm_load_si128(pvHLoad + j);
@@ -474,13 +474,13 @@ static alignment_end* sw_sse2_word (const int8_t* ref,
 
 			/* Update vE value. */
 			vH = _mm_subs_epu16(vH, vGapO); /* saturation arithmetic, result >= 0 */
-			e = _mm_subs_epu16(e, vGapE);
 			e = _mm_max_epi16(e, vH);
+			e = _mm_subs_epu16(e, vGapE);
 			_mm_store_si128(pvE + j, e);
 
 			/* Update vF value. */
-			vF = _mm_subs_epu16(vF, vGapE);
 			vF = _mm_max_epi16(vF, vH);
+			vF = _mm_subs_epu16(vF, vGapE);
 
 			/* Load the next vH. */
 			vH = _mm_load_si128(pvHLoad + j);
