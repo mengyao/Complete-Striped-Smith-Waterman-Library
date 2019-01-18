@@ -77,6 +77,15 @@ typedef struct {
 */
 s_profile* ssw_init (const int8_t* read, const int32_t readLen, const int8_t* mat, const int32_t n, const int8_t score_size);
 
+
+/*! @function Initialises data structures using query profile from hhblits.
+    @param  read    The query profile to look for matches for. One byte per weight.
+	@param  readLen Length of the query profile
+	@param	n       The square root of the number of elements in substitution matrix.
+	@param  bias    Bias applied to offset values to ensure all are above 0.
+*/
+s_profile* ssw_hhblits_init(__m128i* read, const int32_t readLen, const int32_t n, uint8_t bias);
+
 /*!	@function	Release the memory allocated by function ssw_init.
 	@param	p	pointer to the query profile structure
 */
@@ -116,7 +125,7 @@ void init_destroy (s_profile* p);
 			0-based coordinate.
 */
 s_align* ssw_align (const s_profile* prof,
-					const int8_t* ref,
+					const uint8_t* ref,
 					int32_t refLen,
 					const uint8_t weight_gapO,
 					const uint8_t weight_gapE,
@@ -149,7 +158,7 @@ void align_destroy (s_align* a);
 int32_t mark_mismatch (int32_t ref_begin1,
 					   int32_t read_begin1,
 					   int32_t read_end1,
-					   const int8_t* ref,
+					   const uint8_t* ref,
 					   const int8_t* read,
 					   int32_t readLen,
 					   uint32_t** cigar, 

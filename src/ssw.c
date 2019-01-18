@@ -158,7 +158,7 @@ static __m128i* qP_byte (const int8_t* read_num,
    wight_match > 0, all other weights < 0.
    The returned positions are 0-based.
  */
-static alignment_end* sw_sse2_byte (const int8_t* ref,
+static alignment_end* sw_sse2_byte (const uint8_t* ref,
 							 int8_t ref_dir,	// 0: forward ref; 1: reverse ref
 							 int32_t refLen,
 							 int32_t readLen,
@@ -390,7 +390,7 @@ static __m128i* qP_word (const int8_t* read_num,
 	return vProfile;
 }
 
-static alignment_end* sw_sse2_word (const int8_t* ref,
+static alignment_end* sw_sse2_word (const uint8_t* ref,
 							 int8_t ref_dir,	// 0: forward ref; 1: reverse ref
 							 int32_t refLen,
 							 int32_t readLen,
@@ -568,7 +568,7 @@ end:
 	return bests;
 }
 
-static cigar* banded_sw (const int8_t* ref,
+static cigar* banded_sw (const uint8_t* ref,
 				 const int8_t* read,
 				 int32_t refLen,
 				 int32_t readLen,
@@ -792,6 +792,58 @@ s_profile* ssw_init (const int8_t* read, const int32_t readLen, const int8_t* ma
 	return p;
 }
 
+s_profile* ssw_hhblits_init(__m128i* read, const int32_t readLen, const int32_t n, uint8_t bias) {
+	s_profile* p = (s_profile*)calloc(1, sizeof(struct _profile));
+	p->profile_byte = 0;
+  	p->readLen = readLen;
+  	p->bias = bias;
+
+	// Unused in the HHBlits use case.
+	p->n = 0;
+	p->mat = 0;
+	p->read = 0;
+
+	// Split the 128 bit register into 16.
+	int32_t segLen = (readLen + 15) / 16;
+	p->profile_byte = (__m128i*)malloc(n * segLen * sizeof(__m128i));
+	int8_t* t = (int8_t*)p->profile_byte;
+	int8_t* r = (int8_t*)read;
+	int32_t nt, i, j, segNum;
+
+	// Copy weights across from hhblits profile. The incoming profile already
+	// has padding and bias added.
+	for (nt = 0; LIKELY(nt < n); nt++) {
+		for (i = 0; i < segLen; i++) {
+			j = i;
+			for (segNum = 0; LIKELY(segNum < 16); segNum++) {
+				*t++ = *r++;
+				j += segLen;
+			}
+		}
+	}
+
+	// Create a larger word-based profile.
+	segLen = (readLen + 7) / 8;
+	p->profile_word = (__m128i*)malloc(n * segLen * sizeof(__m128i));
+	int16_t* tw = (int16_t*)p->profile_word;
+	r = (int8_t*)read;
+
+	// Copy weights across from hhblits profile, correcting for padding on the
+	// way.
+	for (nt = 0; LIKELY(nt < n); nt++) {
+		for (i = 0; i < segLen; i++) {
+			j = i;
+			for (segNum = 0; LIKELY(segNum < 8); segNum++) {
+				*tw++ = j >= readLen ? bias : *r;
+				++r;
+				j += segLen;
+			}
+		}
+  }
+
+  return p;
+}
+
 void init_destroy (s_profile* p) {
 	free(p->profile_byte);
 	free(p->profile_word);
@@ -799,7 +851,7 @@ void init_destroy (s_profile* p) {
 }
 
 s_align* ssw_align (const s_profile* prof,
-					const int8_t* ref,
+					const uint8_t* ref,
 				  	int32_t refLen,
 				  	const uint8_t weight_gapO,
 				  	const uint8_t weight_gapE,
@@ -933,7 +985,7 @@ uint32_t* store_previous_m (int8_t choice,	// 0: current not M, 1: current match
 int32_t mark_mismatch (int32_t ref_begin1,
 					   int32_t read_begin1,
 					   int32_t read_end1,
-					   const int8_t* ref,
+					   const uint8_t* ref,
 					   const int8_t* read,
 					   int32_t readLen,
 					   uint32_t** cigar,

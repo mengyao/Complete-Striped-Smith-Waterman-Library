@@ -110,7 +110,7 @@ int main (int argc, char * const argv[]) {
 	static const char read_seq[16] = {'C', 'T', 'G', 'A', 'G', 'C', 'C', 'G', 'G', 'T', 'A', 'A', 'A', 'T', 'C', '\0'};	// read sequence
 	s_profile* profile;
 	int8_t* num = (int8_t*)malloc(16);	// the read sequence represented in numbers
-	int8_t* ref_num = (int8_t*)malloc(64);	// the read sequence represented in numbers
+	uint8_t* ref_num = (uint8_t*)malloc(64);	// the read sequence represented in numbers
 	s_align* result;
 
 	/* This table is used to transform nucleotide letters into numbers. */

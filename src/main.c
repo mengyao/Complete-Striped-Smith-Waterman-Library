@@ -60,7 +60,7 @@ static void ssw_write (s_align* a,
 			const kseq_t* ref_seq,
 			const kseq_t* read,
 			const char* read_seq,	// strand == 0: original read; strand == 1: reverse complement read
-			const int8_t* ref_num,
+			const uint8_t* ref_num,
 			const int8_t* read_num,
 			const int8_t* table,
 			int8_t strand,	// 0: forward aligned ; 1: reverse complement aligned
@@ -195,7 +195,7 @@ int main (int argc, char * const argv[]) {
 	const int8_t* mat = mata;
 	char mat_name[16];
 	mat_name[0] = '\0';
-	int8_t* ref_num = (int8_t*)malloc(s1);
+	uint8_t* ref_num = (uint8_t*)malloc(s1);
 	int8_t* num = (int8_t*)malloc(s2), *num_rc = 0;
 	char* read_rc = 0;
 
@@ -401,7 +401,7 @@ int main (int argc, char * const argv[]) {
 			while (refLen > s1) {
 				++s1;
 				kroundup32(s1);
-				ref_num = (int8_t*)realloc(ref_num, s1);
+				ref_num = (uint8_t*)realloc(ref_num, s1);
 			}
 			for (m = 0; m < refLen; ++m) ref_num[m] = table[(int)ref_seq->seq.s[m]];
 			if (path == 1) flag = 2;
