@@ -274,7 +274,6 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 				_mm_store_si128(pvHStore + j, vH);
 				vH = _mm_subs_epu8(vH, vGapO);
 				vF = _mm_subs_epu8(vF, vGapE);
-			//	vF = _mm_max_epu8(vH, vF);
 				if (UNLIKELY(! _mm_movemask_epi8(_mm_cmpgt_epi8(vF, vH)))) goto end;
 			}
 		}
