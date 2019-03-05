@@ -198,7 +198,7 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 	__m128i* pvE = (__m128i*) calloc(segLen, sizeof(__m128i));
 	__m128i* pvHmax = (__m128i*) calloc(segLen, sizeof(__m128i));
 
-	int32_t i, j;
+	int32_t i, j, k;
 	/* 16 byte insertion begin vector */
 	__m128i vGapO = _mm_set1_epi8(weight_gapO);
 
@@ -262,39 +262,22 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 			vH = _mm_load_si128(pvHLoad + j);
 		}
 
-		/* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3 */
-        /* reset pointers to the start of the saved data */
-        j = 0;
-        vH = _mm_load_si128 (pvHStore + j);
+/* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3 */
+		for (k = 0; LIKELY(k < 16); ++k) {
+			vF = _mm_slli_si128 (vF, 1);
+			for (j = 0; LIKELY(j < segLen); ++j) {
+				vH = _mm_load_si128(pvHStore + j);
+				vH = _mm_max_epu8(vH, vF);
+				vMaxColumn = _mm_max_epu8(vMaxColumn, vH);	// newly added line
+				_mm_store_si128(pvHStore + j, vH);
+				vH = _mm_subs_epu8(vH, vGapO);
+				vF = _mm_subs_epu8(vF, vGapE);
+			//	vF = _mm_max_epu8(vH, vF);
+				if (UNLIKELY(! _mm_movemask_epi8(_mm_cmpgt_epi8(vF, vH)))) goto end;
+			}
+		}
 
-        /*  the computed vF value is for the given column.  since */
-        /*  we are at the end, we need to shift the vF value over */
-        /*  to the next column. */
-        vF = _mm_slli_si128 (vF, 1);
-        vTemp = _mm_subs_epu8 (vH, vGapO);
-		vTemp = _mm_subs_epu8 (vF, vTemp);
-		vTemp = _mm_cmpeq_epi8 (vTemp, vZero);
-		cmp  = _mm_movemask_epi8 (vTemp);
-
-        while (cmp != 0xffff)
-        {
-            vH = _mm_max_epu8 (vH, vF);
-			vMaxColumn = _mm_max_epu8(vMaxColumn, vH);
-            _mm_store_si128 (pvHStore + j, vH);
-            vF = _mm_subs_epu8 (vF, vGapE);
-            j++;
-            if (j >= segLen)
-            {
-                j = 0;
-                vF = _mm_slli_si128 (vF, 1);
-            }
-            vH = _mm_load_si128 (pvHStore + j);
-
-            vTemp = _mm_subs_epu8 (vH, vGapO);
-            vTemp = _mm_subs_epu8 (vF, vTemp);
-            vTemp = _mm_cmpeq_epi8 (vTemp, vZero);
-            cmp  = _mm_movemask_epi8 (vTemp);
-        }
+end:		
 
 		vMaxScore = _mm_max_epu8(vMaxScore, vMaxColumn);
 		vTemp = _mm_cmpeq_epi8(vMaxMark, vMaxScore);
