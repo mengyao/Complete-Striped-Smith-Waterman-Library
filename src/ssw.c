@@ -1,6 +1,6 @@
 /* The MIT License
 
-   Copyright (c) 2012-1015 Boston College.
+   Copyright (c) 2012-2015 Boston College.
 
    Permission is hereby granted, free of charge, to any person obtaining
    a copy of this software and associated documentation files (the
@@ -30,9 +30,11 @@
  *
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
- *	Version 1.2.3
- *	Last revision by Mengyao Zhao on 2017-06-26.
+ *	Version 1.2.4
+ *	Last revision by Mengyao Zhao on 2019-03-04.
  *
+ *  The lazy-F loop implementation was derived from SWPS3, which is
+ *  MIT licensed under ETH Zürich, Institute of Computational Science.
  */
 
 //#include <nmmintrin.h>
