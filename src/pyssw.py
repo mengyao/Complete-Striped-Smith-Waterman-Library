@@ -214,7 +214,7 @@ def main(args):
                     else:
                         lScore[i*nEleNum+j] = -args.nMismatch
         else:
-            lEle, dEle2Int, dInt2Ele, lScore = ssw.read_matrix(args.sMatrix)
+            lEle, dEle2Int, dInt2Ele, lScore = ssw_lib.read_matrix(args.sMatrix)
     else:
 # load AA score matrix
         if not args.sMatrix:
@@ -227,7 +227,7 @@ def main(args):
             lScore = ssw_lib.lBlosum50
         else:
             # assume the format of the input score matrix is the same as that of http://www.ncbi.nlm.nih.gov/Class/FieldGuide/BLOSUM62.txt
-            lEle, dEle2Int, dInt2Ele, lScore = ssw.read_matrix(args.sMatrix)
+            lEle, dEle2Int, dInt2Ele, lScore = ssw_lib.read_matrix(args.sMatrix)
 
     if args.bBest and args.bProtien:
         print >> sys.stderr, 'Reverse complement alignment is not available for protein sequences.'
