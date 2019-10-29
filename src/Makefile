@@ -1,6 +1,6 @@
 CC = gcc
 CXX = g++
-CFLAGS := -Wall -pipe -O2
+CFLAGS += -Wall -pipe -O2
 CXXFLAGS := $(CFLAGS)
 LOBJS = ssw.o
 LCPPOBJS = ssw_cpp.o
@@ -31,10 +31,10 @@ $(PROG): main.c kseq.h
 $(EXAMPLE): example.c
 
 $(PROG) $(EXAMPLE): $(LOBJS)
-	$(CC) -o $@ $(filter-out %.h,$^) $(CFLAGS) -lm -lz
+	$(CC) -o $@ $(filter-out %.h,$^) $(CFLAGS) $(LDFLAGS) -lm -lz
 
 $(EXAMPLE_CPP): example.cpp $(LOBJS) $(LCPPOBJS)
-	$(CXX) -o $@ $^ $(CXXFLAGS) -lm -lz
+	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS) -lm -lz
 
 $(JAVA_LIB): sswjni.c ssw.c ssw.h
 	$(CC) $(CFLAGS) $(JAVA_INLCUDES) -fPIC -shared -rdynamic -o $@ $< ssw.c 
