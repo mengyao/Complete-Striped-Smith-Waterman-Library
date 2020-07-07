@@ -1,6 +1,6 @@
 # SSW Library
 
-## An SIMD Smith-Waterman C/C++/Python/Java Library for Use in Genomic Applications
+## An SIMD Smith-Waterman C/C++/Python/Java/R Library for Use in Genomic Applications
 
 License: MIT
 
