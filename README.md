@@ -17,12 +17,14 @@ Authors:
 * C++ wrapper: Wan-Ping Lee
 * Python wrapper: Yongan Zhao
 * Java wrapper: Daniel Cameron
+* R package: Nan Xiao
 
 Contact:
 * Mengyao Zhao <zhaomengyao@gmail.com>
 * Wan-Ping Lee <wanping.lee@gmail.com>
 * Yongan Zhao <zhaoyanswill@gmail.com>
 * Daniel Cameron <cameron.d@wehi.edu.au>
+* Nan Xiao <me@nanx.me>
 
 Last revision: 06/29/2016
 
@@ -247,6 +249,11 @@ The Java wrapper consist of the following components:
     * `ssw.Example` Java class: Java version of the example_c sample code. Run `java -jar ssw.jar` to execute the sample.
 
 To use the library, either reference the `ssw.jar` or including the Aligner and Alignment classes directly. As for any JNI library, the native library must be loaded (using `System.loadLibrary("sswjni")` or similar) before invokation of native methods. For the JVM to find the library, ensure that either the library is included in the `LD_LIBRARY_PATH` environment variable, or `-Djava.library.path=<directory containing libsswjni.so>` is set on the Java command line.
+
+## R package
+
+Please check all the R package information here:
+https://github.com/nanxstats/ssw-r
 
 ## Citation
 
