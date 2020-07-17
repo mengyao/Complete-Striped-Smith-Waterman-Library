@@ -101,8 +101,8 @@ class CSsw(object):
         """
 # load libssw
         sLibName = 'libssw.so'
-        if not sLibPath:
-# user doesn't give the path explicitly
+        if sLibPath:
+# user does give the path explicitly
             if not op.exists(op.join(sLibPath, sLibName)):
                 print >> sys.stderr, 'libssw.so does not exist in the input path'
                 sys.exit()
