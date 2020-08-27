@@ -200,7 +200,7 @@ def main(args):
 # init DNA score matrix
         if not args.sMatrix:
             lEle = ['A', 'C', 'G', 'T', 'N']
-            dRc = {'A':'C', 'C':'G', 'G':'C', 'T':'A', 'a':'C', 'c':'G', 'g':'C', 't':'A'} 
+            dRc = {'A':'T', 'C':'G', 'G':'C', 'T':'A', 'a':'T', 'c':'G', 'g':'C', 't':'A'} 
             for i,ele in enumerate(lEle):
                 dEle2Int[ele] = i
                 dEle2Int[ele.lower()] = i
