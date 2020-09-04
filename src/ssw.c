@@ -67,7 +67,8 @@
  */
 
 //#include <nmmintrin.h>
-#include <emmintrin.h>
+#define SIMDE_ENABLE_NATIVE_ALIASES
+#include <simde/x86/sse2.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>

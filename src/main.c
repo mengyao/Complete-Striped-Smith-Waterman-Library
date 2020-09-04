@@ -6,7 +6,6 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <emmintrin.h>
 #include <zlib.h>
 #include <stdio.h>
 #include <time.h>
