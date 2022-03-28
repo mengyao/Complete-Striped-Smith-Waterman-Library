@@ -1,18 +1,19 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 1.2.2
- *  Last revision by Mengyao Zhao on 2017-05-30.
+ *  Last revision by Mengyao Zhao on 2022Mar28.
  */
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <emmintrin.h>
+//#include <emmintrin.h>
 #include <zlib.h>
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
+#include "sse2neon.h"
 #include "ssw.h"
 #include "kseq.h"
 

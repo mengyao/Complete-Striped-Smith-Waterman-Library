@@ -57,7 +57,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 1.2.4
- *	Last revision by Mengyao Zhao on 2019-03-04.
+ *	Last revision by Mengyao Zhao on 2022-03-28.
  *
  *  The lazy-F loop implementation was derived from SWPS3, which is
  *  MIT licensed under ETH Zürich, Institute of Computational Science.
@@ -66,13 +66,13 @@
  *  BSD licensed under Micharl Farrar.
  */
 
-//#include <nmmintrin.h>
-#include <emmintrin.h>
+//#include <emmintrin.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include "sse2neon.h"
 #include "ssw.h"
 
 #ifdef __GNUC__

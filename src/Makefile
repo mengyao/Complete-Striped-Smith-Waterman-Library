@@ -31,7 +31,7 @@ $(PROG): main.c kseq.h
 $(EXAMPLE): example.c
 
 $(PROG) $(EXAMPLE): $(LOBJS)
-	$(CC) -o $@ $(filter-out %.h,$^) $(CFLAGS) -lm -lz
+	$(CC) -o $@ $(filter-out %.h,$^) $(CFLAGS) -lm -lz -march=armv8-a+fp+simd+crypto+crc
 
 $(EXAMPLE_CPP): example.cpp $(LOBJS) $(LCPPOBJS)
 	$(CXX) -o $@ $^ $(CXXFLAGS) -lm -lz

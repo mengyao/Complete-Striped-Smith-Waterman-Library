@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 1.2.3
- *	Last revision by Mengyao Zhao on 11/29/16.
+ *	Last revision by Mengyao Zhao on 2022Mar28.
  *
  */
 
@@ -14,7 +14,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <emmintrin.h>
+//#include <emmintrin.h>
+#include "sse2neon.h"
 
 #ifdef __cplusplus
 extern "C" {
