@@ -1,6 +1,6 @@
 CC = gcc
 CXX = g++
-CFLAGS := -Wall -pipe -O2
+CFLAGS := -Wall -pipe -g -fsanitize=address#-O2
 CXXFLAGS := $(CFLAGS)
 LOBJS = ssw.o
 LCPPOBJS = ssw_cpp.o
@@ -31,7 +31,7 @@ $(PROG): main.c kseq.h
 $(EXAMPLE): example.c
 
 $(PROG) $(EXAMPLE): $(LOBJS)
-	$(CC) -o $@ $(filter-out %.h,$^) $(CFLAGS) -lm -lz -march=armv8-a+fp+simd+crypto+crc
+	$(CC) -o $@ $(filter-out %.h,$^) $(CFLAGS) -lm -lz #-march=armv8-a+fp+simd+crypto+crc
 
 $(EXAMPLE_CPP): example.cpp $(LOBJS) $(LCPPOBJS)
 	$(CXX) -o $@ $^ $(CXXFLAGS) -lm -lz

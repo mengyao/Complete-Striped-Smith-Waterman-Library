@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 1.2.2
- *  Last revision by Mengyao Zhao on 2022Mar28.
+ *  Last revision by Mengyao Zhao on 2022Mar31.
  */
 
 #include <stdlib.h>
@@ -13,9 +13,16 @@
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
-#include "sse2neon.h"
+//#include "sse2neon.h"
 #include "ssw.h"
 #include "kseq.h"
+
+#ifdef __arm__ // (M1)
+#include "sse2neon.h"
+#else // x86 (Intel)
+#include <emmintrin.h>
+#endif
+
 
 #ifdef __GNUC__
 #define LIKELY(x) __builtin_expect((x),1)

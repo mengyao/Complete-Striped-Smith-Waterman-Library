@@ -57,7 +57,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 1.2.4
- *	Last revision by Mengyao Zhao on 2022-03-28.
+ *	Last revision by Mengyao Zhao on 2022Mar28.
  *
  *  The lazy-F loop implementation was derived from SWPS3, which is
  *  MIT licensed under ETH Zürich, Institute of Computational Science.
@@ -66,14 +66,19 @@
  *  BSD licensed under Micharl Farrar.
  */
 
-//#include <emmintrin.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include "sse2neon.h"
 #include "ssw.h"
+
+#ifdef __arm__ // (M1)
+#include "sse2neon.h"
+#else // x86 (Intel)
+#include <emmintrin.h>
+#endif
+
 
 #ifdef __GNUC__
 #define LIKELY(x) __builtin_expect((x),1)
