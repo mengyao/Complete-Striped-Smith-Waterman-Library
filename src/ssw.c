@@ -57,7 +57,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 1.2.4
- *	Last revision by Mengyao Zhao on 2022-03-28.
+ *	Last revision by Mengyao Zhao on 2022Apr04.
  *
  *  The lazy-F loop implementation was derived from SWPS3, which is
  *  MIT licensed under ETH Zürich, Institute of Computational Science.
@@ -66,14 +66,19 @@
  *  BSD licensed under Micharl Farrar.
  */
 
-//#include <emmintrin.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include "sse2neon.h"
 #include "ssw.h"
+
+#ifdef __ARM_NEON // (M1)
+#include "sse2neon.h"
+#else // x86 (Intel)
+#include <emmintrin.h>
+#endif
+
 
 #ifdef __GNUC__
 #define LIKELY(x) __builtin_expect((x),1)
@@ -88,6 +93,7 @@
 
 /* Convert the coordinate in the direction matrix into the coordinate in one line of the band. */
 #define set_d(u, w, i, j, p) { int x=(i)-(w); x=x>0?x:0; x=(j)-x; (u)=x*3+p; }
+//#define set_d(u, w, i, j, p) { int x=(i)-(w); x=x>0?x:0; x=(j)-x+1; (u)=x*3+p; }
 
 /*! @function
   @abstract  Round an integer to the next closest power-2 integer.
@@ -593,11 +599,12 @@ static cigar* banded_sw (const int8_t* ref,
 				 int32_t n) {
 
 	uint32_t *c = (uint32_t*)malloc(16 * sizeof(uint32_t)), *c1;
-	int32_t i, j, e, f, temp1, temp2, s = 16, s1 = 8, l, max = 0;
+	int32_t i, j, e, f, temp1, temp2, s = 16, s1 = 8, l, max = 0, len;
 	int64_t s2 = 1024;
 	char op, prev_op;
 	int32_t width, width_d, *h_b, *e_b, *h_c;
 	int8_t *direction, *direction_line;
+    len = refLen > readLen ? refLen : readLen;
 	cigar* result = (cigar*)malloc(sizeof(cigar));
 	h_b = (int32_t*)malloc(s1 * sizeof(int32_t));
 	e_b = (int32_t*)malloc(s1 * sizeof(int32_t));
@@ -613,13 +620,9 @@ static cigar* banded_sw (const int8_t* ref,
 			e_b = (int32_t*)realloc(e_b, s1 * sizeof(int32_t));
 			h_c = (int32_t*)realloc(h_c, s1 * sizeof(int32_t));
 		}
-		while (width_d * readLen * 3 >= s2) {
+		while (width_d * readLen * 3 >= s2) {   // width_d*readLen* overflow before s2
 			++s2;
 			kroundup32(s2);
-			if (s2 < 0) {
-				fprintf(stderr, "Alignment score and position are not consensus.\n");
-				exit(1);
-			}
 			direction = (int8_t*)realloc(direction, s2 * sizeof(int8_t));
 		}
 		direction_line = direction;
@@ -642,6 +645,7 @@ static cigar* banded_sw (const int8_t* ref,
 
 				temp1 = i == 0 ? -weight_gapO : h_b[e] - weight_gapO;
 				temp2 = i == 0 ? -weight_gapE : e_b[e] - weight_gapE;
+                //fprintf(stderr, "e_b length: %d, u: %d\n", s1, u);
 				e_b[u] = temp1 > temp2 ? temp1 : temp2;
 				direction_line[de] = temp1 > temp2 ? 3 : 2;
 
@@ -664,8 +668,9 @@ static cigar* banded_sw (const int8_t* ref,
 			for (j = 1; j <= u; j ++) h_b[j] = h_c[j];
 		}
 		band_width *= 2;
-	} while (LIKELY(max < score));
+	} while (LIKELY(max < score) && band_width <= len); // 2022Apr04
 	band_width /= 2;
+    if (max < score) fprintf(stderr, "Warning: The forward and reverse SW scores and aligned sequences are not consistant.\n");
 
 	// trace back
 	i = readLen - 1;
@@ -856,8 +861,8 @@ s_align* ssw_align (const s_profile* prof,
 		return NULL;
 	}
 	r->score1 = bests[0].score;
-	r->ref_end1 = bests[0].ref;
-	r->read_end1 = bests[0].read;
+	r->ref_end1 = bests[0].ref; // 0_based, always count from the input seq begin
+	r->read_end1 = bests[0].read;   // 0_based, count from the alignment begin (aligned length of the read)
 	if (maskLen >= 15) {
 		r->score2 = bests[1].score;
 		r->ref_end2 = bests[1].ref;
@@ -881,6 +886,7 @@ s_align* ssw_align (const s_profile* prof,
 	free(read_reverse);
 	r->ref_begin1 = bests_reverse[0].ref;
 	r->read_begin1 = r->read_end1 - bests_reverse[0].read;
+//    fprintf(stderr, "1: %d, ref_end: %d, read_end: %d\n 2: %d, ref_end: %d, read_end: %d\n", r->score1, r->ref_end1, r->read_end1, bests_reverse[0].score, bests_reverse[0].ref, bests_reverse[0].read);
 	free(bests_reverse);
 	if ((7&flag) == 0 || ((2&flag) != 0 && r->score1 < filters) || ((4&flag) != 0 && (r->ref_end1 - r->ref_begin1 > filterd || r->read_end1 - r->read_begin1 > filterd))) goto end;
 

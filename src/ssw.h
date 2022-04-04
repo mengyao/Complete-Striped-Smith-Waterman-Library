@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 1.2.3
- *	Last revision by Mengyao Zhao on 2022Mar28.
+ *	Last revision by Mengyao Zhao on 2022Apr04.
  *
  */
 
@@ -14,8 +14,13 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-//#include <emmintrin.h>
+
+#ifdef __ARM_NEON // (M1)
 #include "sse2neon.h"
+#else // x86 (Intel)
+#include <emmintrin.h>
+#endif
+
 
 #ifdef __cplusplus
 extern "C" {
