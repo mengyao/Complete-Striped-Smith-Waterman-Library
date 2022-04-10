@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 1.2.2
- *  Last revision by Mengyao Zhao on 2022Apr04.
+ *  Last revision by Mengyao Zhao on 2022-Apr-09.
  */
 
 #include <stdlib.h>
@@ -197,12 +197,14 @@ int main (int argc, char * const argv[]) {
 	gzFile read_fp, ref_fp;
 	kseq_t *read_seq, *ref_seq;
 	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0, header = 0, s1 = 67108864, s2 = 128, filter = 0;
-	int8_t* mata = (int8_t*)calloc(25, sizeof(int8_t));
-	const int8_t* mat = mata;
+	//int8_t* mata = (int8_t*)calloc(25, sizeof(int8_t));
+	//const int8_t* mat = mata;
 	char mat_name[16];
 	mat_name[0] = '\0';
-	int8_t* ref_num = (int8_t*)malloc(s1);
-	int8_t* num = (int8_t*)malloc(s2), *num_rc = 0;
+	//int8_t* ref_num = (int8_t*)malloc(s1);
+	//int8_t* num = (int8_t*)malloc(s2), *num_rc = 0;
+    int8_t *mata, *ref_num, *num, *num_rc = 0;
+    const int8_t* mat;
 	char* read_rc = 0;
 
 	static const int8_t mat50[] = {
@@ -294,11 +296,13 @@ int main (int argc, char * const argv[]) {
 	}
 
 	// initialize scoring matrix for genome sequences
+    mata = (int8_t*)calloc(25, sizeof(int8_t));
 	for (l = k = 0; LIKELY(l < 4); ++l) {
 		for (m = 0; LIKELY(m < 4); ++m) mata[k++] = l == m ? match : -mismatch;	/* weight_match : -weight_mismatch */
 		mata[k++] = 0; // ambiguous base
 	}
 	for (m = 0; LIKELY(m < 5); ++m) mata[k++] = 0;
+    mat = mata;
 
 	if (protein == 1 && (! strcmp(mat_name, "\0"))) {
 		n = 24;
@@ -339,6 +343,7 @@ int main (int argc, char * const argv[]) {
 		}
 		if (k == 0) {
 			fprintf(stderr, "Problem of reading the weight matrix file.\n");
+            free(mata);
 			return 1;
 		}
 		fclose(f_mat);
@@ -368,6 +373,8 @@ int main (int argc, char * const argv[]) {
 	}
 
 	// alignment
+	ref_num = (int8_t*)malloc(s1);
+	num = (int8_t*)malloc(s2);
 	if (reverse == 1 && n == 5) {
 		read_rc = (char*)malloc(s2);
 		num_rc = (int8_t*)malloc(s2);
@@ -395,7 +402,13 @@ int main (int argc, char * const argv[]) {
 			p_rc = ssw_init(num_rc, readLen, mat, n, 2);
 		}else if (reverse == 1 && n == 24) {
 			fprintf (stderr, "Reverse complement alignment is not available for protein sequences. \n");
-			return 1;
+            free(num);
+            free(ref_num);
+            if (num_rc) {
+                free(num_rc);
+                free(read_rc);
+            }
+            return 1;
 		}
 
 		ref_fp = gzopen(argv[optind], "r");
@@ -420,7 +433,10 @@ int main (int argc, char * const argv[]) {
 			}else if (result && result->score1 >= filter){
 				if (sam) ssw_write(result, ref_seq, read_seq, read_seq->seq.s, ref_num, num, table, 0, 1);
 				else ssw_write(result, ref_seq, read_seq, read_seq->seq.s, ref_num, num, table, 0, 0);
-			} else if (! result) return 1;
+			} else if (! result) {
+                fprintf(stderr, "Warning: Alignment between one pair of sequences is failed.\n");
+                continue;
+            }
 			if (result_rc) align_destroy(result_rc);
 			align_destroy(result);
 		}
