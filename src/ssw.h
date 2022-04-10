@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 1.2.3
- *	Last revision by Mengyao Zhao on 2022Apr04.
+ *	Last revision by Mengyao Zhao on 2022-Apr-08.
  *
  */
 
@@ -50,6 +50,7 @@ typedef struct _profile s_profile;
 	@field	cigar	best alignment cigar; stored the same as that in BAM format, high 28 bits: length, low 4 bits: M/I/D (0/1/2);
 					cigar = 0 when the best alignment path is not available
 	@field	cigarLen	length of the cigar string; cigarLen = 0 when the best alignment path is not available
+    @field  flag  If the alignment path is accurate (or has missing part). 0: accurate; 1: has missing part
 */
 typedef struct {
 	uint16_t score1;
@@ -61,6 +62,7 @@ typedef struct {
 	int32_t ref_end2;
 	uint32_t* cigar;
 	int32_t cigarLen;
+    uint16_t flag;
 } s_align;
 
 /*!	@function	Create the query profile using the query sequence.

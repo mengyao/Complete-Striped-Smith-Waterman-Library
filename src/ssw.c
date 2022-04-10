@@ -57,7 +57,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 1.2.4
- *	Last revision by Mengyao Zhao on 2022Apr04.
+ *	Last revision by Mengyao Zhao on 2022-Apr-09.
  *
  *  The lazy-F loop implementation was derived from SWPS3, which is
  *  MIT licensed under ETH Zürich, Institute of Computational Science.
@@ -93,7 +93,6 @@
 
 /* Convert the coordinate in the direction matrix into the coordinate in one line of the band. */
 #define set_d(u, w, i, j, p) { int x=(i)-(w); x=x>0?x:0; x=(j)-x; (u)=x*3+p; }
-//#define set_d(u, w, i, j, p) { int x=(i)-(w); x=x>0?x:0; x=(j)-x+1; (u)=x*3+p; }
 
 /*! @function
   @abstract  Round an integer to the next closest power-2 integer.
@@ -668,9 +667,12 @@ static cigar* banded_sw (const int8_t* ref,
 			for (j = 1; j <= u; j ++) h_b[j] = h_c[j];
 		}
 		band_width *= 2;
-	} while (LIKELY(max < score) && band_width <= len); // 2022Apr04
+	} while (max < score && band_width <= len); // 2022-Apr-08
 	band_width /= 2;
-    if (max < score) fprintf(stderr, "Warning: The forward and reverse SW scores and aligned sequences are not consistant.\n");
+    
+    /* The forward and reverse SW scores and aligned sequences are not consistant. 
+       The alignment beginning location is wrong. The incomplete alignment result is not returned.*/
+    if (UNLIKELY(max < score)) fprintf(stderr, "Warning: The alignment path may miss a small part.\n");
 
 	// trace back
 	i = readLen - 1;
@@ -718,7 +720,7 @@ static cigar* banded_sw (const int8_t* ref,
 				free(e_b);
 				free(h_b);
 				free(c);
-				free(result);
+				free(result); 
 				return 0;
 		}
 		if (op == prev_op) ++e;
@@ -836,6 +838,7 @@ s_align* ssw_align (const s_profile* prof,
 	r->read_begin1 = -1;
 	r->cigar = 0;
 	r->cigarLen = 0;
+    r->flag = 0;
 	if (maskLen < 15) {
 		fprintf(stderr, "When maskLen < 15, the function ssw_align doesn't return 2nd best alignment information.\n");
 	}
@@ -886,8 +889,11 @@ s_align* ssw_align (const s_profile* prof,
 	free(read_reverse);
 	r->ref_begin1 = bests_reverse[0].ref;
 	r->read_begin1 = r->read_end1 - bests_reverse[0].read;
-//    fprintf(stderr, "1: %d, ref_end: %d, read_end: %d\n 2: %d, ref_end: %d, read_end: %d\n", r->score1, r->ref_end1, r->read_end1, bests_reverse[0].score, bests_reverse[0].ref, bests_reverse[0].read);
+
+    if (UNLIKELY(r->score1 > bests_reverse[0].score)) r->flag = 1;   // banded_sw result will miss a small part
 	free(bests_reverse);
+
+//    fprintf(stderr, "1: %d, ref_end: %d, read_end: %d\n 2: %d, ref_end: %d, read_end: %d\n", r->score1, r->ref_end1, r->read_end1, bests_reverse[0].score, bests_reverse[0].ref, bests_reverse[0].read);
 	if ((7&flag) == 0 || ((2&flag) != 0 && r->score1 < filters) || ((4&flag) != 0 && (r->ref_end1 - r->ref_begin1 > filterd || r->read_end1 - r->read_begin1 > filterd))) goto end;
 
 	// Generate cigar.
@@ -895,11 +901,9 @@ s_align* ssw_align (const s_profile* prof,
 	readLen = r->read_end1 - r->read_begin1 + 1;
 	band_width = abs(refLen - readLen) + 1;
 	path = banded_sw(ref + r->ref_begin1, prof->read + r->read_begin1, refLen, readLen, r->score1, weight_gapO, weight_gapE, band_width, prof->mat, prof->n);
-	if (path == 0) {
-		free(r);
-		r = NULL;
-	}
-	else {
+	
+    if (path == 0 ) r->flag = 1;    // banded_sw is failed.
+    else {
 		r->cigar = path->seq;
 		r->cigarLen = path->length;
 		free(path);
