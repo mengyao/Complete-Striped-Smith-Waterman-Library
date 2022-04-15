@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 1.2.2
- *  Last revision by Mengyao Zhao on 2022-Apr-09.
+ *  Last revision by Mengyao Zhao on 2022-Apr-15.
  */
 
 #include <stdlib.h>
@@ -197,12 +197,8 @@ int main (int argc, char * const argv[]) {
 	gzFile read_fp, ref_fp;
 	kseq_t *read_seq, *ref_seq;
 	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0, header = 0, s1 = 67108864, s2 = 128, filter = 0;
-	//int8_t* mata = (int8_t*)calloc(25, sizeof(int8_t));
-	//const int8_t* mat = mata;
 	char mat_name[16];
 	mat_name[0] = '\0';
-	//int8_t* ref_num = (int8_t*)malloc(s1);
-	//int8_t* num = (int8_t*)malloc(s2), *num_rc = 0;
     int8_t *mata, *ref_num, *num, *num_rc = 0;
     const int8_t* mat;
 	char* read_rc = 0;
@@ -428,13 +424,15 @@ int main (int argc, char * const argv[]) {
 			if (reverse == 1 && protein == 0)
 				result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, filter, 0, maskLen);
 			if (result_rc && result_rc->score1 > result->score1 && result_rc->score1 >= filter) {
+                if (result_rc->flag == 2) fprintf(stderr, "Warning: The reverse compliment alignment of the following sequences may miss a small part.\nref_seq: %s\nread_seq: %s\n\n", ref_seq->name.s, read_seq->name.s);
 				if (sam) ssw_write (result_rc, ref_seq, read_seq, read_rc, ref_num, num_rc, table, 1, 1);
 				else ssw_write (result_rc, ref_seq, read_seq, read_rc, ref_num, num_rc, table, 1, 0);
 			}else if (result && result->score1 >= filter){
+                if (result->flag == 2) fprintf(stderr, "Warning: The alignment of the following sequences may miss a small part.\nref_seq: %s\nread_seq: %s\n\n", ref_seq->name.s, read_seq->name.s);
 				if (sam) ssw_write(result, ref_seq, read_seq, read_seq->seq.s, ref_num, num, table, 0, 1);
 				else ssw_write(result, ref_seq, read_seq, read_seq->seq.s, ref_num, num, table, 0, 0);
 			} else if (! result) {
-                fprintf(stderr, "Warning: Alignment between one pair of sequences is failed.\n");
+                fprintf(stderr, "Warning: Alignment between the following sequences is failed.\nref_seq: %s\nread_seq: %s\n\n", ref_seq->name.s, read_seq->name.s);
                 continue;
             }
 			if (result_rc) align_destroy(result_rc);

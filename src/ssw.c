@@ -57,7 +57,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 1.2.4
- *	Last revision by Mengyao Zhao on 2022-Apr-09.
+ *	Last revision by Mengyao Zhao on 2022-Apr-15.
  *
  *  The lazy-F loop implementation was derived from SWPS3, which is
  *  MIT licensed under ETH Zürich, Institute of Computational Science.
@@ -298,7 +298,7 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 			vH = _mm_load_si128(pvHLoad + j);
 		}
 
-/* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3 */
+        /* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3 */
 		for (k = 0; LIKELY(k < 16); ++k) {
 			vF = _mm_slli_si128 (vF, 1);
 			for (j = 0; LIKELY(j < segLen); ++j) {
@@ -670,10 +670,6 @@ static cigar* banded_sw (const int8_t* ref,
 	} while (max < score && band_width <= len); // 2022-Apr-08
 	band_width /= 2;
     
-    /* The forward and reverse SW scores and aligned sequences are not consistant. 
-       The alignment beginning location is wrong. The incomplete alignment result is not returned.*/
-    if (UNLIKELY(max < score)) fprintf(stderr, "Warning: The alignment path may miss a small part.\n");
-
 	// trace back
 	i = readLen - 1;
 	j = refLen - 1;
@@ -890,8 +886,8 @@ s_align* ssw_align (const s_profile* prof,
 	r->ref_begin1 = bests_reverse[0].ref;
 	r->read_begin1 = r->read_end1 - bests_reverse[0].read;
 
-    if (UNLIKELY(r->score1 > bests_reverse[0].score)) r->flag = 1;   // banded_sw result will miss a small part
-	free(bests_reverse);
+    if (UNLIKELY(r->score1 > bests_reverse[0].score)) r->flag = 2;  // banded_sw result will miss a small part
+    free(bests_reverse);
 
 //    fprintf(stderr, "1: %d, ref_end: %d, read_end: %d\n 2: %d, ref_end: %d, read_end: %d\n", r->score1, r->ref_end1, r->read_end1, bests_reverse[0].score, bests_reverse[0].ref, bests_reverse[0].read);
 	if ((7&flag) == 0 || ((2&flag) != 0 && r->score1 < filters) || ((4&flag) != 0 && (r->ref_end1 - r->ref_begin1 > filterd || r->read_end1 - r->read_begin1 > filterd))) goto end;
@@ -902,7 +898,7 @@ s_align* ssw_align (const s_profile* prof,
 	band_width = abs(refLen - readLen) + 1;
 	path = banded_sw(ref + r->ref_begin1, prof->read + r->read_begin1, refLen, readLen, r->score1, weight_gapO, weight_gapE, band_width, prof->mat, prof->n);
 	
-    if (path == 0 ) r->flag = 1;    // banded_sw is failed.
+    if (path == 0) r->flag = 1;    // banded_sw is failed.
     else {
 		r->cigar = path->seq;
 		r->cigarLen = path->length;
