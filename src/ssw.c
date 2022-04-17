@@ -57,7 +57,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 1.2.4
- *	Last revision by Mengyao Zhao on 2022-Apr-15.
+ *	Last revision by Mengyao Zhao on 2022-Apr-17.
  *
  *  The lazy-F loop implementation was derived from SWPS3, which is
  *  MIT licensed under ETH Zürich, Institute of Computational Science.
@@ -886,7 +886,10 @@ s_align* ssw_align (const s_profile* prof,
 	r->ref_begin1 = bests_reverse[0].ref;
 	r->read_begin1 = r->read_end1 - bests_reverse[0].read;
 
-    if (UNLIKELY(r->score1 > bests_reverse[0].score)) r->flag = 2;  // banded_sw result will miss a small part
+    if (UNLIKELY(r->score1 > bests_reverse[0].score)) { // banded_sw result will miss a small part
+		fprintf(stderr, "Warning: The alignment path of one pair of sequences may miss a small part. [ssw.c ssw_align]\n");
+        r->flag = 2;  
+    }
     free(bests_reverse);
 
 //    fprintf(stderr, "1: %d, ref_end: %d, read_end: %d\n 2: %d, ref_end: %d, read_end: %d\n", r->score1, r->ref_end1, r->read_end1, bests_reverse[0].score, bests_reverse[0].ref, bests_reverse[0].read);
