@@ -669,6 +669,9 @@ static cigar* banded_sw (const int8_t* ref,
 		band_width *= 2;
 	} while (max < score && band_width <= len); // 2022-Apr-08
 	band_width /= 2;
+
+    //if (max < score)
+	//	fprintf(stderr, "Warning: The alignment path of one pair of sequences may miss a small part. [ssw.c banded_sw]\n");
     
 	// trace back
 	i = readLen - 1;
