@@ -3,6 +3,7 @@
 Simple python wrapper for SSW library
 Please put the path of libssw.so into LD_LIBRARY_PATH or pass it explicitly as a parameter
 By Yongan Zhao (March 2016)
+Revised by Mengyao Zhao on 2022-May-09
 """
 
 import sys
@@ -52,9 +53,9 @@ def read(sFile):
         sQual = ''
         for l in f:
             sId = l.strip()[1:].split()[0]
-            sSeq = f.next()
-            s3 = f.next()
-            sQual = f.next()
+            sSeq = f.readline().strip()
+            s3 = f.readline().strip()
+            sQual = f.readline().strip()
 
             yield sId, sSeq, sQual
 
@@ -63,23 +64,25 @@ def read(sFile):
     ext = op.splitext(sFile)[1][1:].strip().lower()
     if ext == 'gz' or ext == 'gzip':
         with gzip.open(sFile, 'r') as f:
-            l = f.next()
+            l = f.readline()
             if l.startswith('>'):
                 bFasta = True
             elif l.startswith('@'):
                 bFasta = False
             else:
-                print >> sys.stderr, 'file format cannot be recognized'
+                #print >> sys.stderr, 
+                sys.stderr.write('file format cannot be recognized\n')
                 sys.exit()
     else:
         with open(sFile, 'r') as f:
-            l = f.next()
+            l = f.readline()
             if l.startswith('>'):
                 bFasta = True
             elif l.startswith('@'):
                 bFasta = False
             else:
-                print >> sys.stderr, 'file format cannot be recognized'
+                #print >> sys.stderr, 'file format cannot be recognized'
+                sys.stderr.write('file format cannot be recognized\n')
                 sys.exit()
 
 # read
@@ -171,7 +174,7 @@ def buildPath(q, r, nQryBeg, nRefBeg, lCigar):
 
         if c == 'M':
             sQ += q[nQOff : nQOff+n]
-            sA += ''.join(['|' if q[nQOff+j] == r[nROff+j] else '*' for j in xrange(n)])
+            sA += ''.join(['|' if q[nQOff+j] == r[nROff+j] else '*' for j in range(n)])
             sR += r[nROff : nROff+n]
             nQOff += n
             nROff += n
@@ -206,9 +209,9 @@ def main(args):
                 dEle2Int[ele.lower()] = i
                 dInt2Ele[i] = ele
             nEleNum = len(lEle)
-            lScore = [0 for i in xrange(nEleNum**2)]
-            for i in xrange(nEleNum-1):
-                for j in xrange(nEleNum-1):
+            lScore = [0 for i in range(nEleNum**2)]
+            for i in range(nEleNum-1):
+                for j in range(nEleNum-1):
                     if lEle[i] == lEle[j]:
                         lScore[i*nEleNum+j] = args.nMatch
                     else:
@@ -230,7 +233,8 @@ def main(args):
             lEle, dEle2Int, dInt2Ele, lScore = ssw.read_matrix(args.sMatrix)
 
     if args.bBest and args.bProtien:
-        print >> sys.stderr, 'Reverse complement alignment is not available for protein sequences.'
+        #print >> sys.stderr, 'Reverse complement alignment is not available for protein sequences.'
+        sys.stderr.write('Reverse complement alignment is not available for protein sequences.\n')
 
 # translate score matrix to ctypes
     mat = (len(lScore) * ct.c_int8) ()
@@ -241,11 +245,12 @@ def main(args):
         nFlag = 2
 # print sam head
     if args.bSam and args.bHeader and args.bPath:
-        print '@HD\tVN:1.4\tSO:queryname'
+        print('@HD\tVN:1.4\tSO:queryname')
         for sRId,sRSeq,_ in read(args.target):
-            print '@SQ\tSN:{}\tLN:{}'.format(sRId, len(sRSeq))
+            print('@SQ\tSN:{}\tLN:{}'.format(sRId, len(sRSeq)))
     elif args.bSam and not args.bPath:
-        print >> sys.stderr, 'SAM format output is only available together with option -c.\n'
+        #print >> sys.stderr, 'SAM format output is only available together with option -c.\n'
+        sys.stderr.write('SAM format output is only available together with option -c.\n')
         args.bSam = False
 
     ssw = ssw_lib.CSsw(args.sLibPath)
@@ -289,64 +294,64 @@ def main(args):
 
 # print results
             if not args.bSam:
-                print 'target_name: {}\nquery_name: {}\noptimal_alignment_score: {}\t'.format(sRId, sQId, resPrint[0]),
+                print('target_name: {}\nquery_name: {}\noptimal_alignment_score: {}\t'.format(sRId, sQId, resPrint[0])),
                 if resPrint[1] > 0:
-                    print 'suboptimal_alignment_score: {}\t'.format(resPrint[1]),
+                    print('suboptimal_alignment_score: {}\t'.format(resPrint[1])),
                 if strand == 0:
-                    print 'strand: +\t',
+                    print('strand: +\t'),
                 else: 
-                    print 'strand: -\t',
+                    print('strand: -\t'),
                 if resPrint[2] + 1:
-                    print 'target_begin: {}\t'.format(resPrint[2] + 1),
-                print 'target_end: {}\t'.format(resPrint[3] + 1),
+                    print('target_begin: {}\t'.format(resPrint[2] + 1)),
+                print('target_end: {}\t'.format(resPrint[3] + 1)),
                 if resPrint[4] + 1:
-                    print 'query_begin: {}\t'.format(resPrint[4] + 1),
-                print 'query_end: {}\n'.format(resPrint[5] + 1)
+                    print('query_begin: {}\t'.format(resPrint[4] + 1)),
+                print('query_end: {}\n'.format(resPrint[5] + 1))
                 if resPrint[-2] > 0:
                     n1 = 1 + resPrint[2]
                     n2 = min(60,len(sR)) + resPrint[2] - sR.count('-',0,60)
                     n3 = 1 + resPrint[4]
                     n4 = min(60,len(sQ)) + resPrint[4] - sQ.count('-',0,60)
                     for i in range(0, len(sQ), 60):
-                        print 'Target:{:>8}\t{}\t{}'.format(n1, sR[i:i+60], n2)
+                        print('Target:{:>8}\t{}\t{}'.format(n1, sR[i:i+60], n2))
                         n1 = n2 + 1
                         n2 = n2 + min(60,len(sR)-i-60) - sR.count('-',i+60,i+120)
 
-                        print '{: ^15}\t{}'.format('', sA[i:i+60])
+                        print('{: ^15}\t{}'.format('', sA[i:i+60]))
 
-                        print 'Query:{:>9}\t{}\t{}\n'.format(n3, sQ[i:i+60], n4)
+                        print('Query:{:>9}\t{}\t{}\n'.format(n3, sQ[i:i+60], n4))
                         n3 = n4 + 1
                         n4 = n4 + min(60,len(sQ)-i-60) - sQ.count('-',i+60,i+120)
             else:
-                print "{}\t".format(sQId),
+                print("{}\t".format(sQId)),
                 if resPrint[0] == 0:
-                    print "4\t*\t0\t255\t*\t*\t0\t0\t*\t*",
+                    print("4\t*\t0\t255\t*\t*\t0\t0\t*\t*"),
                 else:
                     mapq = int(-4.343 * math.log(1-abs(resPrint[0]-resPrint[1])/float(resPrint[0])))
                     mapq = int(mapq + 4.99);
                     if mapq >= 254:
                         mapq = 254
                     if strand == 1:
-                        print '16\t',
+                        print('16\t'),
                     else:
-                        print '0\t',
-                    print '{}\t{}\t{}\t'.format(sRId, resPrint[2]+1, mapq),
-                    print sCigar,
-                    print '\t*\t0\t0\t',
-                    print sQSeq[resPrint[4]:resPrint[5]+1] if strand==0 else sQRcSeq[resPrint[4]:resPrint[5]+1],
-                    print '\t',
+                        print('0\t'),
+                    print('{}\t{}\t{}\t'.format(sRId, resPrint[2]+1, mapq)),
+                    print(sCigar),
+                    print('\t*\t0\t0\t'),
+                    print(sQSeq[resPrint[4]:resPrint[5]+1]) if strand==0 else print(sQRcSeq[resPrint[4]:resPrint[5]+1]),
+                    print('\t'),
                     if sQQual:
                         if strand == 0:
-                            print sQQual[resPrint[4]:resPrint[5]+1],
+                            print(sQQual[resPrint[4]:resPrint[5]+1]),
                         else:
-                            print sQQual[-resPrint[4]-1:-resPrint[5]-1:-1]
+                            print(sQQual[-resPrint[4]-1:-resPrint[5]-1:-1])
                     else:
-                        print '*',
+                        print('*'),
 
-                    print '\tAS:i:{}'.format(resPrint[0]),
-                    print '\tNM:i:{}\t'.format(len(sA)-sA.count('|')),
+                    print('\tAS:i:{}'.format(resPrint[0])),
+                    print('\tNM:i:{}\t'.format(len(sA)-sA.count('|'))),
                     if resPrint[1] > 0:
-                        print 'ZS:i:{}'.format(resPrint[1])
+                        print('ZS:i:{}'.format(resPrint[1]))
                     else:
                         print
 
@@ -381,4 +386,6 @@ if __name__ == '__main__':
     t1 = ti.default_timer()
     main(args)
     t2 = ti.default_timer()
-    print >> sys.stderr, 'CPU time: {} seconds'.format(t2 - t1)
+    #print >> sys.stderr, 'CPU time: {} seconds'.format(t2 - t1)
+    sys.stderr.write('CPU time: {} seconds\n'.format(t2 - t1))
+

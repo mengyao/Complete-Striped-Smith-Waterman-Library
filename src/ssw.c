@@ -903,7 +903,17 @@ s_align* ssw_align (const s_profile* prof,
 	readLen = r->read_end1 - r->read_begin1 + 1;
 	band_width = abs(refLen - readLen) + 1;
 	path = banded_sw(ref + r->ref_begin1, prof->read + r->read_begin1, refLen, readLen, r->score1, weight_gapO, weight_gapE, band_width, prof->mat, prof->n);
-	
+
+    fprintf(stderr, "ssw_cigar: ");  // VAST-4221
+    int32_t i, length;
+    char op;
+	for (i = 0; i < path->length; ++i) {
+		op = cigar_int_to_op(path->seq[i]);
+		length = cigar_int_to_len(path->seq[i]);
+        fprintf(stderr, "%d%c", length, op);
+    }
+    fprintf(stderr, "\n");
+
     if (path == 0) r->flag = 1;    // banded_sw is failed.
     else {
 		r->cigar = path->seq;
