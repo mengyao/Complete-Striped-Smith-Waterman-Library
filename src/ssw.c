@@ -677,7 +677,6 @@ static cigar* banded_sw (const int8_t* ref,
 	l = 0;	// record length of current cigar
 	op = prev_op = 'M';
 	temp2 = 2;	// h
-    fprintf(stderr, "The traceback is changed!!!\n");
     while (LIKELY(i >= 0 && j > 0)) {
 		set_d(temp1, band_width, i, j, temp2);
 		switch (direction_line[temp1]) {
@@ -825,7 +824,6 @@ s_align* ssw_align (const s_profile* prof,
 					const int32_t filterd,
 					const int32_t maskLen) {
 
-    fprintf(stderr, "Using ssw_align in ssw.c!!!\n");
 	alignment_end* bests = 0, *bests_reverse = 0;
 	__m128i* vP = 0;
 	int32_t word = 0, band_width = 0, readLen = prof->readLen;
@@ -894,7 +892,6 @@ s_align* ssw_align (const s_profile* prof,
     }
     free(bests_reverse);
 
-//    fprintf(stderr, "1: %d, ref_end: %d, read_end: %d\n 2: %d, ref_end: %d, read_end: %d\n", r->score1, r->ref_end1, r->read_end1, bests_reverse[0].score, bests_reverse[0].ref, bests_reverse[0].read);
 	if ((7&flag) == 0 || ((2&flag) != 0 && r->score1 < filters) || ((4&flag) != 0 && (r->ref_end1 - r->ref_begin1 > filterd || r->read_end1 - r->read_begin1 > filterd))) goto end;
 
 	// Generate cigar.
@@ -903,15 +900,14 @@ s_align* ssw_align (const s_profile* prof,
 	band_width = abs(refLen - readLen) + 1;
 	path = banded_sw(ref + r->ref_begin1, prof->read + r->read_begin1, refLen, readLen, r->score1, weight_gapO, weight_gapE, band_width, prof->mat, prof->n);
 
-    fprintf(stderr, "ssw_cigar: ");  // VAST-4221
-    int32_t i, length;
+/*int32_t i, length;
     char op;
 	for (i = 0; i < path->length; ++i) {
 		op = cigar_int_to_op(path->seq[i]);
 		length = cigar_int_to_len(path->seq[i]);
         fprintf(stderr, "%d%c", length, op);
     }
-    fprintf(stderr, "\n");
+    fprintf(stderr, "\n");*/
 
     if (path == 0) r->flag = 1;    // banded_sw is failed.
     else {

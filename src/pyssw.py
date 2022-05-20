@@ -3,7 +3,7 @@
 Simple python wrapper for SSW library
 Please put the path of libssw.so into LD_LIBRARY_PATH or pass it explicitly as a parameter
 By Yongan Zhao (March 2016)
-Revised by Mengyao Zhao on 2022-May-19
+Revised by Mengyao Zhao on 2022-May-20
 """
 
 import sys
@@ -138,7 +138,6 @@ def align_one(ssw, qProfile, rNum, nRLen, nOpen, nExt, nFlag, nMaskLen):
     lCigar = [res.contents.sCigar[idx] for idx in range(res.contents.nCigarLen)]
     nCigarLen = res.contents.nCigarLen
     ssw.align_destroy(res)
-    sys.stderr.write('lCigar: {}\tnCigarLen: {}\n'.format(lCigar, nCigarLen))
 
     return (nScore, nScore2, nRefBeg, nRefEnd, nQryBeg, nQryEnd, nRefEnd2, nCigarLen, lCigar)
 
@@ -184,11 +183,7 @@ def buildPath(q, r, nQryBeg, nRefBeg, lCigar):
             sA += ' ' * n
             sR += r[nROff : nROff+n]
             nROff += n
-
-    sys.stderr.write('sCigar: {}\n'.format(sCigar))
     return sCigar, sQ, sA, sR
-
-
 
 
 def main(args):
@@ -260,18 +255,13 @@ def main(args):
             qRcNum = to_int(sQRcSeq, lEle, dEle2Int)
             qRcProfile = ssw.ssw_init(qRcNum, ct.c_int32(len(sQSeq)), mat, len(lEle), 2)
 # set mask len
-        if len(sQSeq) > 30:
-            nMaskLen = len(sQSeq) / 2
-        else:
-            nMaskLen = 15
-
+        nMaskLen = len(sQSeq) // 2
+        
 # iter target sequence
         for sRId,sRSeq,_ in read(args.target):
             rNum = to_int(sRSeq, lEle, dEle2Int)
-
 # format of res: (nScore, nScore2, nRefBeg, nRefEnd, nQryBeg, nQryEnd, nRefEnd2, nCigarLen, lCigar)
             res = align_one(ssw, qProfile, rNum, len(sRSeq), args.nOpen, args.nExt, nFlag, nMaskLen)
-            sys.stderr.write('res: {}\n'.format(res)) # debug
 # align rc query
             resRc = None
             if args.bBest and not args.bProtien:
