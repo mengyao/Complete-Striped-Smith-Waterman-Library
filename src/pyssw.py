@@ -3,7 +3,7 @@
 Simple python wrapper for SSW library
 Please put the path of libssw.so into LD_LIBRARY_PATH or pass it explicitly as a parameter
 By Yongan Zhao (March 2016)
-Revised by Mengyao Zhao on 2022-May-09
+Revised by Mengyao Zhao on 2022-May-19
 """
 
 import sys
@@ -13,10 +13,7 @@ import ctypes as ct
 import timeit as ti
 import gzip
 import math
-
 import ssw_lib
-
-
 
 
 def read(sFile):
@@ -70,7 +67,6 @@ def read(sFile):
             elif l.startswith('@'):
                 bFasta = False
             else:
-                #print >> sys.stderr, 
                 sys.stderr.write('file format cannot be recognized\n')
                 sys.exit()
     else:
@@ -81,7 +77,6 @@ def read(sFile):
             elif l.startswith('@'):
                 bFasta = False
             else:
-                #print >> sys.stderr, 'file format cannot be recognized'
                 sys.stderr.write('file format cannot be recognized\n')
                 sys.exit()
 
@@ -143,6 +138,7 @@ def align_one(ssw, qProfile, rNum, nRLen, nOpen, nExt, nFlag, nMaskLen):
     lCigar = [res.contents.sCigar[idx] for idx in range(res.contents.nCigarLen)]
     nCigarLen = res.contents.nCigarLen
     ssw.align_destroy(res)
+    sys.stderr.write('lCigar: {}\tnCigarLen: {}\n'.format(lCigar, nCigarLen))
 
     return (nScore, nScore2, nRefBeg, nRefEnd, nQryBeg, nQryEnd, nRefEnd2, nCigarLen, lCigar)
 
@@ -189,6 +185,7 @@ def buildPath(q, r, nQryBeg, nRefBeg, lCigar):
             sR += r[nROff : nROff+n]
             nROff += n
 
+    sys.stderr.write('sCigar: {}\n'.format(sCigar))
     return sCigar, sQ, sA, sR
 
 
@@ -233,7 +230,6 @@ def main(args):
             lEle, dEle2Int, dInt2Ele, lScore = ssw.read_matrix(args.sMatrix)
 
     if args.bBest and args.bProtien:
-        #print >> sys.stderr, 'Reverse complement alignment is not available for protein sequences.'
         sys.stderr.write('Reverse complement alignment is not available for protein sequences.\n')
 
 # translate score matrix to ctypes
@@ -249,7 +245,6 @@ def main(args):
         for sRId,sRSeq,_ in read(args.target):
             print('@SQ\tSN:{}\tLN:{}'.format(sRId, len(sRSeq)))
     elif args.bSam and not args.bPath:
-        #print >> sys.stderr, 'SAM format output is only available together with option -c.\n'
         sys.stderr.write('SAM format output is only available together with option -c.\n')
         args.bSam = False
 
@@ -274,8 +269,9 @@ def main(args):
         for sRId,sRSeq,_ in read(args.target):
             rNum = to_int(sRSeq, lEle, dEle2Int)
 
-# format ofres: (nScore, nScore2, nRefBeg, nRefEnd, nQryBeg, nQryEnd, nRefEnd2, nCigarLen, lCigar)
+# format of res: (nScore, nScore2, nRefBeg, nRefEnd, nQryBeg, nQryEnd, nRefEnd2, nCigarLen, lCigar)
             res = align_one(ssw, qProfile, rNum, len(sRSeq), args.nOpen, args.nExt, nFlag, nMaskLen)
+            sys.stderr.write('res: {}\n'.format(res)) # debug
 # align rc query
             resRc = None
             if args.bBest and not args.bProtien:
@@ -364,7 +360,7 @@ def main(args):
 if __name__ == '__main__':
 
     parser = ap.ArgumentParser()
-    parser.add_argument('-l', '--sLibPath', default='', help='path of libssw.so')
+    parser.add_argument('-l', '--sLibPath', default='./', help='path of libssw.so')
     parser.add_argument('-m', '--nMatch', type=int, default=2, help='a positive integer as the score for a match in genome sequence alignment. [default: 2]')
     parser.add_argument('-x', '--nMismatch', type=int, default=2, help='a positive integer as the score for a mismatch in genome sequence alignment. [default: 2]')
     parser.add_argument('-o', '--nOpen', type=int, default=3, help='a positive integer as the penalty for the gap opening in genome sequence alignment. [default: 3]')
@@ -386,6 +382,5 @@ if __name__ == '__main__':
     t1 = ti.default_timer()
     main(args)
     t2 = ti.default_timer()
-    #print >> sys.stderr, 'CPU time: {} seconds'.format(t2 - t1)
     sys.stderr.write('CPU time: {} seconds\n'.format(t2 - t1))
 

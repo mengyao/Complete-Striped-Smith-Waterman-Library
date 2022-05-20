@@ -670,9 +670,6 @@ static cigar* banded_sw (const int8_t* ref,
 	} while (max < score && band_width <= len); // 2022-Apr-08
 	band_width /= 2;
 
-    //if (max < score)
-	//	fprintf(stderr, "Warning: The alignment path of one pair of sequences may miss a small part. [ssw.c banded_sw]\n");
-    
 	// trace back
 	i = readLen - 1;
 	j = refLen - 1;
@@ -680,7 +677,8 @@ static cigar* banded_sw (const int8_t* ref,
 	l = 0;	// record length of current cigar
 	op = prev_op = 'M';
 	temp2 = 2;	// h
-	while (LIKELY(i > 0)) {
+    fprintf(stderr, "The traceback is changed!!!\n");
+    while (LIKELY(i >= 0 && j > 0)) {
 		set_d(temp1, band_width, i, j, temp2);
 		switch (direction_line[temp1]) {
 			case 1:
@@ -827,6 +825,7 @@ s_align* ssw_align (const s_profile* prof,
 					const int32_t filterd,
 					const int32_t maskLen) {
 
+    fprintf(stderr, "Using ssw_align in ssw.c!!!\n");
 	alignment_end* bests = 0, *bests_reverse = 0;
 	__m128i* vP = 0;
 	int32_t word = 0, band_width = 0, readLen = prof->readLen;
