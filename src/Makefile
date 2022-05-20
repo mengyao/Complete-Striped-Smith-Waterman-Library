@@ -15,13 +15,10 @@ JAVA_OBJ = ssw/Aligner.class ssw/Alignment.class ssw/Example.class
 
 .PHONY: all default java clean
 
-core: $(PROG)
-
 default: $(PROG) $(EXAMPLE) $(EXAMPLE_CPP) $(LIB) 
-
-all: default java
-
+core: $(PROG)
 java: $(JAVA_JAR) $(JAVA_LIB)
+all: default java
 
 $(LIB): ssw.c ssw.h
 	$(CC) $(CFLAGS) -fPIC -shared -rdynamic -o $@ $<
