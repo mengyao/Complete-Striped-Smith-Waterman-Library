@@ -191,7 +191,7 @@ def main(args):
     dRc = {} 
     dEle2Int = {}
     dInt2Ele = {}
-    if False == args.bProtien:
+    if False == args.bProtein:
 # init DNA score matrix
         if not args.sMatrix:
             lEle = ['A', 'C', 'G', 'T', 'N']
@@ -209,7 +209,7 @@ def main(args):
                     else:
                         lScore[i*nEleNum+j] = -args.nMismatch
         else:
-            lEle, dEle2Int, dInt2Ele, lScore = ssw.read_matrix(args.sMatrix)
+            lEle, dEle2Int, dInt2Ele, lScore = ssw_lib.read_matrix(args.sMatrix)
     else:
 # load AA score matrix
         if not args.sMatrix:
@@ -222,10 +222,15 @@ def main(args):
             lScore = ssw_lib.lBlosum50
         else:
             # assume the format of the input score matrix is the same as that of http://www.ncbi.nlm.nih.gov/Class/FieldGuide/BLOSUM62.txt
-            lEle, dEle2Int, dInt2Ele, lScore = ssw.read_matrix(args.sMatrix)
+            lEle, dEle2Int, dInt2Ele, lScore = ssw_lib.read_matrix(args.sMatrix)
 
+<<<<<<< pyssw_fixes
+    if args.bBest and args.bProtein:
+        print >> sys.stderr, 'Reverse complement alignment is not available for protein sequences.'
+=======
     if args.bBest and args.bProtien:
         sys.stderr.write('Reverse complement alignment is not available for protein sequences.\n')
+>>>>>>> master
 
 # translate score matrix to ctypes
     mat = (len(lScore) * ct.c_int8) ()
@@ -250,7 +255,7 @@ def main(args):
         qNum = to_int(sQSeq, lEle, dEle2Int)
         qProfile = ssw.ssw_init(qNum, ct.c_int32(len(sQSeq)), mat, len(lEle), 2)
 # build rc query profile
-        if args.bBest and not args.bProtien:
+        if args.bBest and not args.bProtein:
             sQRcSeq = ''.join([dRc[x] for x in sQSeq[::-1]])
             qRcNum = to_int(sQRcSeq, lEle, dEle2Int)
             qRcProfile = ssw.ssw_init(qRcNum, ct.c_int32(len(sQSeq)), mat, len(lEle), 2)
@@ -264,7 +269,7 @@ def main(args):
             res = align_one(ssw, qProfile, rNum, len(sRSeq), args.nOpen, args.nExt, nFlag, nMaskLen)
 # align rc query
             resRc = None
-            if args.bBest and not args.bProtien:
+            if args.bBest and not args.bProtein:
                 resRc = align_one(ssw, qRcProfile, rNum, len(sRSeq), args.nOpen, args.nExt, nFlag, nMaskLen)
 
 # build cigar and trace back path
@@ -343,7 +348,7 @@ def main(args):
 
 
         ssw.init_destroy(qProfile)
-        if args.bBest and not args.bProtien:
+        if args.bBest and not args.bProtein:
             ssw.init_destroy(qRcProfile)
 
 
@@ -355,14 +360,14 @@ if __name__ == '__main__':
     parser.add_argument('-x', '--nMismatch', type=int, default=2, help='a positive integer as the score for a mismatch in genome sequence alignment. [default: 2]')
     parser.add_argument('-o', '--nOpen', type=int, default=3, help='a positive integer as the penalty for the gap opening in genome sequence alignment. [default: 3]')
     parser.add_argument('-e', '--nExt', type=int, default=1, help='a positive integer as the penalty for the gap extension in genome sequence alignment. [default: 1]')
-    parser.add_argument('-p', '--bProtien', action='store_true', help='Do protein sequence alignment. Without this option, the ssw_test will do genome sequence alignment. [default: False]')
+    parser.add_argument('-p', '--bProtein', action='store_true', help='Do protein sequence alignment. Without this option, pyssw will do genome sequence alignment. [default: False]')
     parser.add_argument('-a', '--sMatrix', default='', help='a file for either Blosum or Pam weight matrix. [default: Blosum50]')
     parser.add_argument('-c', '--bPath', action='store_true', help='Return the alignment path. [default: False]')
     parser.add_argument('-f', '--nThr', default=0, help='a positive integer. Only output the alignments with the Smith-Waterman score >= N.')
     parser.add_argument('-r', '--bBest', action='store_true', help='The best alignment will be picked between the original read alignment and the reverse complement read alignment. [default: False]')
     parser.add_argument('-s', '--bSam', action='store_true', help='Output in SAM format. [default: no header]')
     parser.add_argument('-header', '--bHeader', action='store_true', help='If -s is used, include header in SAM output.')
-    parser.add_argument('target', help='targe file')
+    parser.add_argument('target', help='target file')
     parser.add_argument('query', help='query file')
     if len(sys.argv) == 1:
         parser.print_help()
