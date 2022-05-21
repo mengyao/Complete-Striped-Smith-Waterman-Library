@@ -1,6 +1,6 @@
 CC = gcc
 CXX = g++
-CFLAGS := -Wall -pipe -O2 #-g -fsanitize=address
+CFLAGS += -Wall -pipe -O2 #-g -fsanitize=address
 CXXFLAGS := $(CFLAGS)
 LOBJS = ssw.o
 LCPPOBJS = ssw_cpp.o
@@ -29,15 +29,14 @@ $(EXAMPLE): example.c
 
 ifdef __arm__ # (M1)
 $(PROG) $(EXAMPLE): $(LOBJS)
-	$(CC) -o $@ $(filter-out %.h,$^) $(CFLAGS) -lm -lz -march=armv8-a+fp+simd+crypto+crc
+	$(CC) -o $@ $(filter-out %.h,$^) $(CFLAGS) $(LDFLAGS) -lm -lz -march=armv8-a+fp+simd+crypto+crc
 else # x86(Intel)
 $(PROG) $(EXAMPLE): $(LOBJS)
-	$(CC) -o $@ $(filter-out %.h,$^) $(CFLAGS) -lm -lz
+	$(CC) -o $@ $(filter-out %.h,$^) $(CFLAGS) $(LDFLAGS) -lm -lz
 endif
 
-
 $(EXAMPLE_CPP): example.cpp $(LOBJS) $(LCPPOBJS)
-	$(CXX) -o $@ $^ $(CXXFLAGS) -lm -lz
+	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS) -lm -lz
 
 $(JAVA_LIB): sswjni.c ssw.c ssw.h
 	$(CC) $(CFLAGS) $(JAVA_INLCUDES) -fPIC -shared -rdynamic -o $@ $< ssw.c 
