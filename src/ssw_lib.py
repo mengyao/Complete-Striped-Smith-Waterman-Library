@@ -3,6 +3,7 @@
 Simple python wrapper for SSW library
 Please put the path of libssw.so into LD_LIBRARY_PATH or pass it explicitly as a parameter
 By Yongan Zhao (March 2016)
+Revised by Mengyao Zhao on 2022-May-19
 """
 
 import sys
@@ -101,10 +102,10 @@ class CSsw(object):
         """
 # load libssw
         sLibName = 'libssw.so'
-        if not sLibPath:
-# user doesn't give the path explicitly
+        if sLibPath:
+# user does give the path explicitly
             if not op.exists(op.join(sLibPath, sLibName)):
-                print >> sys.stderr, 'libssw.so does not exist in the input path'
+                sys.stderr.write('libssw.so does not exist in the input path.')
                 sys.exit()
             self.ssw = ct.cdll.LoadLibrary(op.join(sLibPath,sLibName))
         else:
@@ -115,7 +116,7 @@ class CSsw(object):
                     bFound = True
                     self.ssw = ct.cdll.LoadLibrary(op.join(s,sLibName))
             if bFound == False:
-                print >> sys.stderr, 'libssw.so does not exist in PATH'
+                sys.stderr.write('libssw.so does not exist in PATH')
                 sys.exit()
 
 # init ssw_init
