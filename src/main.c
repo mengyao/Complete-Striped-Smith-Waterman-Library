@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
  *	Version 1.2.2
- *  Last revision by Mengyao Zhao on 2022-Apr-15.
+ *  Last revision by Mengyao Zhao on 2022-May-21.
  */
 
 #include <stdlib.h>
@@ -197,11 +197,9 @@ int main (int argc, char * const argv[]) {
 	gzFile read_fp, ref_fp;
 	kseq_t *read_seq, *ref_seq;
 	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0, header = 0, s1 = 67108864, s2 = 128, filter = 0;
-	char mat_name[16];
-	mat_name[0] = '\0';
     int8_t *mata, *ref_num, *num, *num_rc = 0;
     const int8_t* mat;
-	char* read_rc = 0;
+	char* read_rc = 0, *mat_name = 0;
 
 	static const int8_t mat50[] = {
 	//  A   R   N   D   C   Q   E   G   H   I   L   K   M   F   P   S   T   W   Y   V   B   Z   X   *
@@ -257,22 +255,6 @@ int main (int argc, char * const argv[]) {
 
 	int8_t* table = nt_table;
 
-	// Parse command line.
-	while ((l = getopt(argc, argv, "m:x:o:e:a:f:pcrsh")) >= 0) {
-		switch (l) {
-			case 'm': match = atoi(optarg); break;
-			case 'x': mismatch = atoi(optarg); break;
-			case 'o': gap_open = atoi(optarg); break;
-			case 'e': gap_extension = atoi(optarg); break;
-			case 'a': strcpy(mat_name, optarg); break;
-			case 'f': filter = atoi(optarg); break;
-			case 'p': protein = 1; break;
-			case 'c': path = 1; break;
-			case 'r': reverse = 1; break;
-			case 's': sam = 1; break;
-			case 'h': header = 1; break;
-		}
-	}
 	if (optind + 2 > argc) {
 		fprintf(stderr, "\n");
 		fprintf(stderr, "Usage: ssw_test [options] ... <target.fasta> <query.fasta>(or <query.fastq>)\n");
@@ -291,6 +273,28 @@ int main (int argc, char * const argv[]) {
 		return 1;
 	}
 
+	// Parse command line.
+	while ((l = getopt(argc, argv, "m:x:o:e:a:f:pcrsh")) >= 0) {
+		switch (l) {
+			case 'm': match = atoi(optarg); break;
+			case 'x': mismatch = atoi(optarg); break;
+			case 'o': gap_open = atoi(optarg); break;
+			case 'e': gap_extension = atoi(optarg); break;
+
+			case 'a': 
+                mat_name = (char*)malloc(strlen(optarg) + 1);
+                strcpy(mat_name, optarg); 
+                break;
+
+			case 'f': filter = atoi(optarg); break;
+			case 'p': protein = 1; break;
+			case 'c': path = 1; break;
+			case 'r': reverse = 1; break;
+			case 's': sam = 1; break;
+			case 'h': header = 1; break;
+		}
+	}
+
 	// initialize scoring matrix for genome sequences
     mata = (int8_t*)calloc(25, sizeof(int8_t));
 	for (l = k = 0; LIKELY(l < 4); ++l) {
@@ -300,14 +304,21 @@ int main (int argc, char * const argv[]) {
 	for (m = 0; LIKELY(m < 5); ++m) mata[k++] = 0;
     mat = mata;
 
-	if (protein == 1 && (! strcmp(mat_name, "\0"))) {
+	if (protein == 1 && mat_name == 0) {
 		n = 24;
 		table = aa_table;
 		mat = mat50;
-	} else if (strcmp(mat_name, "\0")) {
+	} else if (mat_name != 0) {
 
 	// Parse score matrix.
 		FILE *f_mat = fopen(mat_name, "r");
+        free(mat_name);
+        if (f_mat == NULL) { 
+            fprintf(stderr, "Failed to open the weight matrix file.\n");
+            free(mata);
+            return 1;
+        }
+
 		char line[128];
 		mata = (int8_t*)realloc(mata, 1024 * sizeof(int8_t));
 		k = 0;

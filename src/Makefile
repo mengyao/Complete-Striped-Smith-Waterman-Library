@@ -1,6 +1,7 @@
 CC = gcc
 CXX = g++
-CFLAGS += -Wall -pipe -O2 #-g -fsanitize=address
+#CFLAGS += -Wall -pipe -O2
+CFLAGS += -Wall -pipe -g -fsanitize=address	# for debug
 CXXFLAGS := $(CFLAGS)
 LOBJS = ssw.o
 LCPPOBJS = ssw_cpp.o
