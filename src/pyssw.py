@@ -224,13 +224,8 @@ def main(args):
             # assume the format of the input score matrix is the same as that of http://www.ncbi.nlm.nih.gov/Class/FieldGuide/BLOSUM62.txt
             lEle, dEle2Int, dInt2Ele, lScore = ssw_lib.read_matrix(args.sMatrix)
 
-<<<<<<< pyssw_fixes
     if args.bBest and args.bProtein:
-        print >> sys.stderr, 'Reverse complement alignment is not available for protein sequences.'
-=======
-    if args.bBest and args.bProtien:
         sys.stderr.write('Reverse complement alignment is not available for protein sequences.\n')
->>>>>>> master
 
 # translate score matrix to ctypes
     mat = (len(lScore) * ct.c_int8) ()
