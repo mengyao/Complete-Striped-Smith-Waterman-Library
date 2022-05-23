@@ -11,14 +11,14 @@ EXAMPLE = example_c
 EXAMPLE_CPP = example_cpp
 JAVA_JAR = ssw.jar
 JAVA_LIB = libsswjni.so
-JAVA_INLCUDES = -I"$(JAVA_HOME)/include" -I"$(JAVA_HOME)/include/linux"
+JAVA_INLCUDES = -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
 JAVA_OBJ = ssw/Aligner.class ssw/Alignment.class ssw/Example.class
 
 .PHONY: all default java clean
 
 default: $(PROG) $(EXAMPLE) $(EXAMPLE_CPP) $(LIB) 
 core: $(PROG)
-java: $(JAVA_JAR) $(JAVA_LIB)
+java: java_home $(JAVA_JAR) $(JAVA_LIB)
 all: default java
 
 $(LIB): ssw.c ssw.h
@@ -47,7 +47,13 @@ $(JAVA_JAR): $(JAVA_OBJ)
 
 %.class: %.java
 	javac -cp ./ $<
-	
+
+java_home:
+ifndef JAVA_HOME
+	@$(ECHO) "ERROR: Your JAVA_HOME environment variable is not set."
+	exit 1
+endif
+
 ssw.o: ssw.c ssw.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
