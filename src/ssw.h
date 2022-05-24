@@ -4,7 +4,7 @@
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
  *	Version 1.2.3
- *	Last revision by Mengyao Zhao on 2022-Apr-15.
+ *	Last revision by Mengyao Zhao on 2022-May-24.
  *
  */
 
@@ -46,7 +46,7 @@ typedef struct _profile s_profile;
     @field	read_begin1	0-based best alignment beginning position on read; read_begin1 = -1 when the best alignment beginning
 						position is not available
     @field	read_end1	0-based best alignment ending position on read
-    @field	read_end2	0-based sub-optimal alignment ending position on read
+    @field	ref_end2	0-based sub-optimal alignment ending position on reference
     @field	cigar	best alignment cigar; stored the same as that in BAM format, high 28 bits: length, low 4 bits: M/I/D (0/1/2);
 					cigar = 0 when the best alignment path is not available
     @field	cigarLen	length of the cigar string; cigarLen = 0 when the best alignment path is not available

@@ -180,8 +180,10 @@ static __m128i* qP_byte (const int8_t* read_num,
 			j = i;
 			for (segNum = 0; LIKELY(segNum < 16) ; segNum ++) {
 				*t++ = j>= readLen ? bias : mat[nt * n + read_num[j]] + bias;
+                fprintf(stderr, "%d\t", *(t-1)); // Mengyao
 				j += segLen;
 			}
+            fprintf(stderr, "\n");    // Mengyao
 		}
 	}
 	return vProfile;
@@ -207,9 +209,10 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 												   is set to 0, it will not be used */
 	 						 uint8_t bias,  /* Shift 0 point to a positive value. */
 							 int32_t maskLen) {
+    fprintf(stderr, "in sw_sse2_byte function\n");   // Mengyao
 
-// Put the largest number of the 16 numbers in vm into m.
-#define max16(m, vm) (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 8)); \
+    // Put the largest number of the 16 numbers in vm into m.
+    #define max16(m, vm) (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 8)); \
 					  (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 4)); \
 					  (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 2)); \
 					  (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 1)); \
@@ -256,6 +259,7 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 		step = -1;
 	}
 	for (i = begin; LIKELY(i != end); i += step) {
+        uint16_t val[8];    // Mengyao
 		int32_t cmp;
 		__m128i e, vF = vZero, vMaxColumn = vZero; /* Initialize F value to 0.
 							   Any errors to vH values will be corrected in the Lazy_F loop.
@@ -280,6 +284,10 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 			vH = _mm_max_epu8(vH, e);
 			vH = _mm_max_epu8(vH, vF);
 			vMaxColumn = _mm_max_epu8(vMaxColumn, vH);
+            memcpy(val, &vMaxColumn, sizeof(val));  // Mengyao
+            printf("j: %d\tvMaxColumn1: %i %i %i %i %i %i %i %i \n",    // Mengyao
+            j, val[0], val[1], val[2], val[3], val[4], val[5],
+            val[6], val[7]);
 
 			/* Save vH values. */
 			_mm_store_si128(pvHStore + j, vH);
@@ -304,7 +312,7 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 			for (j = 0; LIKELY(j < segLen); ++j) {
 				vH = _mm_load_si128(pvHStore + j);
 				vH = _mm_max_epu8(vH, vF);
-				vMaxColumn = _mm_max_epu8(vMaxColumn, vH);	// newly added line
+	    		vMaxColumn = _mm_max_epu8(vMaxColumn, vH);	// newly added line
 				_mm_store_si128(pvHStore + j, vH);
 				vH = _mm_subs_epu8(vH, vGapO);
 				vF = _mm_subs_epu8(vF, vGapE);
@@ -313,6 +321,10 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 		}
 
 end:		
+        memcpy(val, &vMaxColumn, sizeof(val));  // Mengyao
+        printf("vMaxColumn2: %i %i %i %i %i %i %i %i \n",
+           val[0], val[1], val[2], val[3], val[4], val[5],
+           val[6], val[7]);
 
 		vMaxScore = _mm_max_epu8(vMaxScore, vMaxColumn);
 		vTemp = _mm_cmpeq_epi8(vMaxMark, vMaxScore);
@@ -323,6 +335,7 @@ end:
 			max16(temp, vMaxScore);
 			vMaxScore = vMaxMark;
 
+            fprintf(stderr, "temp: %d\n", temp);   // Mengyao
 			if (LIKELY(temp > max)) {
 				max = temp;
 				if (max + bias >= 255) break;	//overflow
@@ -842,6 +855,7 @@ s_align* ssw_align (const s_profile* prof,
 	// Find the alignment scores and ending positions
 	if (prof->profile_byte) {
 		bests = sw_sse2_byte(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_byte, -1, prof->bias, maskLen);
+        fprintf(stderr, "bests[0].score: %d\n", bests[0].score); // Mengyao
 		if (prof->profile_word && bests[0].score == 255) {
 			free(bests);
 			bests = sw_sse2_word(ref, 0, refLen, readLen, weight_gapO, weight_gapE, prof->profile_word, -1, maskLen);
