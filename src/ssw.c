@@ -308,7 +308,9 @@ static alignment_end* sw_sse2_byte (const int8_t* ref,
 				_mm_store_si128(pvHStore + j, vH);
 				vH = _mm_subs_epu8(vH, vGapO);
 				vF = _mm_subs_epu8(vF, vGapE);
-				if (UNLIKELY(! _mm_movemask_epi8(_mm_cmpgt_epi8(vF, vH)))) goto end;
+                vTemp = _mm_subs_epu8(vF, vH);
+                vTemp = _mm_cmpeq_epi8 (vTemp, vZero);
+                if (UNLIKELY(_mm_movemask_epi8(vTemp) == 0xffff)) goto end;
 			}
 		}
 
