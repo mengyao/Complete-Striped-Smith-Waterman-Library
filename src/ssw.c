@@ -56,7 +56,7 @@
  *
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
- *	Version 1.2.4
+ *	Version 1.2.5
  *	Last revision by Mengyao Zhao on 2022-Apr-17.
  *
  *  The lazy-F loop implementation was derived from SWPS3, which is

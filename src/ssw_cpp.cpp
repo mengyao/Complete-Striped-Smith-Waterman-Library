@@ -1,6 +1,6 @@
 // ssw_cpp.cpp
 // Created by Wan-Ping Lee
-// Last revision by Mengyao Zhao on 2017-05-30
+// Last revision by Mengyao Zhao on 2023-Apr-21
 
 #include "ssw_cpp.h"
 #include "ssw.h"
@@ -290,25 +290,18 @@ int Aligner::SetReferenceSequence(const char* seq, const int& length) {
 
   int len = 0;
   if (translation_matrix_) {
-    // calculate the valid length
-    //int calculated_ref_length = static_cast<int>(strlen(seq));
-    //int valid_length = (calculated_ref_length > length)
-    //                   ? length : calculated_ref_length;
-    int valid_length = length;
     // delete the current buffer
     CleanReferenceSequence();
     // allocate a new buffer
-    translated_reference_ = new int8_t[valid_length];
+    translated_reference_ = new int8_t[length];
 
-    len = TranslateBase(seq, valid_length, translated_reference_);
+    len = TranslateBase(seq, length, translated_reference_);
   } else {
     // nothing
   }
 
   reference_length_ = len;
   return len;
-
-
 }
 
 int Aligner::TranslateBase(const char* bases, const int& length,
@@ -326,7 +319,7 @@ int Aligner::TranslateBase(const char* bases, const int& length,
 }
 
 
-bool Aligner::Align(const char* query, const Filter& filter,
+uint16_t Aligner::Align(const char* query, const Filter& filter,
                     Alignment* alignment, const int32_t maskLen) const
 {
   if (!translation_matrix_) return false;
@@ -351,18 +344,18 @@ bool Aligner::Align(const char* query, const Filter& filter,
   alignment->Clear();
   ConvertAlignment(*s_al, query_len, alignment);
   alignment->mismatches = CalculateNumberMismatch(&*alignment, translated_reference_, translated_query, query_len);
-
+  uint16_t align_flag = s_al->flag;
 
   // Free memory
   delete [] translated_query;
   align_destroy(s_al);
   init_destroy(profile);
 
-  return true;
+  return align_flag;
 }
 
 
-bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
+uint16_t Aligner::Align(const char* query, const char* ref, const int& ref_len,
                     const Filter& filter, Alignment* alignment, const int32_t maskLen) const
 {
   if (!translation_matrix_) return false;
@@ -392,6 +385,7 @@ bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
   alignment->Clear();
   ConvertAlignment(*s_al, query_len, alignment);
   alignment->mismatches = CalculateNumberMismatch(&*alignment, translated_ref, translated_query, query_len);
+  uint16_t align_flag = s_al->flag;
 
   // Free memory
   delete [] translated_query;
@@ -399,7 +393,7 @@ bool Aligner::Align(const char* query, const char* ref, const int& ref_len,
   align_destroy(s_al);
   init_destroy(profile);
 
-  return true;
+  return align_flag;
 }
 
 void Aligner::Clear(void) {

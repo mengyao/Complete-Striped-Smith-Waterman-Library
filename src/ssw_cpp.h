@@ -1,6 +1,6 @@
 // ssw_cpp.h
 // Created by Wan-Ping Lee
-// Last revision by Mengyao Zhao on 2017-05-30
+// Last revision by Mengyao Zhao on 2023-Apr-21
 
 #ifndef COMPLETE_STRIPED_SMITH_WATERMAN_CPP_H_
 #define COMPLETE_STRIPED_SMITH_WATERMAN_CPP_H_
@@ -109,7 +109,7 @@ class Aligner {
   //                    and replaced.
   // @param    seq    The reference bases;
   //                  [NOTICE] It is not necessary null terminated.
-  // @param    length The length of bases will be be built.
+  // @param    length The length of bases will be built.
   // @return   The length of the built bases.
   // =========
   int SetReferenceSequence(const char* seq, const int& length);
@@ -134,9 +134,9 @@ class Aligner {
   // @param    maskLen   The distance between the optimal and suboptimal alignment ending position will >= maskLen. We suggest to 
   //                     use readLen/2, if you don't have special concerns. Note: maskLen has to be >= 15, otherwise this function 
   //                     will NOT return the suboptimal alignment information.
-  // @return   True: succeed; false: fail.
+  // @return   If the alignment path is accurate (or has missing part). 0: accurate; 1: banded_sw is totally failed; 2: banded_sw returned path has missing part
   // =========
-  bool Align(const char* query, const Filter& filter, Alignment* alignment, const int32_t maskLen) const;
+  uint16_t Align(const char* query, const Filter& filter, Alignment* alignment, const int32_t maskLen) const;
 
   // =========
   // @function Align the query againt the reference.
@@ -151,9 +151,9 @@ class Aligner {
   // @param    maskLen   The distance between the optimal and suboptimal alignment ending position will >= maskLen. We suggest to 
   //                     use readLen/2, if you don't have special concerns. Note: maskLen has to be >= 15, otherwise this function 
   //                     will NOT return the suboptimal alignment information.
-  // @return   True: succeed; false: fail.
+  // @return   If the alignment path is accurate (or has missing part). 0: accurate; 1: banded_sw is totally failed; 2: banded_sw returned path has missing part
   // =========
-  bool Align(const char* query, const char* ref, const int& ref_len,
+  uint16_t Align(const char* query, const char* ref, const int& ref_len,
              const Filter& filter, Alignment* alignment, const int32_t maskLen) const;
 
   // @function Clear up all containers and thus the aligner is disabled.
