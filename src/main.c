@@ -1,7 +1,7 @@
 /*  main.c
  *  Created by Mengyao Zhao on 06/23/11.
- *	Version 1.2.2
- *  Last revision by Mengyao Zhao on 2022-May-21.
+ *	Version 1.2.6
+ *  Last revision by Mengyao Zhao on 2024-Jul-03.
  */
 
 #include <stdlib.h>
@@ -434,16 +434,19 @@ int main (int argc, char * const argv[]) {
 			result = ssw_align (p, ref_num, refLen, gap_open, gap_extension, flag, filter, 0, maskLen);
 			if (reverse == 1 && protein == 0)
 				result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, filter, 0, maskLen);
-			if (result_rc && result_rc->score1 > result->score1 && result_rc->score1 >= filter) {
+			if (! result){
+				fprintf(stderr, "Warning: Alignment between the following sequences is failed.\nref_name: %s\nread_name: %s\n\n", ref_seq->name.s, read_seq->name.s);
+                continue;
+			}else if (result_rc && result_rc->score1 > result->score1 && result_rc->score1 >= filter) {
                 if (result_rc->flag == 2) fprintf(stderr, "Warning: The reverse compliment alignment of the following sequences may miss a small part.\nref_seq: %s\nread_seq: %s\n\n", ref_seq->name.s, read_seq->name.s);
 				if (sam) ssw_write (result_rc, ref_seq, read_seq, read_rc, ref_num, num_rc, table, 1, 1);
 				else ssw_write (result_rc, ref_seq, read_seq, read_rc, ref_num, num_rc, table, 1, 0);
-			}else if (result && result->score1 >= filter){
+			}else if (result->score1 > 0 && result->score1 >= filter){
                 if (result->flag == 2) fprintf(stderr, "Warning: The alignment of the following sequences may miss a small part.\nref_seq: %s\nread_seq: %s\n\n", ref_seq->name.s, read_seq->name.s);
 				if (sam) ssw_write(result, ref_seq, read_seq, read_seq->seq.s, ref_num, num, table, 0, 1);
 				else ssw_write(result, ref_seq, read_seq, read_seq->seq.s, ref_num, num, table, 0, 0);
-			} else if (! result) {
-                fprintf(stderr, "Warning: Alignment between the following sequences is failed.\nref_seq: %s\nread_seq: %s\n\n", ref_seq->name.s, read_seq->name.s);
+			} else if (result->score1 <= 0) {
+				fprintf(stderr, "There is no identical residue between the following reference and read seqeunces.\nref_name: %s\nread_name: %s\n\n", ref_seq->name.s, read_seq->name.s);
                 continue;
             }
 			if (result_rc) align_destroy(result_rc);

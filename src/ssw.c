@@ -56,8 +56,8 @@
  *
  *  Created by Mengyao Zhao on 6/22/10.
  *  Copyright 2010 Boston College. All rights reserved.
- *	Version 1.2.5
- *	Last revision by Mengyao Zhao on 2022-Apr-17.
+ *	Version 1.2.6
+ *	Last revision by Mengyao Zhao on 2024-Jul-03.
  *
  *  The lazy-F loop implementation was derived from SWPS3, which is
  *  MIT licensed under ETH Zürich, Institute of Computational Science.
@@ -860,6 +860,11 @@ s_align* ssw_align (const s_profile* prof,
 		free(r);
 		return NULL;
 	}
+	if (bests[0].score <= 0) {
+		free(bests);
+		goto end;
+	}
+
 	r->score1 = bests[0].score;
 	r->ref_end1 = bests[0].ref; // 0_based, always count from the input seq begin
 	r->read_end1 = bests[0].read;   // 0_based, count from the alignment begin (aligned length of the read)
