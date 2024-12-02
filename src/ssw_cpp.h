@@ -138,6 +138,8 @@ class Aligner {
   // =========
   uint16_t Align(const char* query, const Filter& filter, Alignment* alignment, const int32_t maskLen) const;
 
+  uint16_t Align(const char* query, const int &query_len, const Filter& filter, Alignment* alignment, const int32_t maskLen) const;
+
   // =========
   // @function Align the query againt the reference.
   //           [NOTICE] The reference won't replace the reference
@@ -155,6 +157,8 @@ class Aligner {
   // =========
   uint16_t Align(const char* query, const char* ref, const int& ref_len,
              const Filter& filter, Alignment* alignment, const int32_t maskLen) const;
+
+  uint16_t Align(const char* query, const int& query_len, const char* ref, const int& ref_len, const Filter& filter, Alignment* alignment, const int32_t maskLen) const;
 
   // @function Clear up all containers and thus the aligner is disabled.
   //             To rebuild the aligner please use Build functions.

@@ -319,13 +319,12 @@ int Aligner::TranslateBase(const char* bases, const int& length,
 }
 
 
-uint16_t Aligner::Align(const char* query, const Filter& filter,
+uint16_t Aligner::Align(const char* query, const int &query_len, const Filter& filter,
                     Alignment* alignment, const int32_t maskLen) const
 {
   if (!translation_matrix_) return false;
   if (reference_length_ == 0) return false;
 
-  int query_len = strlen(query);
   if (query_len == 0) return false;
   int8_t* translated_query = new int8_t[query_len];
   TranslateBase(query, query_len, translated_query);
@@ -354,13 +353,17 @@ uint16_t Aligner::Align(const char* query, const Filter& filter,
   return align_flag;
 }
 
+uint16_t Aligner::Align(const char* query, const Filter& filter,
+                    Alignment* alignment, const int32_t maskLen) const
+{
+	return Aligner::Align(query, strlen(query), filter, alignment, maskLen);
+}
 
-uint16_t Aligner::Align(const char* query, const char* ref, const int& ref_len,
+uint16_t Aligner::Align(const char* query, const int& query_len, const char* ref, const int& ref_len,
                     const Filter& filter, Alignment* alignment, const int32_t maskLen) const
 {
   if (!translation_matrix_) return false;
 
-  int query_len = strlen(query);
   if (query_len == 0) return false;
   int8_t* translated_query = new int8_t[query_len];
   TranslateBase(query, query_len, translated_query);
@@ -394,6 +397,12 @@ uint16_t Aligner::Align(const char* query, const char* ref, const int& ref_len,
   init_destroy(profile);
 
   return align_flag;
+}
+
+uint16_t Aligner::Align(const char* query, const char* ref, const int& ref_len,
+                    const Filter& filter, Alignment* alignment, const int32_t maskLen) const
+{
+	return Aligner::Align(query, strlen(query), ref, ref_len, filter, alignment, maskLen);
 }
 
 void Aligner::Clear(void) {
