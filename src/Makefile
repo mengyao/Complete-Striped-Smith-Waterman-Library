@@ -1,8 +1,7 @@
-CC = gcc
-CXX = g++
-CFLAGS += -Wall -pipe -O2
-#CFLAGS += -Wall -pipe -g -fsanitize=address	# for debug
-CXXFLAGS := $(CFLAGS)
+CFLAGS ?= -O2 -pipe
+CFLAGS += -Wall -pedantic
+#CFLAGS += -Og -g -fsanitize=address	# for debug
+CXXFLAGS ?= $(CFLAGS)
 LOBJS = ssw.o
 LCPPOBJS = ssw_cpp.o
 PROG = ssw_test
@@ -16,13 +15,13 @@ JAVA_OBJ = ssw/Aligner.class ssw/Alignment.class ssw/Example.class
 
 .PHONY: all default java clean
 
-default: $(PROG) $(EXAMPLE) $(EXAMPLE_CPP) $(LIB) 
+default: $(PROG) $(EXAMPLE) $(EXAMPLE_CPP) $(LIB)
 core: $(PROG)
 java: java_home $(JAVA_JAR) $(JAVA_LIB)
 all: default java
 
 $(LIB): ssw.c ssw.h
-	$(CC) $(CFLAGS) -fPIC -shared -rdynamic -o $@ $<
+	$(CC) $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) -fPIC -shared -rdynamic -o $@ $<
 
 $(PROG): main.c kseq.h
 
@@ -30,14 +29,14 @@ $(EXAMPLE): example.c
 
 ifdef __arm__ # (M1)
 $(PROG) $(EXAMPLE): $(LOBJS)
-	$(CC) -o $@ $(filter-out %.h,$^) $(CFLAGS) $(LDFLAGS) -lm -lz -march=armv8-a+fp+simd+crypto+crc
+	$(CC) $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) -o $@ $(filter-out %.h,$^) -lm -lz -march=armv8-a+fp+simd+crypto+crc
 else # x86(Intel)
 $(PROG) $(EXAMPLE): $(LOBJS)
-	$(CC) -o $@ $(filter-out %.h,$^) $(CFLAGS) $(LDFLAGS) -lm -lz
+	$(CC) $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) -o $@ $(filter-out %.h,$^) -lm -lz
 endif
 
 $(EXAMPLE_CPP): example.cpp $(LOBJS) $(LCPPOBJS)
-	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS) -lm -lz
+	$(CXX) $(LDFLAGS) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ -lm -lz
 
 $(JAVA_LIB): sswjni.c ssw.c ssw.h
 	$(CC) $(CFLAGS) $(JAVA_INLCUDES) -fPIC -shared -rdynamic -o $@ $< ssw.c 
@@ -55,10 +54,10 @@ ifndef JAVA_HOME
 endif
 
 ssw.o: ssw.c ssw.h
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 ssw_cpp.o: ssw_cpp.cpp ssw_cpp.h ssw.h
-	$(CXX) -c -o $@ $< $(CXXFLAGS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
 clean:
 	-rm -f $(LOBJS) $(LCPPOBJS) $(PROG) $(LIB) $(EXAMPLE) $(EXAMPLE_CPP) $(JAVA_LIB) $(JAVA_JAR) $(JAVA_OBJ) *~ 
