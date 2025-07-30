@@ -8,22 +8,21 @@
 // Last revision by Mengyao Zhao on 2023-Apr-21
 // ==========================
 
+#include <algorithm>
 #include <iostream>
-#include <string.h>
+#include <string>
 
 #include "ssw_cpp.h"
 
-using std::string;
 using std::cout;
 using std::endl;
 
 static void PrintAlignment(const StripedSmithWaterman::Alignment& alignment);
 
 int main() {
-  const string ref   = "CAGCCTTTCTGACCCGGAAATCAAAATAGGCACAACAAA";
-  const string query = "CTGAGCCGGTAAATC";
-  int32_t maskLen = strlen(query.c_str())/2;
-  maskLen = maskLen < 15 ? 15 : maskLen;
+  const std::string ref("CAGCCTTTCTGACCCGGAAATCAAAATAGGCACAACAAA");
+  const std::string query("CTGAGCCGGTAAATC");
+  const int32_t     maskLen = std::max(query.size() / 2, size_t(15));
 
   // Declares a default Aligner
   StripedSmithWaterman::Aligner aligner;
@@ -32,14 +31,14 @@ int main() {
   // Declares an alignment that stores the result
   StripedSmithWaterman::Alignment alignment;
   // Aligns the query to the ref
-  aligner.Align(query.c_str(), ref.c_str(), ref.size(), filter, &alignment, maskLen);
+  aligner.Align(query.c_str(), query.size(), ref.c_str(), ref.size(), filter, alignment, maskLen);
 
   PrintAlignment(alignment);
 
   return 0;
 }
 
-static void PrintAlignment(const StripedSmithWaterman::Alignment& alignment){
+static void PrintAlignment(const StripedSmithWaterman::Alignment& alignment) {
   cout << "===== SSW result =====" << endl;
   cout << "Best Smith-Waterman score:\t" << alignment.sw_score << endl
        << "Next-best Smith-Waterman score:\t" << alignment.sw_score_next_best << endl
