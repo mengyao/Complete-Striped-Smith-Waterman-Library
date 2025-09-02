@@ -389,7 +389,7 @@ typedef union ALIGN_STRUCT(16) SIMDVec {
 
 // Function declaration
 // SSE
-FORCE_INLINE unsigned int _MM_GET_ROUNDING_MODE();
+FORCE_INLINE unsigned int _MM_GET_ROUNDING_MODE(void);
 FORCE_INLINE __m128 _mm_move_ss(__m128, __m128);
 FORCE_INLINE __m128 _mm_or_ps(__m128, __m128);
 FORCE_INLINE __m128 _mm_set_ps1(float);
@@ -405,7 +405,7 @@ FORCE_INLINE __m128i _mm_set_epi32(int, int, int, int);
 FORCE_INLINE __m128i _mm_set_epi64x(int64_t, int64_t);
 FORCE_INLINE __m128d _mm_set_pd(double, double);
 FORCE_INLINE __m128i _mm_set1_epi32(int);
-FORCE_INLINE __m128i _mm_setzero_si128();
+FORCE_INLINE __m128i _mm_setzero_si128(void);
 // SSE4.1
 FORCE_INLINE __m128d _mm_ceil_pd(__m128d);
 FORCE_INLINE __m128 _mm_ceil_ps(__m128);
@@ -1769,7 +1769,7 @@ FORCE_INLINE void _mm_free(void *addr)
 // The flush zero may contain any of the following flags: _MM_FLUSH_ZERO_ON or
 // _MM_FLUSH_ZERO_OFF
 // https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_MM_GET_FLUSH_ZERO_MODE
-FORCE_INLINE unsigned int _sse2neon_mm_get_flush_zero_mode()
+FORCE_INLINE unsigned int _sse2neon_mm_get_flush_zero_mode(void)
 {
     union {
         fpcr_bitfield field;
@@ -1793,7 +1793,7 @@ FORCE_INLINE unsigned int _sse2neon_mm_get_flush_zero_mode()
 // The rounding mode may contain any of the following flags: _MM_ROUND_NEAREST,
 // _MM_ROUND_DOWN, _MM_ROUND_UP, _MM_ROUND_TOWARD_ZERO
 // https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_MM_GET_ROUNDING_MODE
-FORCE_INLINE unsigned int _MM_GET_ROUNDING_MODE()
+FORCE_INLINE unsigned int _MM_GET_ROUNDING_MODE(void)
 {
     union {
         fpcr_bitfield field;
@@ -2485,7 +2485,7 @@ FORCE_INLINE void _mm_setcsr(unsigned int a)
 }
 
 // FIXME: _mm_getcsr() implementation supports reading the rounding mode only.
-FORCE_INLINE unsigned int _mm_getcsr()
+FORCE_INLINE unsigned int _mm_getcsr(void)
 {
     return _MM_GET_ROUNDING_MODE();
 }
@@ -5052,7 +5052,7 @@ FORCE_INLINE __m128i _mm_packus_epi16(const __m128i a, const __m128i b)
 // 'yield' instruction isn't a good fit because it's effectively a nop on most
 // Arm cores. Experience with several databases has shown has shown an 'isb' is
 // a reasonable approximation.
-FORCE_INLINE void _mm_pause()
+FORCE_INLINE void _mm_pause(void)
 {
     __asm__ __volatile__("isb\n");
 }
@@ -8683,7 +8683,7 @@ FORCE_INLINE __m128i _mm_clmulepi64_si128(__m128i _a, __m128i _b, const int imm)
     }
 }
 
-FORCE_INLINE unsigned int _sse2neon_mm_get_denormals_zero_mode()
+FORCE_INLINE unsigned int _sse2neon_mm_get_denormals_zero_mode(void)
 {
     union {
         fpcr_bitfield field;
