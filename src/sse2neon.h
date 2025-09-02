@@ -25,6 +25,7 @@
 //   Yang-Hao Yuan <yanghau@biilabs.io>
 //   Syoyo Fujita <syoyo@lighttransport.com>
 //   Brecht Van Lommel <brecht@blender.org>
+//   Mengyao Zhao <zhaomengyao@gmail.com>
 
 /*
  * sse2neon is freely redistributable under the MIT License.
