@@ -39,6 +39,59 @@
 
 KSEQ_INIT(gzFile, gzread)
 
+// Global scoring matrices
+static const int8_t mat50[] = {
+//  A   R   N   D   C   Q   E   G   H   I   L   K   M   F   P   S   T   W   Y   V   B   Z   X   *
+     	5, -2, -1, -2, -1, -1, -1,  0, -2, -1, -2, -1, -1, -3, -1,  1,  0, -3, -2,  0, -2, -1, -1, -5,	// A
+       -2,  7, -1, -2, -4,  1,  0, -3,  0, -4, -3,  3, -2, -3, -3, -1, -1, -3, -1, -3, -1,  0, -1, -5,	// R
+       -1, -1,  7,  2, -2,  0,  0,  0,  1, -3, -4,  0, -2, -4, -2,  1,  0, -4, -2, -3,  5,  0, -1, -5,	// N
+       -2, -2,  2,  8, -4,  0,  2, -1, -1, -4, -4, -1, -4, -5, -1,  0, -1, -5, -3, -4,  6,  1, -1, -5,	// D
+       -1, -4, -2, -4, 13, -3, -3, -3, -3, -2, -2, -3, -2, -2, -4, -1, -1, -5, -3, -1, -3, -3, -1, -5,	// C
+       -1,  1,  0,  0, -3,  7,  2, -2,  1, -3, -2,  2,  0, -4, -1,  0, -1, -1, -1, -3,  0,  4, -1, -5,	// Q
+       -1,  0,  0,  2, -3,  2,  6, -3,  0, -4, -3,  1, -2, -3, -1, -1, -1, -3, -2, -3,  1,  5, -1, -5,	// E
+     	0, -3,  0, -1, -3, -2, -3,  8, -2, -4, -4, -2, -3, -4, -2,  0, -2, -3, -3, -4, -1, -2, -1, -5,	// G
+       -2,  0,  1, -1, -3,  1,  0, -2, 10, -4, -3,  0, -1, -1, -2, -1, -2, -3,  2, -4,  0,  0, -1, -5,	// H
+       -1, -4, -3, -4, -2, -3, -4, -4, -4,  5,  2, -3,  2,  0, -3, -3, -1, -3, -1,  4, -4, -3, -1, -5,	// I
+       -2, -3, -4, -4, -2, -2, -3, -4, -3,  2,  5, -3,  3,  1, -4, -3, -1, -2, -1,  1, -4, -3, -1, -5,	// L
+       -1,  3,  0, -1, -3,  2,  1, -2,  0, -3, -3,  6, -2, -4, -1,  0, -1, -3, -2, -3,  0,  1, -1, -5,	// K
+       -1, -2, -2, -4, -2,  0, -2, -3, -1,  2,  3, -2,  7,  0, -3, -2, -1, -1,  0,  1, -3, -1, -1, -5,	// M
+       -3, -3, -4, -5, -2, -4, -3, -4, -1,  0,  1, -4,  0,  8, -4, -3, -2,  1,  4, -1, -4, -4, -1, -5,	// F
+       -1, -3, -2, -1, -4, -1, -1, -2, -2, -3, -4, -1, -3, -4, 10, -1, -1, -4, -3, -3, -2, -1, -1, -5,	// P
+     	1, -1,  1,  0, -1,  0, -1,  0, -1, -3, -3,  0, -2, -3, -1,  5,  2, -4, -2, -2,  0,  0, -1, -5,	// S
+    	0, -1,  0, -1, -1, -1, -1, -2, -2, -1, -1, -1, -1, -2, -1,  2,  5, -3, -2,  0,  0, -1, -1, -5, 	// T
+       -3, -3, -4, -5, -5, -1, -3, -3, -3, -3, -2, -3, -1,  1, -4, -4, -3, 15,  2, -3, -5, -2, -1, -5,	// W
+       -2, -1, -2, -3, -3, -1, -2, -3,  2, -1, -1, -2,  0,  4, -3, -2, -2,  2,  8, -1, -3, -2, -1, -5,	// Y
+     	0, -3, -3, -4, -1, -3, -3, -4, -4,  4,  1, -3,  1, -1, -3, -2,  0, -3, -1,  5, -3, -3, -1, -5,	// V
+       -2, -1,  5,  6, -3,  0,  1, -1,  0, -4, -4,  0, -3, -4, -2,  0,  0, -5, -3, -3,  6,  1, -1, -5,	// B
+       -1,  0,  0,  1, -3,  4,  5, -2,  0, -3, -3,  1, -1, -4, -1,  0, -1, -2, -2, -3,  1,  5, -1, -5,	// Z
+       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -5,	// X
+       -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5,  1 	// *
+};
+
+/* This table is used to transform amino acid letters into numbers. */
+static int8_t aa_table[128] = {
+	23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+	23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+	23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+	23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+	23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23,
+	14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23,
+	23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23,
+	14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23
+};
+
+/* This table is used to transform nucleotide letters into numbers. */
+static int8_t nt_table[128] = {
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+	4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4,
+	4, 4, 4, 4,  3, 3, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+	4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4,
+	4, 4, 4, 4,  3, 3, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4
+};
+
 static void reverse_comple(const char* seq, char* rc) {
 	int32_t end = strlen(seq), start = 0;
 	static const int8_t rc_table[128] = {
@@ -191,71 +244,166 @@ end:
 	}
 }
 
+// Argument parsing
+static int parse_arguments(int argc, char * const argv[], int32_t *match, int32_t *mismatch, 
+                          int32_t *gap_open, int32_t *gap_extension, int32_t *filter, 
+                          int32_t *protein, int32_t *path, int32_t *reverse, 
+                          int32_t *sam, int32_t *header, char **mat_name) {
+	
+	// Parse command line arguments
+	for (int i = 1; i < argc; i++) {
+		if (argv[i][0] == '-') {
+			switch (argv[i][1]) {
+				case 'm':
+					if (i + 1 < argc && argv[i + 1][0] != '-') {
+						*match = atoi(argv[i + 1]);
+						i++; // Skip the next argument
+					}
+					break;
+				case 'x':
+					if (i + 1 < argc && argv[i + 1][0] != '-') {
+						*mismatch = atoi(argv[i + 1]);
+						i++; // Skip the next argument
+					}
+					break;
+				case 'o':
+					if (i + 1 < argc && argv[i + 1][0] != '-') {
+						*gap_open = atoi(argv[i + 1]);
+						i++; // Skip the next argument
+					}
+					break;
+				case 'e':
+					if (i + 1 < argc && argv[i + 1][0] != '-') {
+						*gap_extension = atoi(argv[i + 1]);
+						i++; // Skip the next argument
+					}
+					break;
+				case 'a':
+					if (i + 1 < argc && argv[i + 1][0] != '-') {
+						*mat_name = (char*)malloc(strlen(argv[i + 1]) + 1);
+						strcpy(*mat_name, argv[i + 1]);
+						i++; // Skip the next argument
+					}
+					break;
+				case 'f':
+					if (i + 1 < argc && argv[i + 1][0] != '-') {
+						*filter = atoi(argv[i + 1]);
+						i++; // Skip the next argument
+					}
+					break;
+				case 'p': *protein = 1; break;
+				case 'c': *path = 1; break;
+				case 'r': *reverse = 1; break;
+				case 's': *sam = 1; break;
+				case 'h': *header = 1; break;
+			}
+		}
+	}
+	
+	// Find the first non-option argument (should be the first file)
+	int file_arg_start = 1;
+	while (file_arg_start < argc && argv[file_arg_start][0] == '-') {
+		// Skip the option and its value
+		if (argv[file_arg_start][1] == 'm' || argv[file_arg_start][1] == 'x' || 
+			argv[file_arg_start][1] == 'o' || argv[file_arg_start][1] == 'e' || 
+			argv[file_arg_start][1] == 'a' || argv[file_arg_start][1] == 'f') {
+			file_arg_start += 2; // Skip option and value
+		} else {
+			file_arg_start += 1; // Skip single option
+		}
+	}
+	
+	return file_arg_start;
+}
+
+// Scoring matrix initialization
+static int initialize_scoring_matrix(int32_t match, int32_t mismatch, int32_t protein, 
+                                   char *mat_name, int8_t **mata, const int8_t **mat, 
+                                   int8_t **table, int32_t *n) {
+	
+	// Initialize scoring matrix for genome sequences
+	*mata = (int8_t*)calloc(25, sizeof(int8_t));
+	int32_t k = 0;
+	for (int32_t i = 0; LIKELY(i < 4); ++i) {
+		for (int32_t m = 0; LIKELY(m < 4); ++m) (*mata)[k++] = i == m ? match : -mismatch;	/* weight_match : -weight_mismatch */
+		(*mata)[k++] = 0; // ambiguous base
+	}
+	for (int32_t m = 0; LIKELY(m < 5); ++m) (*mata)[k++] = 0;
+	*mat = *mata;
+
+	if (protein == 1 && mat_name == 0) {
+		*n = 24;
+		*table = aa_table;
+		*mat = mat50;
+	} else if (mat_name != 0) {
+		// Parse score matrix from file
+		FILE *f_mat = fopen(mat_name, "r");
+		free(mat_name);
+		if (f_mat == NULL) { 
+			fprintf(stderr, "Failed to open the weight matrix file.\n");
+			free(*mata);
+			return 1;
+		}
+
+		char line[128];
+		*mata = (int8_t*)realloc(*mata, 1024 * sizeof(int8_t));
+		k = 0;
+		int32_t m = 0;
+		while (fgets(line, 128, f_mat)) {
+			if (line[0] == '*' || (line[0] >= 'A' && line[0] <= 'Z')) {
+				if (line[0] >= 'A' && line[0] <= 'Z') aa_table[(int)line[0]] = aa_table[(int)line[0] + 32] = m;
+				char str[4], *s = str;
+				str[0] = '\0';
+				int32_t l = 1;
+				while (line[l]) {
+					if ((line[l] >= '0' && line[l] <= '9') || line[l] == '-') *s++ = line[l];
+					else if (str[0] != '\0') {
+						*s = '\0';
+						(*mata)[k++] = (int8_t)atoi(str);
+						s = str;
+						str[0] = '\0';
+					}
+					++l;
+				}
+				if (str[0] != '\0') {
+					*s = '\0';
+					(*mata)[k++] = (int8_t)atoi(str);
+					s = str;
+					str[0] = '\0';
+				}
+				++m;
+			}
+		}
+		if (k == 0) {
+			fprintf(stderr, "Problem of reading the weight matrix file.\n");
+			free(*mata);
+			fclose(f_mat);
+			return 1;
+		}
+		fclose(f_mat);
+		*n = m;
+		*table = aa_table;
+		*mat = *mata;
+	}
+	
+	return 0;
+}
+
 int main (int argc, char * const argv[]) {
 	clock_t start, end;
 	float cpu_time;
 	gzFile read_fp, ref_fp;
 	kseq_t *read_seq, *ref_seq;
-	int32_t l, m, k, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0, header = 0, s1 = 67108864, s2 = 128, filter = 0;
+	int32_t l, m, match = 2, mismatch = 2, gap_open = 3, gap_extension = 1, path = 0, reverse = 0, n = 5, sam = 0, protein = 0, header = 0, s1 = 67108864, s2 = 128, filter = 0;
     int8_t *mata, *ref_num, *num, *num_rc = 0;
     const int8_t* mat;
 	char* read_rc = 0, *mat_name = 0;
 
-	static const int8_t mat50[] = {
-	//  A   R   N   D   C   Q   E   G   H   I   L   K   M   F   P   S   T   W   Y   V   B   Z   X   *
-     	5, -2, -1, -2, -1, -1, -1,  0, -2, -1, -2, -1, -1, -3, -1,  1,  0, -3, -2,  0, -2, -1, -1, -5,	// A
-       -2,  7, -1, -2, -4,  1,  0, -3,  0, -4, -3,  3, -2, -3, -3, -1, -1, -3, -1, -3, -1,  0, -1, -5,	// R
-       -1, -1,  7,  2, -2,  0,  0,  0,  1, -3, -4,  0, -2, -4, -2,  1,  0, -4, -2, -3,  5,  0, -1, -5,	// N
-       -2, -2,  2,  8, -4,  0,  2, -1, -1, -4, -4, -1, -4, -5, -1,  0, -1, -5, -3, -4,  6,  1, -1, -5,	// D
-       -1, -4, -2, -4, 13, -3, -3, -3, -3, -2, -2, -3, -2, -2, -4, -1, -1, -5, -3, -1, -3, -3, -1, -5,	// C
-       -1,  1,  0,  0, -3,  7,  2, -2,  1, -3, -2,  2,  0, -4, -1,  0, -1, -1, -1, -3,  0,  4, -1, -5,	// Q
-       -1,  0,  0,  2, -3,  2,  6, -3,  0, -4, -3,  1, -2, -3, -1, -1, -1, -3, -2, -3,  1,  5, -1, -5,	// E
-     	0, -3,  0, -1, -3, -2, -3,  8, -2, -4, -4, -2, -3, -4, -2,  0, -2, -3, -3, -4, -1, -2, -1, -5,	// G
-       -2,  0,  1, -1, -3,  1,  0, -2, 10, -4, -3,  0, -1, -1, -2, -1, -2, -3,  2, -4,  0,  0, -1, -5,	// H
-       -1, -4, -3, -4, -2, -3, -4, -4, -4,  5,  2, -3,  2,  0, -3, -3, -1, -3, -1,  4, -4, -3, -1, -5,	// I
-       -2, -3, -4, -4, -2, -2, -3, -4, -3,  2,  5, -3,  3,  1, -4, -3, -1, -2, -1,  1, -4, -3, -1, -5,	// L
-       -1,  3,  0, -1, -3,  2,  1, -2,  0, -3, -3,  6, -2, -4, -1,  0, -1, -3, -2, -3,  0,  1, -1, -5,	// K
-       -1, -2, -2, -4, -2,  0, -2, -3, -1,  2,  3, -2,  7,  0, -3, -2, -1, -1,  0,  1, -3, -1, -1, -5,	// M
-       -3, -3, -4, -5, -2, -4, -3, -4, -1,  0,  1, -4,  0,  8, -4, -3, -2,  1,  4, -1, -4, -4, -1, -5,	// F
-       -1, -3, -2, -1, -4, -1, -1, -2, -2, -3, -4, -1, -3, -4, 10, -1, -1, -4, -3, -3, -2, -1, -1, -5,	// P
-     	1, -1,  1,  0, -1,  0, -1,  0, -1, -3, -3,  0, -2, -3, -1,  5,  2, -4, -2, -2,  0,  0, -1, -5,	// S
-    	0, -1,  0, -1, -1, -1, -1, -2, -2, -1, -1, -1, -1, -2, -1,  2,  5, -3, -2,  0,  0, -1, -1, -5, 	// T
-       -3, -3, -4, -5, -5, -1, -3, -3, -3, -3, -2, -3, -1,  1, -4, -4, -3, 15,  2, -3, -5, -2, -1, -5, 	// W
-       -2, -1, -2, -3, -3, -1, -2, -3,  2, -1, -1, -2,  0,  4, -3, -2, -2,  2,  8, -1, -3, -2, -1, -5, 	// Y
-     	0, -3, -3, -4, -1, -3, -3, -4, -4,  4,  1, -3,  1, -1, -3, -2,  0, -3, -1,  5, -3, -3, -1, -5, 	// V
-       -2, -1,  5,  6, -3,  0,  1, -1,  0, -4, -4,  0, -3, -4, -2,  0,  0, -5, -3, -3,  6,  1, -1, -5, 	// B
-       -1,  0,  0,  1, -3,  4,  5, -2,  0, -3, -3,  1, -1, -4, -1,  0, -1, -2, -2, -3,  1,  5, -1, -5, 	// Z
-       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -5, 	// X
-       -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5,  1 	// *
-	};
-
-	/* This table is used to transform amino acid letters into numbers. */
-	int8_t aa_table[128] = {
-		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
-		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
-		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
-		23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
-		23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23,
-		14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23,
-		23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23,
-		14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23
-	};
-
-	/* This table is used to transform nucleotide letters into numbers. */
-	int8_t nt_table[128] = {
-		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-		4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-		4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4,
-		4, 4, 4, 4,  3, 3, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-		4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4,
-		4, 4, 4, 4,  3, 3, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4
-	};
-
-	int8_t* table = nt_table;
-
-	if (optind + 2 > argc) {
+	// Parse command line arguments
+	int file_arg_start = parse_arguments(argc, argv, &match, &mismatch, &gap_open, &gap_extension, &filter, &protein, &path, &reverse, &sam, &header, &mat_name);
+	
+	// Check if we have the required file arguments
+	if (file_arg_start + 2 > argc) {
 		fprintf(stderr, "\n");
 		fprintf(stderr, "Usage: ssw_test [options] ... <target.fasta> <query.fasta>(or <query.fastq>)\n");
 		fprintf(stderr, "Options:\n");
@@ -272,104 +420,25 @@ int main (int argc, char * const argv[]) {
 		fprintf(stderr, "\t-h\tIf -s is used, include header in SAM output.\n\n");
 		return 1;
 	}
-
-	// Parse command line.
-	while ((l = getopt(argc, argv, "m:x:o:e:a:f:pcrsh")) >= 0) {
-		switch (l) {
-			case 'm': match = atoi(optarg); break;
-			case 'x': mismatch = atoi(optarg); break;
-			case 'o': gap_open = atoi(optarg); break;
-			case 'e': gap_extension = atoi(optarg); break;
-
-			case 'a': 
-                mat_name = (char*)malloc(strlen(optarg) + 1);
-                strcpy(mat_name, optarg); 
-                break;
-
-			case 'f': filter = atoi(optarg); break;
-			case 'p': protein = 1; break;
-			case 'c': path = 1; break;
-			case 'r': reverse = 1; break;
-			case 's': sam = 1; break;
-			case 'h': header = 1; break;
-		}
+	
+	int8_t* table = nt_table;
+	
+	// Initialize scoring matrix
+	if (initialize_scoring_matrix(match, mismatch, protein, mat_name, &mata, &mat, &table, &n) != 0) {
+		return 1;
 	}
 
-	// initialize scoring matrix for genome sequences
-    mata = (int8_t*)calloc(25, sizeof(int8_t));
-	for (l = k = 0; LIKELY(l < 4); ++l) {
-		for (m = 0; LIKELY(m < 4); ++m) mata[k++] = l == m ? match : -mismatch;	/* weight_match : -weight_mismatch */
-		mata[k++] = 0; // ambiguous base
-	}
-	for (m = 0; LIKELY(m < 5); ++m) mata[k++] = 0;
-    mat = mata;
-
-	if (protein == 1 && mat_name == 0) {
-		n = 24;
-		table = aa_table;
-		mat = mat50;
-	} else if (mat_name != 0) {
-
-	// Parse score matrix.
-		FILE *f_mat = fopen(mat_name, "r");
-        free(mat_name);
-        if (f_mat == NULL) { 
-            fprintf(stderr, "Failed to open the weight matrix file.\n");
-            free(mata);
-            return 1;
-        }
-
-		char line[128];
-		mata = (int8_t*)realloc(mata, 1024 * sizeof(int8_t));
-		k = 0;
-		m = 0;
-		while (fgets(line, 128, f_mat)) {
-			if (line[0] == '*' || (line[0] >= 'A' && line[0] <= 'Z')) {
-				if (line[0] >= 'A' && line[0] <= 'Z') aa_table[(int)line[0]] = aa_table[(int)line[0] + 32] = m;
-				char str[4], *s = str;
-				str[0] = '\0';
-				l = 1;
-				while (line[l]) {
-					if ((line[l] >= '0' && line[l] <= '9') || line[l] == '-') *s++ = line[l];
-					else if (str[0] != '\0') {
-						*s = '\0';
-						mata[k++] = (int8_t)atoi(str);
-						s = str;
-						str[0] = '\0';
-					}
-					++l;
-				}
-				if (str[0] != '\0') {
-					*s = '\0';
-					mata[k++] = (int8_t)atoi(str);
-					s = str;
-					str[0] = '\0';
-				}
-				++m;
-			}
-		}
-		if (k == 0) {
-			fprintf(stderr, "Problem of reading the weight matrix file.\n");
-            free(mata);
-			return 1;
-		}
-		fclose(f_mat);
-		n = m;
-		table = aa_table;
-		mat = mata;
-	}
-
-	read_fp = gzopen(argv[optind + 1], "r");
+	read_fp = gzopen(argv[file_arg_start + 1], "r");
 
     if (! read_fp) {
-        fprintf (stderr, "gzopen of '%s' failed.\n", argv[optind + 1]);
+        fprintf (stderr, "gzopen of '%s' failed.\n", argv[file_arg_start + 1]);
             exit (EXIT_FAILURE);
     }
 
 	read_seq = kseq_init(read_fp);
 	if (sam && header && path) {
 		fprintf(stdout, "@HD\tVN:1.4\tSO:queryname\n");
-		ref_fp = gzopen(argv[optind], "r");
+		ref_fp = gzopen(argv[file_arg_start], "r");
 		ref_seq = kseq_init(ref_fp);
 		while ((l = kseq_read(ref_seq)) >= 0) fprintf(stdout, "@SQ\tSN:%s\tLN:%d\n", ref_seq->name.s, (int32_t)ref_seq->seq.l);
 		kseq_destroy(ref_seq);
@@ -418,7 +487,7 @@ int main (int argc, char * const argv[]) {
             return 1;
 		}
 
-		ref_fp = gzopen(argv[optind], "r");
+		ref_fp = gzopen(argv[file_arg_start], "r");
 		ref_seq = kseq_init(ref_fp);
 		while (kseq_read(ref_seq) >= 0) {
 			s_align* result, *result_rc = 0;
