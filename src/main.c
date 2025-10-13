@@ -253,49 +253,52 @@ static int parse_arguments(int argc, char * const argv[], int32_t *match, int32_
 	// Parse command line arguments
 	for (int i = 1; i < argc; i++) {
 		if (argv[i][0] == '-') {
-			switch (argv[i][1]) {
-				case 'm':
-					if (i + 1 < argc && argv[i + 1][0] != '-') {
-						*match = atoi(argv[i + 1]);
-						i++; // Skip the next argument
-					}
-					break;
-				case 'x':
-					if (i + 1 < argc && argv[i + 1][0] != '-') {
-						*mismatch = atoi(argv[i + 1]);
-						i++; // Skip the next argument
-					}
-					break;
-				case 'o':
-					if (i + 1 < argc && argv[i + 1][0] != '-') {
-						*gap_open = atoi(argv[i + 1]);
-						i++; // Skip the next argument
-					}
-					break;
-				case 'e':
-					if (i + 1 < argc && argv[i + 1][0] != '-') {
-						*gap_extension = atoi(argv[i + 1]);
-						i++; // Skip the next argument
-					}
-					break;
-				case 'a':
-					if (i + 1 < argc && argv[i + 1][0] != '-') {
-						*mat_name = (char*)malloc(strlen(argv[i + 1]) + 1);
-						strcpy(*mat_name, argv[i + 1]);
-						i++; // Skip the next argument
-					}
-					break;
-				case 'f':
-					if (i + 1 < argc && argv[i + 1][0] != '-') {
-						*filter = atoi(argv[i + 1]);
-						i++; // Skip the next argument
-					}
-					break;
-				case 'p': *protein = 1; break;
-				case 'c': *path = 1; break;
-				case 'r': *reverse = 1; break;
-				case 's': *sam = 1; break;
-				case 'h': *header = 1; break;
+			// Handle combined flags like -cs by iterating through all characters
+			for (int j = 1; argv[i][j] != '\0'; j++) {
+				switch (argv[i][j]) {
+					case 'm':
+						if (i + 1 < argc && argv[i + 1][0] != '-') {
+							*match = atoi(argv[i + 1]);
+							i++; // Skip the next argument
+						}
+						break;
+					case 'x':
+						if (i + 1 < argc && argv[i + 1][0] != '-') {
+							*mismatch = atoi(argv[i + 1]);
+							i++; // Skip the next argument
+						}
+						break;
+					case 'o':
+						if (i + 1 < argc && argv[i + 1][0] != '-') {
+							*gap_open = atoi(argv[i + 1]);
+							i++; // Skip the next argument
+						}
+						break;
+					case 'e':
+						if (i + 1 < argc && argv[i + 1][0] != '-') {
+							*gap_extension = atoi(argv[i + 1]);
+							i++; // Skip the next argument
+						}
+						break;
+					case 'a':
+						if (i + 1 < argc && argv[i + 1][0] != '-') {
+							*mat_name = (char*)malloc(strlen(argv[i + 1]) + 1);
+							strcpy(*mat_name, argv[i + 1]);
+							i++; // Skip the next argument
+						}
+						break;
+					case 'f':
+						if (i + 1 < argc && argv[i + 1][0] != '-') {
+							*filter = atoi(argv[i + 1]);
+							i++; // Skip the next argument
+						}
+						break;
+					case 'p': *protein = 1; break;
+					case 'c': *path = 1; break;
+					case 'r': *reverse = 1; break;
+					case 's': *sam = 1; break;
+					case 'h': *header = 1; break;
+				}
 			}
 		}
 	}
