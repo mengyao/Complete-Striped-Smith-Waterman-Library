@@ -600,10 +600,12 @@ static cigar* banded_sw (const int8_t* ref,
 
 	uint32_t *c = (uint32_t*)malloc(16 * sizeof(uint32_t)), *c1;
 	int32_t i, j, e, f, temp1, temp2, s = 16, s1 = 8, l, max = 0, len;
+	int32_t max_i = 0, max_j = 0;
 	int64_t s2 = 1024;
 	char op, prev_op;
 	int32_t width, width_d, *h_b, *e_b, *h_c;
 	int8_t *direction, *direction_line;
+	const int32_t neg_inf = INT32_MIN / 2;
     len = refLen > readLen ? refLen : readLen;
 	cigar* result = (cigar*)malloc(sizeof(cigar));
 	h_b = (int32_t*)malloc(s1 * sizeof(int32_t));
@@ -632,7 +634,9 @@ static cigar* banded_sw (const int8_t* ref,
 			j = i - band_width;	beg = beg > j ? beg : j; // band start
 			j = i + band_width; end = end < j ? end : j; // band end
 			edge = end + 1 < width - 1 ? end + 1 : width - 1;
-			f = h_b[0] = e_b[0] = h_b[edge] = e_b[edge] = h_c[0] = 0;
+			f = neg_inf;
+			h_b[0] = h_b[edge] = h_c[0] = 0;
+			e_b[0] = e_b[edge] = neg_inf;
 			direction_line = direction + width_d * i * 3;
 
 			for (j = beg; LIKELY(j <= end); j ++) {
@@ -644,7 +648,7 @@ static cigar* banded_sw (const int8_t* ref,
 				set_d(dh, band_width, i, j, 2);
 
 				temp1 = i == 0 ? -weight_gapO : h_b[e] - weight_gapO;
-				temp2 = i == 0 ? -weight_gapE : e_b[e] - weight_gapE;
+				temp2 = i == 0 ? neg_inf : e_b[e] - weight_gapE;
                 //fprintf(stderr, "e_b length: %d, u: %d\n", s1, u);
 				e_b[u] = temp1 > temp2 ? temp1 : temp2;
 				direction_line[de] = temp1 > temp2 ? 3 : 2;
@@ -660,7 +664,11 @@ static cigar* banded_sw (const int8_t* ref,
 				temp2 = h_b[d] + mat[ref[j] * n + read[i]];
 				h_c[u] = temp1 > temp2 ? temp1 : temp2;
 
-				if (h_c[u] > max) max = h_c[u];
+				if (h_c[u] > max) {
+					max = h_c[u];
+					max_i = i;
+					max_j = j;
+				}
 
 				if (temp1 <= temp2) direction_line[dh] = 1;
 				else direction_line[dh] = e1 > f1 ? direction_line[de] : direction_line[df];
@@ -672,12 +680,13 @@ static cigar* banded_sw (const int8_t* ref,
 	band_width /= 2;
 
 	// trace back
-	i = readLen - 1;
-	j = refLen - 1;
+	i = max_i;
+	j = max_j;
 	e = 0;	// Count the number of M, D or I.
 	l = 0;	// record length of current cigar
 	op = prev_op = 'M';
 	temp2 = 2;	// h
+	direction_line = direction + width_d * i * 3;
     while (LIKELY(i >= 0 && j > 0)) {
 		set_d(temp1, band_width, i, j, temp2);
 		switch (direction_line[temp1]) {
@@ -771,6 +780,34 @@ static cigar* banded_sw (const int8_t* ref,
 	free(h_b);
 	free(c);
 	return result;
+}
+
+static int32_t cigar_alignment_score(const cigar* path,
+									 const int8_t* ref,
+									 const int8_t* read,
+									 const int8_t* mat,
+									 int32_t n,
+									 const uint32_t weight_gapO,
+									 const uint32_t weight_gapE) {
+	int32_t score = 0;
+	int32_t ref_pos = 0, read_pos = 0;
+	for (int32_t i = 0; i < path->length; ++i) {
+		uint32_t len = cigar_int_to_len(path->seq[i]);
+		char op = cigar_int_to_op(path->seq[i]);
+		if (op == 'M') {
+			for (uint32_t j = 0; j < len; ++j) {
+				score += mat[ref[ref_pos] * n + read[read_pos]];
+				++ref_pos;
+				++read_pos;
+			}
+		} else {
+			int32_t penalty = weight_gapO + (len > 1 ? (len - 1) * weight_gapE : 0);
+			score -= penalty;
+			if (op == 'I') read_pos += len;
+			else if (op == 'D') ref_pos += len;
+		}
+	}
+	return score;
 }
 
 static int8_t* seq_reverse(const int8_t* seq, int32_t end)	/* end is 0-based alignment ending position */
@@ -904,7 +941,20 @@ s_align* ssw_align (const s_profile* prof,
 	refLen = r->ref_end1 - r->ref_begin1 + 1;
 	readLen = r->read_end1 - r->read_begin1 + 1;
 	band_width = abs(refLen - readLen) + 1;
-	path = banded_sw(ref + r->ref_begin1, prof->read + r->read_begin1, refLen, readLen, r->score1, weight_gapO, weight_gapE, band_width, prof->mat, prof->n);
+	int32_t full_band = refLen > readLen ? refLen : readLen;
+	while (1) {
+		path = banded_sw(ref + r->ref_begin1, prof->read + r->read_begin1, refLen, readLen, r->score1, weight_gapO, weight_gapE, band_width, prof->mat, prof->n);
+		if (path == 0) break;
+		int32_t cigar_score = cigar_alignment_score(path, ref + r->ref_begin1, prof->read + r->read_begin1, prof->mat, prof->n, weight_gapO, weight_gapE);
+		if (cigar_score == r->score1) break;
+		free(path->seq);
+		free(path);
+		if (band_width >= full_band) {
+			path = 0;
+			break;
+		}
+		band_width = full_band;
+	}
 
 /*int32_t i, length;
     char op;
@@ -1022,4 +1072,3 @@ int32_t mark_mismatch (int32_t ref_begin1,
 	(*cigar) = new_cigar;
 	return mismatch_length;
 }
-
