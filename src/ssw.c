@@ -864,7 +864,7 @@ s_align* ssw_align (const s_profile* prof,
 
 	alignment_end* bests = 0, *bests_reverse = 0;
 	__m128i* vP = 0;
-	int32_t word = 0, band_width = 0, readLen = prof->readLen;
+	int32_t word = 0, band_width = 0, full_band = 0, readLen = prof->readLen;
 	int8_t* read_reverse = 0;
 	cigar* path;
 	s_align* r = (s_align*)calloc(1, sizeof(s_align));
@@ -941,7 +941,7 @@ s_align* ssw_align (const s_profile* prof,
 	refLen = r->ref_end1 - r->ref_begin1 + 1;
 	readLen = r->read_end1 - r->read_begin1 + 1;
 	band_width = abs(refLen - readLen) + 1;
-	int32_t full_band = refLen > readLen ? refLen : readLen;
+	full_band = refLen > readLen ? refLen : readLen;
 	while (1) {
 		path = banded_sw(ref + r->ref_begin1, prof->read + r->read_begin1, refLen, readLen, r->score1, weight_gapO, weight_gapE, band_width, prof->mat, prof->n);
 		if (path == 0) break;
